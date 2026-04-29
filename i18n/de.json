@@ -335,7 +335,7 @@
       "dsgvo_einwilligung_label": "Ich habe die Datenschutzhinweise gelesen und stimme der Verarbeitung meiner Daten gemäß der oben genannten Bedingungen zu (Pflicht).",
       "wahrheit_label": "Ich versichere, dass meine Angaben wahrheitsgemäß sind (Pflicht).",
       "captcha_titel": "Spam-Schutz",
-      "captcha_hint": "Bestätige, dass du kein Roboter bist."
+      "captcha_hint": "Bitte das Captcha lösen, um zu bestätigen, dass du kein Bot bist."
     }
   },
   "validation": {
@@ -354,6 +354,7 @@
     "max_length": "Maximal {n} Zeichen erlaubt",
     "min_length": "Mindestens {n} Zeichen erforderlich",
     "must_check": "Bitte ankreuzen, um fortzufahren",
+    "captcha_required": "Bitte das Captcha lösen, um fortzufahren",
     "min_one_role": "Bitte wähle mindestens eine Rolle aus",
     "min_one_anstellung": "Bitte wähle mindestens eine Anstellungsform",
     "min_one_slot": "Bitte wähle mindestens ein Zeitfenster aus",

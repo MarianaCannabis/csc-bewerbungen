@@ -667,6 +667,38 @@ body::before {
   .grid-slot { padding: 10px 2px; font-size: 0.7rem; }
 }
 
+/* Adress-Verifikation Status */
+.adresse-status {
+  margin-top: 0.5rem;
+  font-size: 0.825rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: var(--radius-md);
+  display: none;
+}
+
+.adresse-status.aktiv { display: block; }
+
+.adresse-status.pruefe {
+  background: var(--sand-100);
+  color: var(--ink-mute);
+}
+
+.adresse-status.ok {
+  background: var(--success-bg);
+  color: var(--success);
+  font-weight: 500;
+}
+
+.adresse-status.warning {
+  background: var(--warning-bg);
+  color: var(--warning-text);
+}
+
+.adresse-status.error {
+  background: var(--error-bg);
+  color: var(--error);
+}
+
 /* Range / Slider */
 .btn-quick-stunden {
   font-family: inherit;
@@ -1234,6 +1266,9 @@ const state = {
     adresse_strasse: '',
     adresse_plz: '',
     adresse_ort: '',
+    adresse_verifiziert: null,  // null | 'ok' | 'warning' | 'not_found'
+    adresse_lat: null,
+    adresse_lon: null,
     telefon: '',
     email: '',
     steuer_id: '',
@@ -1602,6 +1637,8 @@ function renderSection2() {
         <div class="error-message">${t('validation.required')}</div>
       </div>
     </div>
+
+    <div class="adresse-status" id="adresse-status"></div>
 
     <div class="field-grid cols-2">
       <div class="form-group" id="fg-telefon">
@@ -2417,10 +2454,102 @@ function attachSection2() {
     if (el) {
       el.addEventListener('input', e => {
         state.formData[key] = e.target.value;
+        // Bei Adressfeld-Änderung: verifizierten Status zurücksetzen
+        if (['adresse_strasse', 'adresse_plz', 'adresse_ort'].includes(key)) {
+          state.formData.adresse_verifiziert = null;
+          state.formData.adresse_lat = null;
+          state.formData.adresse_lon = null;
+        }
         saveDraft();
       });
     }
   });
+  
+  // Adress-Verifikation onBlur (wenn Bewerber das Adressfeld verlässt)
+  ['i-strasse', 'i-plz', 'i-ort'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('blur', () => {
+        // Nur prüfen wenn alle drei Adressfelder gefüllt sind
+        const d = state.formData;
+        if (d.adresse_strasse?.trim() && d.adresse_plz?.trim() && d.adresse_ort?.trim()) {
+          // Debounce: 800ms warten, falls User zwischen Feldern wechselt
+          clearTimeout(window._adresseTimer);
+          window._adresseTimer = setTimeout(() => verifyAdresse(), 800);
+        }
+      });
+    }
+  });
+}
+
+// Adress-Verifikation via OpenStreetMap Nominatim
+// Wichtig: Nominatim erfordert User-Agent, max 1 Anfrage/Sekunde
+async function verifyAdresse() {
+  const d = state.formData;
+  const statusEl = document.getElementById('adresse-status');
+  if (!statusEl) return;
+  
+  if (!d.adresse_strasse?.trim() || !d.adresse_plz?.trim() || !d.adresse_ort?.trim()) {
+    statusEl.classList.remove('aktiv');
+    return;
+  }
+  
+  // Status: Prüfung läuft
+  statusEl.className = 'adresse-status aktiv pruefe';
+  statusEl.textContent = t('validation.adresse_pruefe');
+  
+  try {
+    // Nominatim-Query mit strukturierten Parametern
+    const params = new URLSearchParams({
+      street: d.adresse_strasse.trim(),
+      postalcode: d.adresse_plz.trim(),
+      city: d.adresse_ort.trim(),
+      country: 'Deutschland',
+      format: 'jsonv2',
+      limit: '3',
+      addressdetails: '1'
+    });
+    
+    const res = await fetch(`https://nominatim.openstreetmap.org/search?${params.toString()}`, {
+      headers: {
+        // Nominatim ToS: User-Agent erforderlich für Identifikation
+        'Accept': 'application/json'
+      }
+    });
+    
+    if (!res.ok) throw new Error('Nominatim error: ' + res.status);
+    const results = await res.json();
+    
+    if (results.length === 0) {
+      // Nicht gefunden — nicht blockieren, nur warnen
+      statusEl.className = 'adresse-status aktiv error';
+      statusEl.textContent = t('validation.adresse_nicht_gefunden');
+      d.adresse_verifiziert = 'not_found';
+      d.adresse_lat = null;
+      d.adresse_lon = null;
+    } else if (results.length === 1) {
+      // Eindeutiger Treffer
+      const r = results[0];
+      statusEl.className = 'adresse-status aktiv ok';
+      statusEl.textContent = t('validation.adresse_verifiziert') + ' — ' + (r.display_name || '').split(',').slice(0, 3).join(', ');
+      d.adresse_verifiziert = 'ok';
+      d.adresse_lat = parseFloat(r.lat);
+      d.adresse_lon = parseFloat(r.lon);
+    } else {
+      // Mehrdeutig
+      statusEl.className = 'adresse-status aktiv warning';
+      statusEl.textContent = t('validation.adresse_unklar');
+      d.adresse_verifiziert = 'warning';
+      // Trotzdem ersten Treffer als Koordinate speichern
+      d.adresse_lat = parseFloat(results[0].lat);
+      d.adresse_lon = parseFloat(results[0].lon);
+    }
+    saveDraft();
+  } catch (e) {
+    console.error('Adress-Verifikation fehlgeschlagen:', e);
+    // Fail silently — Bewerber soll trotzdem absenden können
+    statusEl.classList.remove('aktiv');
+  }
 }
 
 function attachSection3() {
@@ -2988,6 +3117,23 @@ function fillFormFromState() {
   setVal('i-iban', d.iban);
   setVal('i-kk-name', d.kk_name);
   setVal('i-kk-mitgl', d.kk_mitgl);
+  
+  // Adress-Status restoren
+  if (d.adresse_verifiziert) {
+    const statusEl = document.getElementById('adresse-status');
+    if (statusEl) {
+      if (d.adresse_verifiziert === 'ok') {
+        statusEl.className = 'adresse-status aktiv ok';
+        statusEl.textContent = t('validation.adresse_verifiziert');
+      } else if (d.adresse_verifiziert === 'warning') {
+        statusEl.className = 'adresse-status aktiv warning';
+        statusEl.textContent = t('validation.adresse_unklar');
+      } else if (d.adresse_verifiziert === 'not_found') {
+        statusEl.className = 'adresse-status aktiv error';
+        statusEl.textContent = t('validation.adresse_nicht_gefunden');
+      }
+    }
+  }
 
   // Sektion 3
   d.rollen.forEach(r => {
@@ -3288,40 +3434,27 @@ function calculateAge(dateStr) {
   return age;
 }
 
-// IBAN-Format-Check mit echter MOD97-Prüfsumme
+// IBAN-Format-Check: Nur Format-Prüfung (DE 22 Zeichen, gültiger Ländercode)
+// Echte MOD97-Prüfsumme erst beim Vertragsabschluss durch HR.
 function isValidIBANFormat(iban) {
   if (!iban) return false;
-  // Whitespace und Sonderzeichen entfernen
   const cleaned = iban.replace(/[\s\-]/g, '').toUpperCase();
   
   // Muss mit 2 Buchstaben beginnen, dann 2 Ziffern, Rest alphanumerisch
   if (!/^[A-Z]{2}\d{2}[A-Z0-9]+$/.test(cleaned)) return false;
   
-  // Längen-Check (DE = 22)
+  // Längen-Map für gängige EU-Länder
   const lengthMap = { 
     DE: 22, AT: 20, CH: 21, FR: 27, IT: 27, ES: 24, NL: 18, BE: 16, 
-    PL: 28, GB: 22, LU: 20, DK: 18 
+    PL: 28, GB: 22, LU: 20, DK: 18, SE: 24, NO: 15, FI: 18, IE: 22,
+    PT: 25, GR: 27, CZ: 24, HU: 28, SK: 24, SI: 19, EE: 20, LV: 21, LT: 20
   };
   const country = cleaned.substring(0, 2);
   const expected = lengthMap[country];
   if (expected && cleaned.length !== expected) return false;
   if (cleaned.length < 15 || cleaned.length > 34) return false;
   
-  // MOD97-Prüfsumme: erste 4 Zeichen ans Ende, A=10, B=11 etc., dann mod 97 muss 1 sein
-  const rearranged = cleaned.substring(4) + cleaned.substring(0, 4);
-  const numericString = rearranged.split('').map(c => {
-    const code = c.charCodeAt(0);
-    return code >= 65 && code <= 90 ? (code - 55).toString() : c;
-  }).join('');
-  
-  // Modulo auf großen Zahlen (BigInt nicht überall verfügbar, daher String-basiert)
-  let remainder = '';
-  for (const ch of numericString) {
-    remainder = (remainder + ch);
-    const num = parseInt(remainder, 10);
-    if (!isNaN(num)) remainder = (num % 97).toString();
-  }
-  return parseInt(remainder, 10) === 1;
+  return true;
 }
 
 function showErrors() {
@@ -3448,7 +3581,14 @@ async function submitForm() {
     nachname: d.nachname.trim(),
     geburtsdatum: d.geburtsdatum,
     staatsangehoerigkeit: d.staatsangehoerigkeit.trim(),
-    adresse: { strasse: d.adresse_strasse, plz: d.adresse_plz, ort: d.adresse_ort },
+    adresse: { 
+      strasse: d.adresse_strasse, 
+      plz: d.adresse_plz, 
+      ort: d.adresse_ort,
+      verifiziert: d.adresse_verifiziert || 'not_checked',
+      lat: d.adresse_lat,
+      lon: d.adresse_lon
+    },
     telefon: d.telefon.trim(),
     email: d.email.trim().toLowerCase(),
     geburtsort: d.geburtsort?.trim() || null,

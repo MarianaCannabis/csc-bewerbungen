@@ -2465,6 +2465,66 @@ function attachSection2() {
     }
   });
   
+  // Live-Validierung Geburtsdatum (onBlur)
+  const geb = document.getElementById('i-geburtsdatum');
+  if (geb) {
+    geb.addEventListener('blur', () => {
+      const fg = document.getElementById('fg-geburtsdatum');
+      const em = fg ? fg.querySelector('.error-message') : null;
+      if (!geb.value) {
+        if (fg) fg.classList.remove('has-error');
+        return;
+      }
+      if (!isValidDate(geb.value)) {
+        if (fg) fg.classList.add('has-error');
+        if (em) em.textContent = t('validation.date_invalid');
+        return;
+      }
+      const age = calculateAge(geb.value);
+      if (age < 18) {
+        if (fg) fg.classList.add('has-error');
+        if (em) em.textContent = t('validation.age_under_18');
+      } else if (age > 100) {
+        if (fg) fg.classList.add('has-error');
+        if (em) em.textContent = t('validation.age_over_100');
+      } else {
+        if (fg) fg.classList.remove('has-error');
+      }
+    });
+  }
+  
+  // Live-Validierung IBAN (onBlur, nur wenn was eingetippt wurde)
+  const ibanEl = document.getElementById('i-iban');
+  if (ibanEl) {
+    ibanEl.addEventListener('blur', () => {
+      const v = ibanEl.value.trim();
+      // Status-Element direkt unter dem Feld einfügen falls nicht vorhanden
+      let statusEl = document.getElementById('iban-status');
+      if (!statusEl) {
+        statusEl = document.createElement('div');
+        statusEl.id = 'iban-status';
+        statusEl.style.cssText = 'margin-top: 0.4rem; font-size: 0.825rem; padding: 0.4rem 0.7rem; border-radius: var(--radius-md);';
+        ibanEl.parentNode.insertBefore(statusEl, ibanEl.nextSibling);
+      }
+      statusEl.style.display = 'none';
+      
+      if (!v) {
+        return;  // freiwillig, leer ist OK
+      }
+      if (!isValidIBANFormat(v)) {
+        statusEl.style.display = 'block';
+        statusEl.style.background = 'var(--error-bg)';
+        statusEl.style.color = 'var(--error)';
+        statusEl.textContent = '✗ ' + t('validation.iban_invalid');
+      } else {
+        statusEl.style.display = 'block';
+        statusEl.style.background = 'var(--success-bg)';
+        statusEl.style.color = 'var(--success)';
+        statusEl.textContent = '✓ Format OK';
+      }
+    });
+  }
+  
   // Adress-Verifikation onBlur (wenn Bewerber das Adressfeld verlässt)
   ['i-strasse', 'i-plz', 'i-ort'].forEach(id => {
     const el = document.getElementById(id);
@@ -2664,6 +2724,39 @@ function attachSection3() {
         }
         setVal('i-probearbeit-anmerkung', state.formData.probearbeit_anmerkung);
         if (isActive5) sec5.classList.add('active');
+      }
+      
+      // Sektion 7 (Mobilität) neu rendern wegen Anfahrt-Standort-Logik
+      const sec7 = document.getElementById('section-7');
+      if (sec7) {
+        const isActive7 = sec7.classList.contains('active');
+        sec7.innerHTML = renderSectionContent(7);
+        attachSection7();
+        // Restore Anfahrt-Werte
+        if (state.formData.max_anfahrt) {
+          const r = sec7.querySelector(`input[name="anfahrt"][value="${state.formData.max_anfahrt}"]`);
+          if (r) r.checked = true;
+        }
+        if (state.formData.max_anfahrt_anbau) {
+          const r = sec7.querySelector(`input[name="anfahrt-anbau"][value="${state.formData.max_anfahrt_anbau}"]`);
+          if (r) r.checked = true;
+        }
+        state.formData.fuehrerschein.forEach(fs => {
+          const cb = sec7.querySelector(`[data-fs="${fs}"]`);
+          if (cb) cb.checked = true;
+        });
+        if (state.formData.eigenes_fahrzeug !== null && state.formData.eigenes_fahrzeug !== undefined) {
+          const r = sec7.querySelector(`input[name="fahrzeug"][value="${state.formData.eigenes_fahrzeug}"]`);
+          if (r) r.checked = true;
+        }
+        if (state.formData.jobticket) {
+          const r = sec7.querySelector(`input[name="jobticket"][value="${state.formData.jobticket}"]`);
+          if (r) r.checked = true;
+        }
+        if (typeof updateJobticketVisibility === 'function') {
+          updateJobticketVisibility();
+        }
+        if (isActive7) sec7.classList.add('active');
       }
       
       updateConditionalBlocks();

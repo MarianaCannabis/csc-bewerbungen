@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter+Tight:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://js.hcaptcha.com/1/api.js" async defer></script>
 <style>
 :root {
   /* Earth tones — gedämpftes Olivgrün als Anker */
@@ -2439,14 +2440,15 @@ function renderSection9() {
       <div class="error-message">${t('validation.must_check')}</div>
     </div>
 
-    <div class="info-box" style="border-left-color: var(--olive-500); background: var(--olive-50);">
-      <p class="info-box-title" style="color: var(--olive-700);">${s.captcha_titel}</p>
-      <p>${s.captcha_hint}</p>
-      <label class="checkbox-block" style="margin-top: 0.75rem; max-width: 280px;">
-        <input type="checkbox" id="cb-captcha">
-        <span class="checkbox-label">Ich bin kein Roboter</span>
-      </label>
-      <p class="form-hint" style="margin-top: 0.6rem; font-style: italic;">(Hinweis: Echtes Captcha folgt in Phase 2b)</p>
+    <div class="form-group" id="fg-captcha">
+      <label class="form-label">${s.captcha_titel}<span class="required">*</span></label>
+      <p class="form-hint" style="margin-bottom: 0.75rem;">${s.captcha_hint}</p>
+      <div class="h-captcha" 
+           data-sitekey="a4ba7a40-e684-4308-90be-5a6815f87508"
+           data-callback="onHCaptchaSuccess"
+           data-expired-callback="onHCaptchaExpired"
+           data-error-callback="onHCaptchaError"></div>
+      <div class="error-message">${t('validation.captcha_required') || 'Bitte das Captcha lösen.'}</div>
     </div>
   `;
 }
@@ -3471,11 +3473,30 @@ function attachSection9() {
     state.formData.wahrheitsgemaess = e.target.checked;
     saveDraft();
   });
-  document.getElementById('cb-captcha').addEventListener('change', e => {
-    state.formData.captcha = e.target.checked;
-    saveDraft();
-  });
+  // hCaptcha-Callbacks werden global definiert — siehe unten
 }
+
+// hCaptcha-Callbacks — global, weil hCaptcha sie über window aufruft
+window.onHCaptchaSuccess = function(token) {
+  state.formData.captcha = true;
+  state.formData.captcha_token = token;
+  // Falls noch ein Validierungsfehler angezeigt wurde, den entfernen
+  const fg = document.getElementById('fg-captcha');
+  if (fg) fg.classList.remove('has-error');
+  saveDraft();
+};
+
+window.onHCaptchaExpired = function() {
+  state.formData.captcha = false;
+  state.formData.captcha_token = '';
+  saveDraft();
+};
+
+window.onHCaptchaError = function(err) {
+  console.error('hCaptcha-Fehler:', err);
+  state.formData.captcha = false;
+  state.formData.captcha_token = '';
+};
 
 // ============================================================================
 // FORM-WIEDERHERSTELLUNG AUS STATE
@@ -3708,7 +3729,10 @@ function fillFormFromState() {
   // Sektion 9
   if (d.dsgvo_zustimmung) document.getElementById('cb-dsgvo').checked = true;
   if (d.wahrheitsgemaess) document.getElementById('cb-wahrheit').checked = true;
-  if (d.captcha) document.getElementById('cb-captcha').checked = true;
+  // Captcha-Token wird NICHT aus Draft wiederhergestellt — User muss neu lösen
+  // (Sicherheits-Best-Practice, Tokens haben begrenzte Gültigkeit)
+  state.formData.captcha = false;
+  state.formData.captcha_token = '';
 }
 
 // ============================================================================
@@ -3822,7 +3846,7 @@ function validateSection(n) {
   if (n === 9) {
     if (!d.dsgvo_zustimmung) state.errors.dsgvo = true;
     if (!d.wahrheitsgemaess) state.errors.wahrheit = true;
-    if (!d.captcha) state.errors.captcha = true;
+    if (!d.captcha || !d.captcha_token) state.errors.captcha = true;
   }
 
   return Object.keys(state.errors).length === 0;
@@ -4050,6 +4074,7 @@ async function submitForm() {
     schwerbehinderung_einschr: (d.sensible_einwilligung && d.schwerbehinderung === 'ja' && d.schwerbehinderung_einschr) ? d.schwerbehinderung_einschr.trim() : null,
     schwerbehinderung_anpassungen: (d.sensible_einwilligung && d.schwerbehinderung === 'ja' && d.schwerbehinderung_anpassungen) ? d.schwerbehinderung_anpassungen.trim() : null,
     dsgvo_zustimmung: d.dsgvo_zustimmung,
+    captcha_token: d.captcha_token || null,
     sprache: state.lang
   };
 

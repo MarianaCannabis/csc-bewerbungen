@@ -668,6 +668,30 @@ body::before {
 }
 
 /* Range / Slider */
+.btn-quick-stunden {
+  font-family: inherit;
+  font-size: 0.825rem;
+  padding: 0.4rem 0.85rem;
+  border: 1px solid var(--sand-300);
+  background: var(--cream);
+  color: var(--olive-700);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-quick-stunden:hover {
+  background: var(--olive-50);
+  border-color: var(--olive-500);
+}
+
+.btn-quick-stunden.active {
+  background: var(--olive-100);
+  border-color: var(--olive-700);
+  color: var(--olive-900);
+  font-weight: 500;
+}
+
 .soft-skill-row {
   display: grid;
   grid-template-columns: 1fr auto;
@@ -1116,6 +1140,73 @@ const SUPABASE_URL = 'https://gvzayggvtlychyjbnsgv.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd2emF5Z2d2dGx5Y2h5amJuc2d2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3ODEzMTIsImV4cCI6MjA4OTM1NzMxMn0.1L2e98IjFjF8z_-t0Fpm20wwVyrtWfkMdjGG79fJwMg';
 const STORAGE_KEY = 'csc_bewerbung_draft_v1';
 
+// Rollen-Anstellungsformen-Mapping nach §17 KCanG
+// Unmittelbare Tätigkeiten am Pflanzen-/Produkt (Anbau, Ernte, Abgabe) = nur Minijob
+// Vorstand = Minijob oder Ehrenamt
+// Head Grower = Leitungsfunktion (nicht selbst an Pflanzen) → TZ/VZ möglich
+// Sonstige (Reinigung, Sicherheit) = alle Anstellungsformen
+const ROLE_ANSTELLUNG_MAP = {
+  'grower':            ['minijob'],
+  'head_grower':       ['teilzeit', 'vollzeit', 'honorar'],
+  'ausgabe':           ['minijob'],
+  'vorstand':          ['minijob', 'ehrenamt'],
+  'stellv_vorstand':   ['minijob', 'ehrenamt'],
+  'praevention':       ['minijob', 'ehrenamt', 'honorar'],
+  'springer':          ['minijob'],
+  'reinigung':         ['minijob', 'teilzeit', 'vollzeit', 'honorar'],
+  'sicherheit':        ['minijob', 'teilzeit', 'vollzeit', 'honorar']
+};
+
+// Rollen-Standort-Mapping
+// 'anbau'    = Anbauanlage (eigene Räumlichkeit, oft entfernt)
+// 'ausgabe'  = Ausgabestelle (vor Ort, Mitgliederkontakt)
+// 'flexibel' = standort-übergreifend (Büro, je nach Bedarf)
+const ROLE_STANDORT_MAP = {
+  'grower':            'anbau',
+  'head_grower':       'anbau',
+  'ausgabe':           'ausgabe',
+  'sicherheit':        'ausgabe',
+  'praevention':       'ausgabe',
+  'springer':          'ausgabe',
+  'vorstand':          'flexibel',
+  'stellv_vorstand':   'flexibel',
+  'reinigung':         'flexibel'
+};
+
+// Hilfsfunktion: Schnittmenge der erlaubten Anstellungsformen für gewählte Rollen
+function allowedAnstellungen(rollen) {
+  if (!rollen || rollen.length === 0) return [];
+  let allowed = null;
+  rollen.forEach(r => {
+    const set = new Set(ROLE_ANSTELLUNG_MAP[r] || []);
+    allowed = allowed === null ? set : new Set([...allowed].filter(x => set.has(x)));
+  });
+  return allowed ? Array.from(allowed) : [];
+}
+
+// Hilfsfunktion: Welche Standorte ergeben sich aus den gewählten Rollen?
+// Liefert sortiertes Array mit unique Werten ['anbau', 'ausgabe'] oder ['flexibel']
+function rolleStandorte(rollen) {
+  if (!rollen || rollen.length === 0) return [];
+  const standorte = new Set();
+  rollen.forEach(r => {
+    const s = ROLE_STANDORT_MAP[r];
+    if (s) standorte.add(s);
+  });
+  // Wenn Anbau oder Ausgabe dabei ist, brauchen wir keine 'flexibel'-Anzeige
+  // (flexibel-Rollen werden in den vorhandenen Rastern mit erfasst)
+  if (standorte.has('anbau') || standorte.has('ausgabe')) {
+    standorte.delete('flexibel');
+  }
+  return Array.from(standorte).sort();  // ['anbau', 'ausgabe']
+}
+
+// Hilfsfunktion: Standort-Konflikt vorhanden? (Anbau UND Ausgabe gleichzeitig)
+function hasStandortKonflikt(rollen) {
+  const s = rolleStandorte(rollen);
+  return s.includes('anbau') && s.includes('ausgabe');
+}
+
 // "supabase" ist global vom CDN-Script belegt — eigene Instanz unter anderem Namen
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -1151,6 +1242,7 @@ const state = {
     kk_name: '',
     kk_mitgl: '',
     rollen: [],
+    bestaetigt_zwei_standorte: false,
     motivation: '',
     praevention_sachkunde: null,
     sicherheit_nachweis: null,
@@ -1159,7 +1251,11 @@ const state = {
     vorerfahrung: '',
     sprachen: { de: '', en: '', tr: '', ru: '', ar: '', pl: '', fr: '', es: '' },
     soft_skills: { stress: 0, kunde: 0, verschwiegenheit: 0, team: 0, genauigkeit: 0 },
-    verfuegbarkeit: { mo:[false,false,false,false], di:[false,false,false,false], mi:[false,false,false,false], do:[false,false,false,false], fr:[false,false,false,false], sa:[false,false,false,false], so:[false,false,false,false] },
+    verfuegbarkeit: { 
+      anbau:     { mo:[false,false,false,false], di:[false,false,false,false], mi:[false,false,false,false], do:[false,false,false,false], fr:[false,false,false,false], sa:[false,false,false,false], so:[false,false,false,false] },
+      ausgabe:   { mo:[false,false,false,false], di:[false,false,false,false], mi:[false,false,false,false], do:[false,false,false,false], fr:[false,false,false,false], sa:[false,false,false,false], so:[false,false,false,false] },
+      allgemein: { mo:[false,false,false,false], di:[false,false,false,false], mi:[false,false,false,false], do:[false,false,false,false], fr:[false,false,false,false], sa:[false,false,false,false], so:[false,false,false,false] }
+    },
     wunsch_zeiten: '',
     wunsch_stunden_min: '',
     wunsch_stunden_max: '',
@@ -1181,6 +1277,9 @@ const state = {
     sucht_relevant: '',
     sucht_details: '',
     schwerbehinderung: '',
+    schwerbehinderung_gdb: '',
+    schwerbehinderung_einschr: '',
+    schwerbehinderung_anpassungen: '',
     dsgvo_zustimmung: false,
     wahrheitsgemaess: false,
     captcha: false
@@ -1620,6 +1719,20 @@ function renderSection3() {
       <div class="char-counter" id="counter-motivation">0 / 500</div>
       <div class="error-message">${t('validation.required')}</div>
     </div>
+
+    <div id="standort-konflikt-block" class="form-group" style="display: none; margin-top: 1.5rem;">
+      <div class="info-box" style="background: var(--warning-bg); border-left-color: var(--terracotta);">
+        <p class="info-box-title">${s.standort_konflikt_titel}</p>
+        <p>${s.standort_konflikt_text}</p>
+      </div>
+      <div class="form-group" id="fg-standort-konflikt-bestaetigung" style="margin-top: 1rem;">
+        <label class="checkbox-block">
+          <input type="checkbox" id="cb-standort-konflikt">
+          <span class="checkbox-label"><strong>${s.standort_konflikt_bestaetigung}</strong></span>
+        </label>
+        <div class="error-message">${t('validation.standort_konflikt_required')}</div>
+      </div>
+    </div>
   `;
 }
 
@@ -1690,7 +1803,7 @@ function renderSection4() {
   `;
 }
 
-// SEKTION 5 — Verfügbarkeit
+// SEKTION 5 — Verfügbarkeit (mit Standort-aware Mehrfach-Rastern)
 function renderSection5() {
   const s = state.i18n.sections['5'];
   const tage = [
@@ -1699,26 +1812,46 @@ function renderSection5() {
   ];
   const slots = [s.slot_morgens, s.slot_mittags, s.slot_nachmittags, s.slot_abends];
 
+  // Welche Standorte brauchen wir?
+  const standorte = rolleStandorte(state.formData.rollen);
+  
+  // Falls noch keine Rollen gewählt: zeige nur das allgemeine Raster
+  // (Bewerber kann durch alle Sektionen ohne Rollenwahl, sollte aber Sektion 3 zuerst machen)
+  const zeigeStandorte = standorte.length > 0 ? standorte : ['allgemein'];
+  // Spezialfall: wenn nur flexible Rollen (Vorstand, Reinigung) → 'allgemein' Raster
+  if (standorte.length === 0 && state.formData.rollen.length > 0) {
+    zeigeStandorte.length = 0;
+    zeigeStandorte.push('allgemein');
+  }
+
+  // Helper: Raster für einen Standort generieren
+  function rasterHTML(standort) {
+    const titel = s[`matrix_titel_${standort}`] || s.matrix_titel;
+    const hint = s[`matrix_hint_${standort}`] || s.matrix_hint;
+    return `
+      <h3 class="section-subtitle">${titel}</h3>
+      <p class="form-hint" style="margin-bottom: 1rem;">${hint}</p>
+      <div class="form-group" id="fg-verfuegbarkeit-${standort}">
+        <div class="grid-availability">
+          <div class="grid-cell-header"></div>
+          ${slots.map(sl => `<div class="grid-cell-header">${sl}</div>`).join('')}
+          ${tage.map(([d, label]) => `
+            <div class="grid-cell-day">${label}</div>
+            ${[0,1,2,3].map(i => `
+              <div class="grid-slot" data-standort="${standort}" data-day="${d}" data-slot="${i}">·</div>
+            `).join('')}
+          `).join('')}
+        </div>
+        <div class="error-message">${t(`validation.min_one_slot_${standort}`) || t('validation.min_one_slot')}</div>
+      </div>
+    `;
+  }
+
   return `
     <h2 class="section-title">${s.title}</h2>
     <p class="section-description">${s.description}</p>
 
-    <h3 class="section-subtitle">${s.matrix_titel}</h3>
-    <p class="form-hint" style="margin-bottom: 1rem;">${s.matrix_hint}</p>
-
-    <div class="form-group" id="fg-verfuegbarkeit">
-      <div class="grid-availability">
-        <div class="grid-cell-header"></div>
-        ${slots.map(sl => `<div class="grid-cell-header">${sl}</div>`).join('')}
-        ${tage.map(([d, label]) => `
-          <div class="grid-cell-day">${label}</div>
-          ${[0,1,2,3].map(i => `
-            <div class="grid-slot" data-day="${d}" data-slot="${i}">·</div>
-          `).join('')}
-        `).join('')}
-      </div>
-      <div class="error-message">${t('validation.min_one_slot')}</div>
-    </div>
+    ${zeigeStandorte.map(rasterHTML).join('')}
 
     <div class="form-group">
       <label class="form-label">${s.wunsch_zeiten_label}</label>
@@ -1727,6 +1860,20 @@ function renderSection5() {
 
     <div class="form-group" id="fg-stunden">
       <label class="form-label">${s.stunden_label}<span class="required">*</span></label>
+      ${s.stunden_hint ? `<p class="form-hint" style="margin-bottom: 0.75rem;">${s.stunden_hint}</p>` : ''}
+      
+      ${s.stunden_quick_label ? `
+      <div style="margin-bottom: 0.75rem;">
+        <p class="form-hint" style="margin-bottom: 0.4rem; font-weight: 500;">${s.stunden_quick_label}</p>
+        <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+          <button type="button" class="btn-quick-stunden" data-stunden-min="5" data-stunden-max="10">${s.stunden_quick_minijob}</button>
+          <button type="button" class="btn-quick-stunden" data-stunden-min="15" data-stunden-max="20">${s.stunden_quick_teilzeit_klein}</button>
+          <button type="button" class="btn-quick-stunden" data-stunden-min="25" data-stunden-max="30">${s.stunden_quick_teilzeit_gross}</button>
+          <button type="button" class="btn-quick-stunden" data-stunden-min="35" data-stunden-max="40">${s.stunden_quick_vollzeit}</button>
+        </div>
+      </div>
+      ` : ''}
+      
       <div class="field-grid cols-2">
         <div>
           <label class="form-hint" style="margin: 0 0 0.3rem 0; display: block;">${s.stunden_min}</label>
@@ -1853,22 +2000,50 @@ function renderSection5() {
 // SEKTION 6 — Anstellung
 function renderSection6() {
   const s = state.i18n.sections['6'];
-  const formen = [
+  const allFormen = [
     { id: 'vollzeit', t: s.anstellung_vollzeit, d: s.anstellung_vollzeit_desc },
     { id: 'teilzeit', t: s.anstellung_teilzeit, d: s.anstellung_teilzeit_desc },
     { id: 'minijob', t: s.anstellung_minijob, d: s.anstellung_minijob_desc },
     { id: 'ehrenamt', t: s.anstellung_ehrenamt, d: s.anstellung_ehrenamt_desc },
     { id: 'honorar', t: s.anstellung_honorar, d: s.anstellung_honorar_desc }
   ];
-
+  
+  // Filter nach gewählten Rollen
+  const allowed = allowedAnstellungen(state.formData.rollen);
+  const verfuegbar = allowed.length > 0
+    ? allFormen.filter(f => allowed.includes(f.id))
+    : allFormen;  // Keine Rolle gewählt = alle anzeigen (Edge-Case)
+  
+  const blockedForms = allFormen.filter(f => !verfuegbar.find(v => v.id === f.id));
+  
+  // SPECIAL CASE: Leere Schnittmenge — Rollen sind nicht in einem Vertrag kombinierbar
+  const empty_intersection = state.formData.rollen.length > 0 && allowed.length === 0;
+  
   return `
     <h2 class="section-title">${s.title}</h2>
     <p class="section-description">${s.description}</p>
 
+    ${empty_intersection ? `
+    <div class="info-box" style="background: var(--error-bg); border-left-color: var(--error);">
+      <p class="info-box-title" style="color: var(--error);">${s.keine_kombination_titel || 'Diese Rollen-Kombination braucht zwei Verträge'}</p>
+      <p>${s.keine_kombination_text || 'Deine gewählten Rollen haben unterschiedliche rechtliche Anforderungen — z. B. Grower (nur Minijob nach §17 KCanG) und Head Grower (Teilzeit/Vollzeit). Diese können nicht in einem einzigen Anstellungsvertrag kombiniert werden. Wenn du beide Rollen ausüben möchtest, bräuchtest du zwei separate Verträge. Das ist möglich, aber ungewöhnlich.'}</p>
+      <p><strong>${s.keine_kombination_hinweis || 'Was kannst du tun?'}</strong></p>
+      <ul style="margin: 0.5rem 0 0; padding-left: 1.25rem;">
+        <li>${s.keine_kombination_option1 || 'Geh zurück zu Sektion 3 und wähle nur eine der beiden Rollen'}</li>
+        <li>${s.keine_kombination_option2 || 'Wähle hier alle gewünschten Anstellungsformen — der Vorstand prüft im Einzelfall'}</li>
+      </ul>
+    </div>
+    ` : (state.formData.rollen.length > 0 ? `
+    <div class="info-box" style="background: var(--olive-50); border-left-color: var(--olive-500);">
+      <p class="info-box-title" style="color: var(--olive-700);">${s.kcang_titel || 'Hinweis nach §17 KCanG'}</p>
+      <p>${s.kcang_text || 'Aufgrund deiner gewählten Rolle(n) sind nur bestimmte Anstellungsformen rechtlich zulässig. Das Konsumcannabisgesetz beschränkt unmittelbare Tätigkeiten (Anbau, Ausgabe) auf Minijob-Niveau.'}</p>
+    </div>
+    ` : '')}
+
     <div class="form-group" id="fg-anstellung">
       <label class="form-label">${s.anstellung_label}<span class="required">*</span></label>
       <div class="role-card-group">
-        ${formen.map(f => `
+        ${(empty_intersection ? allFormen : verfuegbar).map(f => `
           <label class="role-card" data-anstellung="${f.id}">
             <input type="checkbox" value="${f.id}" data-anstellung-cb>
             <div class="role-card-title">${f.t}</div>
@@ -1878,6 +2053,17 @@ function renderSection6() {
       </div>
       <div class="error-message">${t('validation.min_one_anstellung')}</div>
     </div>
+
+    ${blockedForms.length > 0 && !empty_intersection ? `
+    <div style="margin-top: 1.5rem; padding: 1rem 1.25rem; background: var(--sand-100); border-radius: var(--radius-md); border: 1px dashed var(--sand-300);">
+      <p style="margin: 0 0 0.5rem; font-size: 0.85rem; color: var(--ink-mute); font-weight: 500;">
+        ${s.nicht_verfuegbar_titel || 'Nicht verfügbar für deine Rolle(n):'}
+      </p>
+      <ul style="margin: 0; padding-left: 1.25rem; font-size: 0.85rem; color: var(--ink-mute); line-height: 1.8;">
+        ${blockedForms.map(f => `<li>${f.t}</li>`).join('')}
+      </ul>
+    </div>
+    ` : ''}
 
     <div class="info-box">
       <p class="info-box-title">${s.info_titel}</p>
@@ -1896,11 +2082,15 @@ function renderSection7() {
 
     <div class="form-group" id="fg-anfahrt">
       <label class="form-label">${s.anfahrt_label}<span class="required">*</span></label>
+      ${s.anfahrt_hint ? `<p class="form-hint" style="margin-bottom: 0.75rem;">${s.anfahrt_hint}</p>` : ''}
       <div class="checkbox-stack">
         <label class="checkbox-block"><input type="radio" name="anfahrt" value="15"><span class="checkbox-label"><strong>${s.anfahrt_15}</strong></span></label>
         <label class="checkbox-block"><input type="radio" name="anfahrt" value="30"><span class="checkbox-label"><strong>${s.anfahrt_30}</strong></span></label>
         <label class="checkbox-block"><input type="radio" name="anfahrt" value="45"><span class="checkbox-label"><strong>${s.anfahrt_45}</strong></span></label>
         <label class="checkbox-block"><input type="radio" name="anfahrt" value="60"><span class="checkbox-label"><strong>${s.anfahrt_60}</strong></span></label>
+        <label class="checkbox-block"><input type="radio" name="anfahrt" value="90"><span class="checkbox-label"><strong>${s.anfahrt_90}</strong></span></label>
+        <label class="checkbox-block"><input type="radio" name="anfahrt" value="120"><span class="checkbox-label"><strong>${s.anfahrt_2h}</strong></span></label>
+        <label class="checkbox-block"><input type="radio" name="anfahrt" value="240"><span class="checkbox-label"><strong>${s.anfahrt_4h}</strong></span></label>
         <label class="checkbox-block"><input type="radio" name="anfahrt" value="999"><span class="checkbox-label"><strong>${s.anfahrt_mehr}</strong></span></label>
       </div>
       <div class="error-message">${t('validation.required')}</div>
@@ -1975,6 +2165,28 @@ function renderSection8() {
           <label class="checkbox-block"><input type="radio" name="schwerbeh" value="ja"><span class="checkbox-label">${s.schwerbehinderung_ja}</span></label>
           <label class="checkbox-block"><input type="radio" name="schwerbeh" value="nein"><span class="checkbox-label">${s.schwerbehinderung_nein}</span></label>
           <label class="checkbox-block"><input type="radio" name="schwerbeh" value="keine_angabe"><span class="checkbox-label">${s.schwerbehinderung_keine_angabe}</span></label>
+        </div>
+      </div>
+
+      <div id="schwerbeh-details" style="display: none;">
+        <div class="form-group">
+          <label class="form-label">${s.schwerbehinderung_gdb_label}</label>
+          <p class="form-hint" style="margin-bottom: 0.5rem;">${s.schwerbehinderung_gdb_hint}</p>
+          <select class="form-select" id="i-schwerbeh-gdb">
+            <option value="">—</option>
+            ${Object.entries(s.schwerbehinderung_gdb_options || {}).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">${s.schwerbehinderung_einschr_label}</label>
+          <p class="form-hint" style="margin-bottom: 0.5rem;">${s.schwerbehinderung_einschr_hint}</p>
+          <textarea class="form-textarea" id="i-schwerbeh-einschr" placeholder="${s.schwerbehinderung_einschr_placeholder}" style="min-height: 70px;"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">${s.schwerbehinderung_anpassungen_label}</label>
+          <textarea class="form-textarea" id="i-schwerbeh-anpassungen" placeholder="${s.schwerbehinderung_anpassungen_placeholder}" style="min-height: 70px;"></textarea>
         </div>
       </div>
 
@@ -2188,6 +2400,103 @@ function attachSection3() {
         state.formData.rollen = state.formData.rollen.filter(r => r !== role);
       }
       card.classList.toggle('selected', cb.checked);
+      
+      // Anstellungsformen säubern: nur erlaubte behalten
+      const allowed = allowedAnstellungen(state.formData.rollen);
+      if (allowed.length > 0) {
+        state.formData.anstellungsformen = state.formData.anstellungsformen.filter(a => allowed.includes(a));
+      }
+      
+      // Standort-Konflikt prüfen und Block ein-/ausblenden
+      const konflikt = hasStandortKonflikt(state.formData.rollen);
+      const blk = document.getElementById('standort-konflikt-block');
+      if (blk) {
+        blk.style.display = konflikt ? '' : 'none';
+        if (!konflikt) {
+          state.formData.bestaetigt_zwei_standorte = false;
+          const cb = document.getElementById('cb-standort-konflikt');
+          if (cb) cb.checked = false;
+        }
+      }
+      
+      // Sektion 6 neu rendern (falls bereits gerendert), damit Card-Filter aktuell ist
+      const sec6 = document.getElementById('section-6');
+      if (sec6) {
+        const isActive = sec6.classList.contains('active');
+        sec6.innerHTML = renderSectionContent(6);
+        attachSection6();
+        // Restore selection
+        state.formData.anstellungsformen.forEach(a => {
+          const c = sec6.querySelector(`[data-anstellung="${a}"]`);
+          if (c) {
+            c.classList.add('selected');
+            const ci = c.querySelector('input');
+            if (ci) ci.checked = true;
+          }
+        });
+        if (isActive) sec6.classList.add('active');
+      }
+      
+      // Sektion 5 (Verfügbarkeit) neu rendern wegen Standort-Logik
+      const sec5 = document.getElementById('section-5');
+      if (sec5) {
+        const isActive5 = sec5.classList.contains('active');
+        sec5.innerHTML = renderSectionContent(5);
+        attachSection5();
+        // Restore: gewählte Slots
+        ['anbau', 'ausgabe', 'allgemein'].forEach(standort => {
+          if (state.formData.verfuegbarkeit[standort]) {
+            Object.entries(state.formData.verfuegbarkeit[standort]).forEach(([day, slots]) => {
+              slots.forEach((selected, i) => {
+                if (selected) {
+                  const slot = sec5.querySelector(`.grid-slot[data-standort="${standort}"][data-day="${day}"][data-slot="${i}"]`);
+                  if (slot) {
+                    slot.classList.add('selected');
+                    slot.textContent = '✓';
+                  }
+                }
+              });
+            });
+          }
+        });
+        // Restore: Stunden, Bereitschaften, Datum, Probearbeit etc.
+        const setVal = (id, val) => { const e = document.getElementById(id); if (e && val) e.value = val; };
+        setVal('i-wunsch-zeiten', state.formData.wunsch_zeiten);
+        setVal('i-stunden-min', state.formData.wunsch_stunden_min);
+        setVal('i-stunden-max', state.formData.wunsch_stunden_max);
+        ['we', 'feiertag', 'nacht'].forEach(k => {
+          if (state.formData[`bereit_${k}`] !== null && state.formData[`bereit_${k}`] !== undefined) {
+            const r = sec5.querySelector(`input[name="bereit-${k}"][value="${state.formData[`bereit_${k}`]}"]`);
+            if (r) r.checked = true;
+          }
+        });
+        setVal('i-eintritt', state.formData.eintritt_fruehestens);
+        setVal('i-kuendigungsfrist', state.formData.kuendigungsfrist);
+        setVal('i-sperrzeiten', state.formData.sperrzeiten);
+        if (state.formData.probearbeit_bereit !== null && state.formData.probearbeit_bereit !== undefined) {
+          const r = sec5.querySelector(`input[name="probearbeit-bereit"][value="${state.formData.probearbeit_bereit}"]`);
+          if (r) r.checked = true;
+          if (state.formData.probearbeit_bereit === true) {
+            const det = sec5.querySelector('#cb-probearbeit-details');
+            if (det) det.classList.add('active');
+          }
+        }
+        state.formData.probearbeit_orte.forEach(ort => {
+          const card = sec5.querySelector(`[data-probearbeit-ort="${ort}"]`);
+          if (card) {
+            card.classList.add('selected');
+            const ci = card.querySelector('input');
+            if (ci) ci.checked = true;
+          }
+        });
+        if (state.formData.probearbeit_dauer) {
+          const r = sec5.querySelector(`input[name="probearbeit-dauer"][value="${state.formData.probearbeit_dauer}"]`);
+          if (r) r.checked = true;
+        }
+        setVal('i-probearbeit-anmerkung', state.formData.probearbeit_anmerkung);
+        if (isActive5) sec5.classList.add('active');
+      }
+      
       updateConditionalBlocks();
       saveDraft();
     });
@@ -2217,6 +2526,15 @@ function attachSection3() {
     counter.className = 'char-counter' + (len > 450 ? ' warning' : '') + (len === 500 ? ' error' : '');
     saveDraft();
   });
+
+  // Konflikt-Bestätigung
+  const konfCb = document.getElementById('cb-standort-konflikt');
+  if (konfCb) {
+    konfCb.addEventListener('change', e => {
+      state.formData.bestaetigt_zwei_standorte = e.target.checked;
+      saveDraft();
+    });
+  }
 }
 
 function updateConditionalBlocks() {
@@ -2263,14 +2581,25 @@ function attachSection4() {
 }
 
 function attachSection5() {
-  // Verfügbarkeits-Grid
+  // Verfügbarkeits-Grid (jetzt pro Standort)
   document.querySelectorAll('.grid-slot').forEach(slot => {
     slot.addEventListener('click', () => {
+      const standort = slot.dataset.standort || 'allgemein';
       const day = slot.dataset.day;
       const idx = parseInt(slot.dataset.slot);
-      state.formData.verfuegbarkeit[day][idx] = !state.formData.verfuegbarkeit[day][idx];
-      slot.classList.toggle('selected', state.formData.verfuegbarkeit[day][idx]);
-      slot.textContent = state.formData.verfuegbarkeit[day][idx] ? '✓' : '·';
+      
+      // Defensive: state.formData.verfuegbarkeit[standort] muss existieren
+      if (!state.formData.verfuegbarkeit[standort]) {
+        state.formData.verfuegbarkeit[standort] = { 
+          mo:[false,false,false,false], di:[false,false,false,false], mi:[false,false,false,false], 
+          do:[false,false,false,false], fr:[false,false,false,false], sa:[false,false,false,false], 
+          so:[false,false,false,false] 
+        };
+      }
+      
+      state.formData.verfuegbarkeit[standort][day][idx] = !state.formData.verfuegbarkeit[standort][day][idx];
+      slot.classList.toggle('selected', state.formData.verfuegbarkeit[standort][day][idx]);
+      slot.textContent = state.formData.verfuegbarkeit[standort][day][idx] ? '✓' : '·';
       saveDraft();
     });
   });
@@ -2286,6 +2615,22 @@ function attachSection5() {
   document.getElementById('i-stunden-max').addEventListener('input', e => {
     state.formData.wunsch_stunden_max = e.target.value;
     saveDraft();
+  });
+  
+  // Quick-Buttons für Stundenzahl
+  document.querySelectorAll('.btn-quick-stunden').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const min = btn.dataset.stundenMin;
+      const max = btn.dataset.stundenMax;
+      document.getElementById('i-stunden-min').value = min;
+      document.getElementById('i-stunden-max').value = max;
+      state.formData.wunsch_stunden_min = min;
+      state.formData.wunsch_stunden_max = max;
+      // Aktive Markierung
+      document.querySelectorAll('.btn-quick-stunden').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      saveDraft();
+    });
   });
 
   ['we', 'feiertag', 'nacht'].forEach(k => {
@@ -2457,9 +2802,46 @@ function attachSection8() {
   document.querySelectorAll('input[name="schwerbeh"]').forEach(r => {
     r.addEventListener('change', e => {
       state.formData.schwerbehinderung = e.target.value;
+      const details = document.getElementById('schwerbeh-details');
+      if (details) {
+        details.style.display = e.target.value === 'ja' ? '' : 'none';
+        if (e.target.value !== 'ja') {
+          state.formData.schwerbehinderung_gdb = '';
+          state.formData.schwerbehinderung_einschr = '';
+          state.formData.schwerbehinderung_anpassungen = '';
+          const gdbEl = document.getElementById('i-schwerbeh-gdb');
+          if (gdbEl) gdbEl.value = '';
+          const einschrEl = document.getElementById('i-schwerbeh-einschr');
+          if (einschrEl) einschrEl.value = '';
+          const anpEl = document.getElementById('i-schwerbeh-anpassungen');
+          if (anpEl) anpEl.value = '';
+        }
+      }
       saveDraft();
     });
   });
+  
+  const gdbEl = document.getElementById('i-schwerbeh-gdb');
+  if (gdbEl) {
+    gdbEl.addEventListener('change', e => {
+      state.formData.schwerbehinderung_gdb = e.target.value;
+      saveDraft();
+    });
+  }
+  const einschrEl = document.getElementById('i-schwerbeh-einschr');
+  if (einschrEl) {
+    einschrEl.addEventListener('input', e => {
+      state.formData.schwerbehinderung_einschr = e.target.value;
+      saveDraft();
+    });
+  }
+  const anpEl = document.getElementById('i-schwerbeh-anpassungen');
+  if (anpEl) {
+    anpEl.addEventListener('input', e => {
+      state.formData.schwerbehinderung_anpassungen = e.target.value;
+      saveDraft();
+    });
+  }
   const td = document.getElementById('i-sucht-details');
   if (td) {
     td.addEventListener('input', e => {
@@ -2540,6 +2922,16 @@ function fillFormFromState() {
     }
   });
   updateConditionalBlocks();
+  
+  // Konflikt-Block ein-/ausblenden je nach Rollen
+  if (hasStandortKonflikt(d.rollen)) {
+    const blk = document.getElementById('standort-konflikt-block');
+    if (blk) blk.style.display = '';
+    if (d.bestaetigt_zwei_standorte) {
+      const cb = document.getElementById('cb-standort-konflikt');
+      if (cb) cb.checked = true;
+    }
+  }
   if (d.praevention_sachkunde) {
     const r = document.querySelector(`input[name="praevention"][value="${d.praevention_sachkunde}"]`);
     if (r) r.checked = true;
@@ -2572,17 +2964,21 @@ function fillFormFromState() {
     }
   });
 
-  // Sektion 5
-  Object.entries(d.verfuegbarkeit).forEach(([day, slots]) => {
-    slots.forEach((selected, i) => {
-      if (selected) {
-        const slot = document.querySelector(`.grid-slot[data-day="${day}"][data-slot="${i}"]`);
-        if (slot) {
-          slot.classList.add('selected');
-          slot.textContent = '✓';
-        }
-      }
-    });
+  // Sektion 5 — Verfügbarkeit pro Standort restoren
+  ['anbau', 'ausgabe', 'allgemein'].forEach(standort => {
+    if (d.verfuegbarkeit[standort]) {
+      Object.entries(d.verfuegbarkeit[standort]).forEach(([day, slots]) => {
+        slots.forEach((selected, i) => {
+          if (selected) {
+            const slot = document.querySelector(`.grid-slot[data-standort="${standort}"][data-day="${day}"][data-slot="${i}"]`);
+            if (slot) {
+              slot.classList.add('selected');
+              slot.textContent = '✓';
+            }
+          }
+        });
+      });
+    }
   });
   setVal('i-wunsch-zeiten', d.wunsch_zeiten);
   setVal('i-stunden-min', d.wunsch_stunden_min);
@@ -2658,6 +3054,14 @@ function fillFormFromState() {
     if (d.schwerbehinderung) {
       const r = document.querySelector(`input[name="schwerbeh"][value="${d.schwerbehinderung}"]`);
       if (r) r.checked = true;
+      if (d.schwerbehinderung === 'ja') {
+        const det = document.getElementById('schwerbeh-details');
+        if (det) det.style.display = '';
+        const gdbEl = document.getElementById('i-schwerbeh-gdb');
+        if (gdbEl && d.schwerbehinderung_gdb) gdbEl.value = d.schwerbehinderung_gdb;
+        setVal('i-schwerbeh-einschr', d.schwerbehinderung_einschr);
+        setVal('i-schwerbeh-anpassungen', d.schwerbehinderung_anpassungen);
+      }
     }
   }
 
@@ -2700,6 +3104,9 @@ function validateSection(n) {
     if (d.rollen.includes('praevention') && !d.praevention_sachkunde) state.errors.praevention = true;
     if (d.rollen.includes('sicherheit') && !d.sicherheit_nachweis) state.errors.sicherheit = true;
     if (!d.motivation?.trim()) state.errors.motivation = true;
+    if (hasStandortKonflikt(d.rollen) && !d.bestaetigt_zwei_standorte) {
+      state.errors['standort-konflikt-bestaetigung'] = true;
+    }
   }
 
   if (n === 4) {
@@ -2708,8 +3115,22 @@ function validateSection(n) {
   }
 
   if (n === 5) {
-    const anyAvail = Object.values(d.verfuegbarkeit).some(arr => arr.some(v => v));
-    if (!anyAvail) state.errors.verfuegbarkeit = true;
+    // Standorte basierend auf Rollen ermitteln
+    const standorte = rolleStandorte(d.rollen);
+    const checkStandorte = standorte.length > 0 ? standorte : ['allgemein'];
+    
+    checkStandorte.forEach(standort => {
+      const v = d.verfuegbarkeit[standort];
+      if (!v) {
+        state.errors[`verfuegbarkeit-${standort}`] = true;
+        return;
+      }
+      const anyAvail = Object.values(v).some(arr => arr.some(slot => slot));
+      if (!anyAvail) {
+        state.errors[`verfuegbarkeit-${standort}`] = true;
+      }
+    });
+    
     const min = parseInt(d.wunsch_stunden_min);
     const max = parseInt(d.wunsch_stunden_max);
     if (!d.wunsch_stunden_min || !d.wunsch_stunden_max || isNaN(min) || isNaN(max) || max < min) {
@@ -2842,6 +3263,17 @@ async function submitForm() {
 
   const d = state.formData;
 
+  // Verfügbarkeit auf relevante Standorte filtern (keine leeren Raster mitschicken)
+  const standorte = rolleStandorte(d.rollen);
+  const verfuegbarkeit_export = {};
+  if (standorte.length > 0) {
+    standorte.forEach(s => {
+      verfuegbarkeit_export[s] = d.verfuegbarkeit[s];
+    });
+  } else {
+    verfuegbarkeit_export.allgemein = d.verfuegbarkeit.allgemein;
+  }
+
   const payload = {
     verein_id: d.verein_id,
     vorname: d.vorname.trim(),
@@ -2862,6 +3294,9 @@ async function submitForm() {
     ist_nicht_eu: d.ist_nicht_eu,
     arbeitserlaubnis: d.ist_nicht_eu ? d.arbeitserlaubnis : null,
     rollen: d.rollen,
+    rollen_standorte: standorte.length > 0 ? standorte : ['allgemein'],
+    standort_konflikt: hasStandortKonflikt(d.rollen),
+    bestaetigt_zwei_standorte: d.bestaetigt_zwei_standorte,
     motivation: d.motivation.trim(),
     anstellungsformen: d.anstellungsformen,
     praevention_sachkunde: d.praevention_sachkunde,
@@ -2871,7 +3306,7 @@ async function submitForm() {
     vorerfahrung: d.vorerfahrung?.trim() || null,
     sprachen: d.sprachen,
     soft_skills: d.soft_skills,
-    verfuegbarkeit: d.verfuegbarkeit,
+    verfuegbarkeit: verfuegbarkeit_export,
     wunsch_zeiten: d.wunsch_zeiten?.trim() || null,
     wunsch_stunden_min: parseInt(d.wunsch_stunden_min) || null,
     wunsch_stunden_max: parseInt(d.wunsch_stunden_max) || null,
@@ -2892,6 +3327,9 @@ async function submitForm() {
     sucht_relevant: d.sensible_einwilligung && d.sucht_relevant ? d.sucht_relevant : null,
     sucht_details: d.sensible_einwilligung && d.sucht_details ? d.sucht_details.trim() : null,
     schwerbehinderung: d.sensible_einwilligung && d.schwerbehinderung ? d.schwerbehinderung : null,
+    schwerbehinderung_gdb: (d.sensible_einwilligung && d.schwerbehinderung === 'ja' && d.schwerbehinderung_gdb) ? d.schwerbehinderung_gdb : null,
+    schwerbehinderung_einschr: (d.sensible_einwilligung && d.schwerbehinderung === 'ja' && d.schwerbehinderung_einschr) ? d.schwerbehinderung_einschr.trim() : null,
+    schwerbehinderung_anpassungen: (d.sensible_einwilligung && d.schwerbehinderung === 'ja' && d.schwerbehinderung_anpassungen) ? d.schwerbehinderung_anpassungen.trim() : null,
     dsgvo_zustimmung: d.dsgvo_zustimmung,
     sprache: state.lang
   };

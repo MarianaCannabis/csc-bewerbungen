@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter+Tight:wght@300;400;500;600&display=swap" rel="stylesheet">
-<script src="https://js.hcaptcha.com/1/api.js" async defer></script>
+<script src="https://js.hcaptcha.com/1/api.js?onload=onHCaptchaApiLoad&render=explicit" async defer></script>
 <style>
 :root {
   /* Earth tones — gedämpftes Olivgrün als Anker */
@@ -2443,11 +2443,7 @@ function renderSection9() {
     <div class="form-group" id="fg-captcha">
       <label class="form-label">${s.captcha_titel}<span class="required">*</span></label>
       <p class="form-hint" style="margin-bottom: 0.75rem;">${s.captcha_hint}</p>
-      <div class="h-captcha" 
-           data-sitekey="a4ba7a40-e684-4308-90be-5a6815f87508"
-           data-callback="onHCaptchaSuccess"
-           data-expired-callback="onHCaptchaExpired"
-           data-error-callback="onHCaptchaError"></div>
+      <div id="hcaptcha-container"></div>
       <div class="error-message">${t('validation.captcha_required') || 'Bitte das Captcha lösen.'}</div>
     </div>
   `;
@@ -3473,7 +3469,53 @@ function attachSection9() {
     state.formData.wahrheitsgemaess = e.target.checked;
     saveDraft();
   });
-  // hCaptcha-Callbacks werden global definiert — siehe unten
+  
+  // hCaptcha rendern — entweder sofort wenn API geladen, sonst später
+  renderHCaptcha();
+}
+
+// Zustand: ist die hCaptcha-API geladen?
+window._hCaptchaApiLoaded = false;
+window._hCaptchaWidgetId = null;
+
+window.onHCaptchaApiLoad = function() {
+  window._hCaptchaApiLoaded = true;
+  console.log('hCaptcha API geladen');
+  renderHCaptcha();
+};
+
+function renderHCaptcha() {
+  const container = document.getElementById('hcaptcha-container');
+  if (!container) {
+    // Sektion 9 noch nicht im DOM — das ist OK, beim nächsten Wechsel zur Sektion 9 wird neu versucht
+    return;
+  }
+  if (!window._hCaptchaApiLoaded || typeof hcaptcha === 'undefined') {
+    // API noch nicht da — auf Lade-Callback warten
+    return;
+  }
+  // Bereits gerendert? — nicht doppelt
+  if (window._hCaptchaWidgetId !== null) {
+    // Reset, falls ein altes Widget existiert (z.B. nach Sprachenwechsel)
+    try {
+      hcaptcha.reset(window._hCaptchaWidgetId);
+    } catch (e) {
+      // Widget ist evtl. weg, neu rendern
+      window._hCaptchaWidgetId = null;
+    }
+  }
+  if (window._hCaptchaWidgetId === null && container.childElementCount === 0) {
+    try {
+      window._hCaptchaWidgetId = hcaptcha.render('hcaptcha-container', {
+        sitekey: 'a4ba7a40-e684-4308-90be-5a6815f87508',
+        callback: 'onHCaptchaSuccess',
+        'expired-callback': 'onHCaptchaExpired',
+        'error-callback': 'onHCaptchaError'
+      });
+    } catch (e) {
+      console.error('hCaptcha render Fehler:', e);
+    }
+  }
 }
 
 // hCaptcha-Callbacks — global, weil hCaptcha sie über window aufruft
@@ -3954,6 +3996,12 @@ function showSection(n) {
 
   // Scroll zum Anfang
   window.scrollTo({ top: 0, behavior: 'smooth' });
+  
+  // hCaptcha rendern wenn Sektion 9 aktiv wird (Widget kann zwischendurch verloren gehen)
+  if (n === 9 && typeof renderHCaptcha === 'function') {
+    setTimeout(() => renderHCaptcha(), 100);
+  }
+  
   saveDraft();
 }
 

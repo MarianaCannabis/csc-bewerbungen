@@ -335,7 +335,7 @@
       "dsgvo_einwilligung_label": "I have read the privacy notice and consent to the processing of my data under the conditions stated above (required).",
       "wahrheit_label": "I confirm that my information is truthful (required).",
       "captcha_titel": "Spam protection",
-      "captcha_hint": "Confirm that you're not a robot."
+      "captcha_hint": "Please solve the captcha to confirm you're not a bot."
     }
   },
   "validation": {
@@ -354,6 +354,7 @@
     "max_length": "Maximum {n} characters allowed",
     "min_length": "At least {n} characters required",
     "must_check": "Please tick to continue",
+    "captcha_required": "Please solve the captcha to continue",
     "min_one_role": "Please select at least one role",
     "min_one_anstellung": "Please select at least one employment type",
     "min_one_slot": "Please select at least one time slot",

@@ -147,7 +147,22 @@
       "soft_kunde": "Customer contact",
       "soft_verschwiegenheit": "Discretion",
       "soft_team": "Teamwork",
-      "soft_genauigkeit": "Accuracy"
+      "soft_genauigkeit": "Accuracy",
+      "anhaenge_titel": "Upload documents (optional)",
+      "anhaenge_hint": "CV and possibly certificates, qualification proofs. Up to 10 files at 10 MB each. Allowed: PDF, JPG, PNG, HEIC.",
+      "anhaenge_drop": "Drop files here or",
+      "anhaenge_browse": "Choose files",
+      "anhaenge_keine_kat": "General",
+      "anhaenge_kat_lebenslauf": "CV",
+      "anhaenge_kat_zeugnis": "Certificate / Qualification",
+      "anhaenge_kat_sachkunde": "Qualification certificate (Prevention §34a etc.)",
+      "anhaenge_kat_sonstiges": "Other",
+      "anhaenge_loeschen": "Remove",
+      "anhaenge_size_too_large": "File is too large (max. 10 MB)",
+      "anhaenge_format_not_allowed": "File format not allowed",
+      "anhaenge_max_files": "Maximum 10 files allowed",
+      "anhaenge_kein_upload": "I'm not uploading any documents now",
+      "anhaenge_kein_upload_bestaetigung": "I understand that I'll need to submit documents (e.g. CV, qualification certificates) later. Without documents, the board cannot finalize my application."
     },
     "5": {
       "title": "Availability",

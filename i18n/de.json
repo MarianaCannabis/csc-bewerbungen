@@ -147,7 +147,22 @@
       "soft_kunde": "Kund:innenkontakt",
       "soft_verschwiegenheit": "Verschwiegenheit",
       "soft_team": "Teamfähigkeit",
-      "soft_genauigkeit": "Genauigkeit"
+      "soft_genauigkeit": "Genauigkeit",
+      "anhaenge_titel": "Unterlagen hochladen (optional)",
+      "anhaenge_hint": "Lebenslauf und ggf. Zeugnisse, Sachkunde-Nachweise. Bis zu 10 Dateien à 10 MB. Erlaubt: PDF, JPG, PNG, HEIC.",
+      "anhaenge_drop": "Dateien hier ablegen oder",
+      "anhaenge_browse": "Dateien auswählen",
+      "anhaenge_keine_kat": "Allgemein",
+      "anhaenge_kat_lebenslauf": "Lebenslauf",
+      "anhaenge_kat_zeugnis": "Zeugnis / Qualifikation",
+      "anhaenge_kat_sachkunde": "Sachkunde-Nachweis (Prävention §34a etc.)",
+      "anhaenge_kat_sonstiges": "Sonstiges",
+      "anhaenge_loeschen": "Entfernen",
+      "anhaenge_size_too_large": "Datei ist zu groß (max. 10 MB)",
+      "anhaenge_format_not_allowed": "Dateiformat nicht erlaubt",
+      "anhaenge_max_files": "Maximal 10 Dateien erlaubt",
+      "anhaenge_kein_upload": "Ich lade jetzt keine Unterlagen hoch",
+      "anhaenge_kein_upload_bestaetigung": "Mir ist bewusst, dass ich Unterlagen (z. B. Lebenslauf, Sachkunde-Nachweise) später nachreichen muss. Ohne Unterlagen kann der Vorstand meine Bewerbung nicht abschließend prüfen."
     },
     "5": {
       "title": "Verfügbarkeit",

@@ -1,0 +1,1307 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mariana Cannabis · Bewerbungs-Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --bg: #0a120d;
+      --bg-card: #131e17;
+      --bg-elev: #1a2920;
+      --border: #2a3d31;
+      --border-strong: #3d5644;
+      --tx: #e8f0e9;
+      --tx-dim: #9eb3a4;
+      --tx-mute: #6a8170;
+      --green: #4caf6a;
+      --green-dim: #3a8a52;
+      --green-glow: rgba(76, 175, 106, 0.18);
+      --gold: #f9c74f;
+      --red: #e57373;
+      --red-bg: rgba(229, 115, 115, 0.12);
+      --blue: #64b5f6;
+      --blue-bg: rgba(100, 181, 246, 0.12);
+      --orange: #ffb74d;
+      --orange-bg: rgba(255, 183, 77, 0.12);
+    }
+    
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    html, body {
+      font-family: 'DM Sans', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--tx);
+      font-size: 14px;
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+    
+    code, .mono { font-family: 'DM Mono', monospace; }
+    
+    /* ════════════════════════════════════════════════════ LOGIN ═ */
+    
+    #login {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: radial-gradient(ellipse at top, rgba(76, 175, 106, 0.08), transparent 60%),
+                  var(--bg);
+    }
+    
+    .login-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 40px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+    }
+    
+    .login-card h1 {
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      margin-bottom: 4px;
+    }
+    
+    .login-card .sub {
+      color: var(--tx-dim);
+      font-size: 13px;
+      margin-bottom: 28px;
+    }
+    
+    .brand-mark {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 24px;
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--green);
+      font-weight: 600;
+    }
+    
+    .brand-mark::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      background: var(--green);
+      border-radius: 50%;
+      box-shadow: 0 0 12px var(--green);
+    }
+    
+    label {
+      display: block;
+      font-size: 12px;
+      color: var(--tx-dim);
+      margin-bottom: 6px;
+      font-weight: 500;
+    }
+    
+    input[type=email], input[type=text], select, textarea {
+      width: 100%;
+      background: var(--bg-elev);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px;
+      color: var(--tx);
+      font-family: inherit;
+      font-size: 14px;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--green);
+      background: #1d2e23;
+    }
+    
+    button {
+      cursor: pointer;
+      font-family: inherit;
+      border: none;
+      transition: all 0.15s;
+    }
+    
+    .btn-primary {
+      background: var(--green);
+      color: #0a120d;
+      font-weight: 600;
+      padding: 12px 18px;
+      border-radius: 8px;
+      width: 100%;
+      font-size: 14px;
+      margin-top: 16px;
+    }
+    
+    .btn-primary:hover {
+      background: #5fbe7d;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px var(--green-glow);
+    }
+    
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+    
+    .login-msg {
+      margin-top: 16px;
+      padding: 12px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    
+    .login-msg.success {
+      background: var(--green-glow);
+      border: 1px solid var(--green-dim);
+      color: #b8e4c0;
+    }
+    
+    .login-msg.error {
+      background: var(--red-bg);
+      border: 1px solid var(--red);
+      color: #f0bcbc;
+    }
+    
+    /* ═════════════════════════════════════════════════════ APP ═ */
+    
+    #app { display: none; min-height: 100vh; }
+    
+    header {
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      backdrop-filter: blur(20px);
+    }
+    
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    
+    .logo-text {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+    
+    .logo-text .accent { color: var(--green); }
+    
+    .role-pill {
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-weight: 600;
+    }
+    
+    .role-pill.admin {
+      background: var(--green-glow);
+      color: var(--green);
+      border: 1px solid var(--green-dim);
+    }
+    
+    .role-pill.vorstand {
+      background: var(--blue-bg);
+      color: var(--blue);
+      border: 1px solid #4a90c2;
+    }
+    
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-size: 13px;
+    }
+    
+    .user-email {
+      color: var(--tx-dim);
+    }
+    
+    .btn-ghost {
+      background: transparent;
+      color: var(--tx-dim);
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-size: 12px;
+      border: 1px solid var(--border);
+    }
+    
+    .btn-ghost:hover {
+      background: var(--bg-elev);
+      color: var(--tx);
+    }
+    
+    /* ─────────────────────────────────────────── Layout (Liste/Detail) ─ */
+    
+    .main {
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      height: calc(100vh - 56px);
+    }
+    
+    @media (max-width: 900px) {
+      .main { grid-template-columns: 1fr; }
+      .detail-panel.no-mobile { display: none; }
+    }
+    
+    /* ─────────────────────────────────────────── Liste ─ */
+    
+    .list-panel {
+      border-right: 1px solid var(--border);
+      background: var(--bg-card);
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .list-header {
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      background: var(--bg-card);
+      z-index: 2;
+    }
+    
+    .list-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .list-title .count {
+      font-size: 11px;
+      background: var(--bg-elev);
+      padding: 3px 8px;
+      border-radius: 999px;
+      color: var(--tx-dim);
+      font-weight: 500;
+    }
+    
+    .filter-row {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+    
+    .filter-row select,
+    .filter-row input {
+      padding: 8px 10px;
+      font-size: 12px;
+      flex: 1;
+    }
+    
+    .list-items {
+      flex: 1;
+      overflow-y: auto;
+    }
+    
+    .list-item {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      transition: background 0.1s;
+    }
+    
+    .list-item:hover { background: var(--bg-elev); }
+    .list-item.active { background: var(--bg-elev); border-left: 3px solid var(--green); padding-left: 15px; }
+    
+    .list-item-top {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+    
+    .list-item-name {
+      font-weight: 600;
+      font-size: 14px;
+    }
+    
+    .list-item-date {
+      font-size: 11px;
+      color: var(--tx-mute);
+      font-family: 'DM Mono', monospace;
+    }
+    
+    .list-item-meta {
+      font-size: 12px;
+      color: var(--tx-dim);
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-top: 4px;
+    }
+    
+    .list-item-rolle {
+      color: var(--green);
+      font-weight: 500;
+    }
+    
+    .list-empty {
+      padding: 40px 24px;
+      text-align: center;
+      color: var(--tx-mute);
+      font-size: 13px;
+    }
+    
+    /* ─────────────────────────────────────────── Status Badges ─ */
+    
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    
+    .status-badge.eingegangen {
+      background: var(--blue-bg);
+      color: var(--blue);
+    }
+    
+    .status-badge.in_pruefung {
+      background: var(--orange-bg);
+      color: var(--orange);
+    }
+    
+    .status-badge.eingeladen {
+      background: var(--green-glow);
+      color: var(--green);
+    }
+    
+    .status-badge.warteliste {
+      background: rgba(249, 199, 79, 0.15);
+      color: var(--gold);
+    }
+    
+    .status-badge.abgelehnt {
+      background: var(--red-bg);
+      color: var(--red);
+    }
+    
+    .status-badge.angenommen {
+      background: var(--green);
+      color: var(--bg);
+    }
+    
+    /* ─────────────────────────────────────────── Detail-Panel ─ */
+    
+    .detail-panel {
+      overflow-y: auto;
+      padding: 32px 40px;
+      background: var(--bg);
+    }
+    
+    @media (max-width: 1100px) {
+      .detail-panel { padding: 24px 28px; }
+    }
+    
+    .detail-empty {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: var(--tx-mute);
+      font-size: 14px;
+      text-align: center;
+      padding: 24px;
+    }
+    
+    .detail-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 24px;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+    
+    .detail-name {
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      margin-bottom: 4px;
+    }
+    
+    .detail-meta {
+      color: var(--tx-dim);
+      font-size: 13px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    
+    .detail-meta a {
+      color: var(--blue);
+      text-decoration: none;
+    }
+    
+    .detail-meta a:hover { text-decoration: underline; }
+    
+    .detail-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    
+    .action-btn {
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      border: 1px solid;
+      background: transparent;
+      transition: all 0.15s;
+    }
+    
+    .action-btn.einladen {
+      border-color: var(--green-dim);
+      color: var(--green);
+    }
+    
+    .action-btn.einladen:hover {
+      background: var(--green-glow);
+    }
+    
+    .action-btn.warteliste {
+      border-color: #c89d3a;
+      color: var(--gold);
+    }
+    
+    .action-btn.warteliste:hover {
+      background: rgba(249, 199, 79, 0.12);
+    }
+    
+    .action-btn.abgelehnt {
+      border-color: #b85959;
+      color: var(--red);
+    }
+    
+    .action-btn.abgelehnt:hover {
+      background: var(--red-bg);
+    }
+    
+    .action-btn.angenommen {
+      background: var(--green);
+      color: var(--bg);
+      border-color: var(--green);
+    }
+    
+    .action-btn.angenommen:hover {
+      background: #5fbe7d;
+    }
+    
+    .action-btn.pruefen {
+      border-color: #b88c4d;
+      color: var(--orange);
+    }
+    
+    .action-btn.pruefen:hover {
+      background: var(--orange-bg);
+    }
+    
+    /* Sektionen */
+    
+    .section {
+      margin-bottom: 28px;
+    }
+    
+    .section-title {
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--tx-mute);
+      margin-bottom: 12px;
+      font-weight: 600;
+    }
+    
+    .field-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px 24px;
+    }
+    
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    
+    .field-label {
+      font-size: 11px;
+      color: var(--tx-mute);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    
+    .field-value {
+      font-size: 14px;
+      color: var(--tx);
+      word-break: break-word;
+    }
+    
+    .field-value.empty {
+      color: var(--tx-mute);
+      font-style: italic;
+    }
+    
+    .tag-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 4px;
+    }
+    
+    .tag {
+      font-size: 11px;
+      padding: 3px 9px;
+      background: var(--bg-elev);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--tx);
+    }
+    
+    .tag.role { background: var(--green-glow); border-color: var(--green-dim); color: var(--green); }
+    
+    .anhang-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    .anhang-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      background: var(--bg-elev);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 13px;
+    }
+    
+    .anhang-item .name { color: var(--tx); }
+    .anhang-item .meta { color: var(--tx-mute); font-size: 11px; font-family: 'DM Mono', monospace; }
+    
+    .anhang-link {
+      color: var(--green);
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    
+    .anhang-link:hover { text-decoration: underline; }
+    
+    .loading {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--tx-mute);
+      font-size: 13px;
+      padding: 24px;
+    }
+    
+    .loading::before {
+      content: '';
+      width: 12px;
+      height: 12px;
+      border: 2px solid var(--border);
+      border-top-color: var(--green);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    /* Toast */
+    
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--bg-card);
+      border: 1px solid var(--green-dim);
+      color: var(--tx);
+      padding: 14px 20px;
+      border-radius: 10px;
+      font-size: 13px;
+      z-index: 100;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+    
+    .toast.error {
+      border-color: var(--red);
+    }
+  </style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════ LOGIN ═ -->
+<div id="login">
+  <div class="login-card">
+    <div class="brand-mark">Mariana Cannabis</div>
+    <h1>Bewerbungs-Dashboard</h1>
+    <p class="sub">Login per Magic-Link. Du bekommst eine E-Mail mit einem Login-Link.</p>
+    
+    <label for="login-email">E-Mail-Adresse</label>
+    <input type="email" id="login-email" placeholder="vorstand@mariana-cannabis.de" autocomplete="email">
+    
+    <button class="btn-primary" id="login-btn" onclick="sendMagicLink()">Login-Link senden</button>
+    
+    <div id="login-msg" class="login-msg" style="display:none"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════ APP ═ -->
+<div id="app">
+  <header>
+    <div class="header-left">
+      <div class="logo-text">Mariana <span class="accent">·</span> Bewerbungen</div>
+      <span class="role-pill" id="role-pill"></span>
+    </div>
+    <div class="header-right">
+      <span class="user-email" id="user-email"></span>
+      <button class="btn-ghost" onclick="logout()">Abmelden</button>
+    </div>
+  </header>
+  
+  <div class="main">
+    <!-- LISTE ─────────────────────── -->
+    <div class="list-panel">
+      <div class="list-header">
+        <div class="list-title">
+          Bewerbungen 
+          <span class="count" id="list-count">–</span>
+        </div>
+        <div class="filter-row">
+          <select id="filter-status" onchange="renderList()">
+            <option value="">Alle Status</option>
+            <option value="eingegangen">Eingegangen</option>
+            <option value="in_pruefung">In Prüfung</option>
+            <option value="eingeladen">Eingeladen</option>
+            <option value="warteliste">Warteliste</option>
+            <option value="angenommen">Angenommen</option>
+            <option value="abgelehnt">Abgelehnt</option>
+          </select>
+          <select id="filter-verein" onchange="renderList()" style="display:none">
+            <option value="">Alle Vereine</option>
+          </select>
+        </div>
+        <div class="filter-row">
+          <input type="text" id="filter-search" placeholder="Name, E-Mail oder Stadt..." oninput="renderList()">
+        </div>
+      </div>
+      <div class="list-items" id="list-items">
+        <div class="loading">Lade Bewerbungen...</div>
+      </div>
+    </div>
+    
+    <!-- DETAIL ────────────────────── -->
+    <div class="detail-panel" id="detail-panel">
+      <div class="detail-empty">
+        <div>
+          Wähle links eine Bewerbung aus,<br>um Details zu sehen.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+// ════════════════════════════════════════════════════════════════════════════
+// CONFIG
+// ════════════════════════════════════════════════════════════════════════════
+
+const SUPABASE_URL = 'https://gvzayggvtlychyjbnsgv.supabase.co';
+// SUPABASE_ANON_KEY siehe ganz unten im Script
+
+const STATUS_LABELS = {
+  eingegangen: 'Eingegangen',
+  in_pruefung: 'In Prüfung',
+  eingeladen: 'Eingeladen',
+  warteliste: 'Warteliste',
+  angenommen: 'Angenommen',
+  abgelehnt: 'Abgelehnt'
+};
+
+const ROLE_LABELS = {
+  vorstand: 'Vorstand',
+  stellv_vorstand: 'Stellv. Vorstand',
+  grower: 'Grower',
+  head_grower: 'Head Grower',
+  ausgabe: 'Ausgabe',
+  springer: 'Springer',
+  praevention: 'Präventionsbeauftragte:r',
+  sicherheit: 'Sicherheit',
+  reinigung: 'Reinigung'
+};
+
+// ════════════════════════════════════════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════════════════════════════════════════
+
+let sb = null;
+let session = null;
+let userContext = null; // { rolle, verein_id, ist_admin, email }
+let bewerbungen = [];
+let vereine = {};
+let selectedId = null;
+
+// ════════════════════════════════════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════════════════════════════════════
+
+async function init() {
+  // sb wurde bereits in DOMContentLoaded erstellt
+  
+  // Prüfen ob bereits eingeloggt (oder gerade vom Magic Link zurück)
+  const { data: { session: existingSession } } = await sb.auth.getSession();
+  
+  if (existingSession) {
+    session = existingSession;
+    await loadDashboard();
+  } else {
+    showLogin();
+  }
+  
+  // Auth-State-Listener
+  sb.auth.onAuthStateChange(async (event, newSession) => {
+    if (event === 'SIGNED_IN' && newSession) {
+      session = newSession;
+      await loadDashboard();
+    } else if (event === 'SIGNED_OUT') {
+      session = null;
+      showLogin();
+    }
+  });
+}
+
+function showLogin() {
+  document.getElementById('login').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+}
+
+function showApp() {
+  document.getElementById('login').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// LOGIN (Magic Link)
+// ════════════════════════════════════════════════════════════════════════════
+
+async function sendMagicLink() {
+  const email = document.getElementById('login-email').value.trim().toLowerCase();
+  const btn = document.getElementById('login-btn');
+  const msgEl = document.getElementById('login-msg');
+  
+  if (!email || !email.includes('@')) {
+    showLoginMsg('Bitte eine gültige E-Mail-Adresse eingeben.', 'error');
+    return;
+  }
+  
+  btn.disabled = true;
+  btn.textContent = 'Sende Login-Link...';
+  msgEl.style.display = 'none';
+  
+  try {
+    const { error } = await sb.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: window.location.href.split('#')[0].split('?')[0],
+        shouldCreateUser: false  // nur registrierte Vorstände dürfen rein
+      }
+    });
+    
+    if (error) {
+      // Bei "User not found" konkretere Fehlermeldung
+      if (error.message.toLowerCase().includes('not found') || error.message.toLowerCase().includes('signups not allowed')) {
+        showLoginMsg('Diese E-Mail-Adresse ist nicht als Vorstand registriert. Wende dich an den Mariana-Hauptverein.', 'error');
+      } else {
+        showLoginMsg('Fehler: ' + error.message, 'error');
+      }
+    } else {
+      showLoginMsg('Login-Link wurde an ' + email + ' geschickt. Bitte E-Mail-Postfach prüfen (auch Spam).', 'success');
+      btn.textContent = 'E-Mail geschickt ✓';
+    }
+  } catch (e) {
+    showLoginMsg('Netzwerk-Fehler: ' + e.message, 'error');
+  } finally {
+    setTimeout(() => {
+      btn.disabled = false;
+      if (btn.textContent === 'Sende Login-Link...') btn.textContent = 'Login-Link senden';
+    }, 2000);
+  }
+}
+
+function showLoginMsg(text, type) {
+  const msgEl = document.getElementById('login-msg');
+  msgEl.textContent = text;
+  msgEl.className = 'login-msg ' + type;
+  msgEl.style.display = 'block';
+}
+
+async function logout() {
+  await sb.auth.signOut();
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// DASHBOARD LADEN
+// ════════════════════════════════════════════════════════════════════════════
+
+async function loadDashboard() {
+  showApp();
+  
+  // 1. User-Kontext laden (Rolle, Verein)
+  try {
+    const { data: userData, error: userErr } = await sb.rpc('csc_current_user_context');
+    if (userErr) throw userErr;
+    
+    if (!userData || userData.length === 0) {
+      // Eingeloggt, aber kein Dashboard-User-Eintrag — nicht freigeschaltet
+      showApp();
+      document.getElementById('list-items').innerHTML = 
+        '<div class="list-empty">Dein Account ist nicht für das Dashboard freigeschaltet.<br><br>Bitte wende dich an den Mariana-Hauptverein.</div>';
+      document.getElementById('user-email').textContent = session.user.email;
+      document.getElementById('role-pill').textContent = 'Kein Zugriff';
+      document.getElementById('role-pill').className = 'role-pill';
+      
+      // Letzten Login NICHT updaten, da Account nicht freigeschaltet
+      return;
+    }
+    
+    userContext = userData[0];
+    userContext.email = session.user.email;
+    
+    // Last-Login updaten
+    await sb.from('csc_dashboard_user')
+      .update({ letzter_login: new Date().toISOString() })
+      .eq('auth_user_id', session.user.id);
+    
+  } catch (e) {
+    toast('Fehler beim Laden des User-Kontexts: ' + e.message, true);
+    return;
+  }
+  
+  // Header befüllen
+  document.getElementById('user-email').textContent = userContext.email;
+  const pill = document.getElementById('role-pill');
+  if (userContext.ist_admin) {
+    pill.textContent = 'Admin · Alle Vereine';
+    pill.className = 'role-pill admin';
+    document.getElementById('filter-verein').style.display = '';
+  } else {
+    pill.textContent = 'Vorstand';
+    pill.className = 'role-pill vorstand';
+  }
+  
+  // 2. Vereine laden (zur Anzeige des Vereinsnamens in der Liste)
+  await loadVereine();
+  
+  // 3. Bewerbungen laden
+  await loadBewerbungen();
+}
+
+async function loadVereine() {
+  const { data, error } = await sb.from('csc_vereine')
+    .select('id, name, ort, plz, bundesland')
+    .eq('aktiv', true);
+  
+  if (error) {
+    console.error('Vereine laden:', error);
+    return;
+  }
+  
+  vereine = {};
+  data.forEach(v => { vereine[v.id] = v; });
+  
+  // Vereinsfilter befüllen (nur für Admin)
+  if (userContext.ist_admin) {
+    const sel = document.getElementById('filter-verein');
+    sel.innerHTML = '<option value="">Alle Vereine</option>' +
+      data.sort((a,b) => a.name.localeCompare(b.name, 'de'))
+          .map(v => `<option value="${v.id}">${escapeHtml(v.name)}</option>`).join('');
+  }
+}
+
+async function loadBewerbungen() {
+  const { data, error } = await sb.from('csc_bewerbungen')
+    .select('*')
+    .order('eingegangen_am', { ascending: false });
+  
+  if (error) {
+    document.getElementById('list-items').innerHTML = 
+      '<div class="list-empty">Fehler beim Laden: ' + escapeHtml(error.message) + '</div>';
+    return;
+  }
+  
+  bewerbungen = data || [];
+  renderList();
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// LISTE RENDERN (mit Filter)
+// ════════════════════════════════════════════════════════════════════════════
+
+function renderList() {
+  const statusFilter = document.getElementById('filter-status').value;
+  const vereinFilter = document.getElementById('filter-verein').value;
+  const searchTerm = document.getElementById('filter-search').value.toLowerCase().trim();
+  
+  let filtered = bewerbungen;
+  
+  if (statusFilter) {
+    filtered = filtered.filter(b => (b.status || 'eingegangen') === statusFilter);
+  }
+  if (vereinFilter) {
+    filtered = filtered.filter(b => b.verein_id === vereinFilter);
+  }
+  if (searchTerm) {
+    filtered = filtered.filter(b => {
+      const hay = [
+        b.vorname, b.nachname, b.email,
+        b.adresse?.ort, b.adresse?.plz, b.adresse?.stadt
+      ].filter(Boolean).join(' ').toLowerCase();
+      return hay.includes(searchTerm);
+    });
+  }
+  
+  document.getElementById('list-count').textContent = filtered.length;
+  
+  const container = document.getElementById('list-items');
+  
+  if (filtered.length === 0) {
+    container.innerHTML = '<div class="list-empty">Keine Bewerbungen gefunden.</div>';
+    return;
+  }
+  
+  container.innerHTML = filtered.map(b => {
+    const v = vereine[b.verein_id];
+    const status = b.status || 'eingegangen';
+    const rollen = Array.isArray(b.rollen) ? b.rollen : [];
+    const rollenLabel = rollen.slice(0, 2).map(r => ROLE_LABELS[r] || r).join(', ') 
+      + (rollen.length > 2 ? ` +${rollen.length - 2}` : '');
+    const date = b.eingegangen_am ? new Date(b.eingegangen_am).toLocaleDateString('de-DE', {day:'2-digit',month:'2-digit'}) : '–';
+    
+    return `
+      <div class="list-item ${b.id === selectedId ? 'active' : ''}" onclick="selectBewerbung('${b.id}')">
+        <div class="list-item-top">
+          <div class="list-item-name">${escapeHtml(b.vorname || '')} ${escapeHtml(b.nachname || '')}</div>
+          <div class="list-item-date">${date}</div>
+        </div>
+        <div class="list-item-meta">
+          <span class="status-badge ${status}">${STATUS_LABELS[status] || status}</span>
+          <span class="list-item-rolle">${escapeHtml(rollenLabel || '–')}</span>
+        </div>
+        ${userContext.ist_admin && v ? `<div class="list-item-meta" style="margin-top:4px"><span style="font-size:11px;color:var(--tx-mute)">${escapeHtml(v.name)}</span></div>` : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// DETAIL-ANSICHT
+// ════════════════════════════════════════════════════════════════════════════
+
+async function selectBewerbung(id) {
+  selectedId = id;
+  renderList();  // re-render für active-Marker
+  
+  const b = bewerbungen.find(x => x.id === id);
+  if (!b) return;
+  
+  const v = vereine[b.verein_id];
+  const status = b.status || 'eingegangen';
+  
+  // Anhänge laden
+  let anhaenge = [];
+  try {
+    const { data: ah } = await sb.from('csc_bewerbung_anhaenge')
+      .select('*')
+      .eq('bewerbung_id', id);
+    anhaenge = ah || [];
+  } catch (e) {
+    console.error('Anhänge:', e);
+  }
+  
+  const fmt = (val) => val ? escapeHtml(String(val)) : '<span class="empty">–</span>';
+  const fmtDate = (val) => val ? new Date(val).toLocaleDateString('de-DE') : '<span class="empty">–</span>';
+  const fmtBool = (val) => val === true ? 'Ja' : val === false ? 'Nein' : '<span class="empty">–</span>';
+  const fmtList = (arr) => Array.isArray(arr) && arr.length 
+    ? arr.map(x => `<span class="tag">${escapeHtml(ROLE_LABELS[x] || x)}</span>`).join('') 
+    : '<span class="empty">–</span>';
+  const fmtRoles = (arr) => Array.isArray(arr) && arr.length 
+    ? arr.map(x => `<span class="tag role">${escapeHtml(ROLE_LABELS[x] || x)}</span>`).join('') 
+    : '<span class="empty">–</span>';
+  
+  const adresse = b.adresse || {};
+  const adresseStr = [adresse.strasse, [adresse.plz, adresse.ort || adresse.stadt].filter(Boolean).join(' ')]
+    .filter(Boolean).join(', ') || '–';
+  
+  const html = `
+    <div class="detail-header">
+      <div>
+        <div class="detail-name">${escapeHtml(b.vorname || '')} ${escapeHtml(b.nachname || '')}</div>
+        <div class="detail-meta">
+          <span class="status-badge ${status}">${STATUS_LABELS[status] || status}</span>
+          <span class="mono">ID: ${b.id.slice(0, 8).toUpperCase()}</span>
+          <span>· Eingegangen: ${fmtDate(b.eingegangen_am)}</span>
+          ${v ? `<span>· Verein: <strong style="color:var(--tx)">${escapeHtml(v.name)}</strong></span>` : ''}
+        </div>
+      </div>
+      <div class="detail-actions">
+        <button class="action-btn pruefen" onclick="setStatus('${b.id}', 'in_pruefung')">In Prüfung</button>
+        <button class="action-btn einladen" onclick="setStatus('${b.id}', 'eingeladen')">Einladen</button>
+        <button class="action-btn warteliste" onclick="setStatus('${b.id}', 'warteliste')">Warteliste</button>
+        <button class="action-btn angenommen" onclick="setStatus('${b.id}', 'angenommen')">Annehmen</button>
+        <button class="action-btn abgelehnt" onclick="setStatus('${b.id}', 'abgelehnt')">Ablehnen</button>
+      </div>
+    </div>
+    
+    <div class="section">
+      <div class="section-title">Kontakt</div>
+      <div class="field-grid">
+        <div class="field"><div class="field-label">E-Mail</div><div class="field-value"><a href="mailto:${escapeHtml(b.email || '')}" style="color:var(--blue);text-decoration:none">${fmt(b.email)}</a></div></div>
+        <div class="field"><div class="field-label">Telefon</div><div class="field-value">${fmt(b.telefon)}</div></div>
+        <div class="field"><div class="field-label">Geburtsdatum</div><div class="field-value">${fmtDate(b.geburtsdatum)}</div></div>
+        <div class="field"><div class="field-label">Adresse</div><div class="field-value">${fmt(adresseStr)}</div></div>
+        <div class="field"><div class="field-label">Wohnsitz Deutschland (6 Mon.)</div><div class="field-value">${fmtBool(b.wohnsitz_d_6_monate)}</div></div>
+        <div class="field"><div class="field-label">Volljährig</div><div class="field-value">${fmtBool(b.ist_volljaehrig)}</div></div>
+      </div>
+    </div>
+    
+    <div class="section">
+      <div class="section-title">Bewerbung</div>
+      <div class="field-grid">
+        <div class="field"><div class="field-label">Mitglied</div><div class="field-value">${fmt(b.ist_mitglied)}</div></div>
+        <div class="field"><div class="field-label">Standort-Wunsch</div><div class="field-value">${fmt(b.standort_wunsch)}</div></div>
+      </div>
+      <div style="margin-top:14px"><div class="field-label">Rolle(n)</div><div class="tag-list">${fmtRoles(b.rollen)}</div></div>
+      <div style="margin-top:14px"><div class="field-label">Anstellungsform(en)</div><div class="tag-list">${fmtList(b.anstellungsformen)}</div></div>
+    </div>
+    
+    <div class="section">
+      <div class="section-title">Verfügbarkeit</div>
+      <div class="field-grid">
+        <div class="field"><div class="field-label">Wunsch-Stunden / Woche</div><div class="field-value">${b.wunsch_stunden_min || '?'}–${b.wunsch_stunden_max || '?'} Std.</div></div>
+        <div class="field"><div class="field-label">Frühester Start</div><div class="field-value">${fmtDate(b.fruehester_start)}</div></div>
+        <div class="field"><div class="field-label">Probearbeit möglich</div><div class="field-value">${fmtBool(b.probearbeit)}</div></div>
+        <div class="field"><div class="field-label">Max. Anfahrt</div><div class="field-value">${fmt(b.max_anfahrt)}</div></div>
+        <div class="field"><div class="field-label">Jobticket gewünscht</div><div class="field-value">${fmtBool(b.jobticket)}</div></div>
+      </div>
+    </div>
+    
+    ${b.qualifikationen || b.sachkunde ? `
+    <div class="section">
+      <div class="section-title">Qualifikationen</div>
+      <div class="field-grid">
+        ${b.qualifikationen ? `<div class="field"><div class="field-label">Qualifikationen</div><div class="field-value">${escapeHtml(b.qualifikationen).replace(/\\n/g, '<br>')}</div></div>` : ''}
+        ${b.sachkunde ? `<div class="field"><div class="field-label">Sachkunde</div><div class="field-value">${fmt(b.sachkunde)}</div></div>` : ''}
+      </div>
+    </div>
+    ` : ''}
+    
+    ${b.schwerbehinderung ? `
+    <div class="section">
+      <div class="section-title">Schwerbehinderung</div>
+      <div class="field-grid">
+        <div class="field"><div class="field-label">GdB</div><div class="field-value">${fmt(b.schwerbehinderung_gdb)}</div></div>
+        <div class="field"><div class="field-label">Einschränkungen</div><div class="field-value">${fmt(b.schwerbehinderung_einschr)}</div></div>
+        <div class="field"><div class="field-label">Anpassungen gewünscht</div><div class="field-value">${fmt(b.schwerbehinderung_anpassungen)}</div></div>
+      </div>
+    </div>
+    ` : ''}
+    
+    ${b.iban ? `
+    <div class="section">
+      <div class="section-title">Bankverbindung</div>
+      <div class="field-grid">
+        <div class="field"><div class="field-label">IBAN</div><div class="field-value mono">${fmt(b.iban)}</div></div>
+        <div class="field"><div class="field-label">Kontoinhaber</div><div class="field-value">${fmt(b.kontoinhaber)}</div></div>
+      </div>
+    </div>
+    ` : ''}
+    
+    ${b.nachricht ? `
+    <div class="section">
+      <div class="section-title">Nachricht</div>
+      <div class="field-value" style="white-space:pre-wrap;background:var(--bg-card);padding:14px;border-radius:8px;border:1px solid var(--border)">${escapeHtml(b.nachricht)}</div>
+    </div>
+    ` : ''}
+    
+    ${anhaenge.length > 0 ? `
+    <div class="section">
+      <div class="section-title">Anhänge (${anhaenge.length})</div>
+      <div class="anhang-list">
+        ${anhaenge.map(a => `
+          <div class="anhang-item">
+            <div>
+              <div class="name">${escapeHtml(a.original_dateiname || a.dateiname || '–')}</div>
+              <div class="meta">${escapeHtml(a.kategorie || '')} · ${a.groesse_bytes ? Math.round(a.groesse_bytes/1024) + ' KB' : ''}</div>
+            </div>
+            <button class="anhang-link" onclick="downloadAnhang('${a.storage_pfad || a.pfad || ''}', '${escapeHtml(a.original_dateiname || 'datei')}')">Herunterladen</button>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+    ` : ''}
+  `;
+  
+  document.getElementById('detail-panel').innerHTML = html;
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// STATUS ÄNDERN
+// ════════════════════════════════════════════════════════════════════════════
+
+async function setStatus(id, newStatus) {
+  const b = bewerbungen.find(x => x.id === id);
+  if (!b) return;
+  
+  const confirmed = confirm(`Status auf "${STATUS_LABELS[newStatus]}" setzen?\n\n${b.vorname} ${b.nachname}`);
+  if (!confirmed) return;
+  
+  try {
+    const { error } = await sb.from('csc_bewerbungen')
+      .update({ 
+        status: newStatus,
+        status_geaendert_am: new Date().toISOString()
+      })
+      .eq('id', id);
+    
+    if (error) throw error;
+    
+    // Lokal updaten
+    b.status = newStatus;
+    b.status_geaendert_am = new Date().toISOString();
+    
+    renderList();
+    selectBewerbung(id);
+    toast('Status auf "' + STATUS_LABELS[newStatus] + '" gesetzt');
+  } catch (e) {
+    toast('Fehler: ' + e.message, true);
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// ANHANG DOWNLOAD
+// ════════════════════════════════════════════════════════════════════════════
+
+async function downloadAnhang(storagePfad, filename) {
+  if (!storagePfad) {
+    toast('Kein Storage-Pfad hinterlegt', true);
+    return;
+  }
+  
+  try {
+    const { data, error } = await sb.storage
+      .from('bewerbung-anhaenge')
+      .createSignedUrl(storagePfad, 60); // 60 Sek gültig
+    
+    if (error) throw error;
+    
+    const a = document.createElement('a');
+    a.href = data.signedUrl;
+    a.download = filename;
+    a.click();
+  } catch (e) {
+    toast('Download-Fehler: ' + e.message, true);
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// UTILS
+// ════════════════════════════════════════════════════════════════════════════
+
+function escapeHtml(s) {
+  if (s == null) return '';
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+let toastTimer = null;
+function toast(msg, isError = false) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show' + (isError ? ' error' : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// SUPABASE KONFIGURATION
+// 
+// Der anon-Key ist OK öffentlich — RLS-Policies schützen die Daten.
+// HIER DEN ANON-KEY EINSETZEN (eyJhbG...): 
+// ════════════════════════════════════════════════════════════════════════════
+
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd2emF5Z2d2dGx5Y2h5amJuc2d2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3ODEzMTIsImV4cCI6MjA4OTM1NzMxMn0.1L2e98IjFjF8z_-t0Fpm20wwVyrtWfkMdjGG79fJwMg';
+
+
+// Init starten
+document.addEventListener('DOMContentLoaded', () => {
+  if (!SUPABASE_ANON_KEY || SUPABASE_ANON_KEY === 'BITTE_HIER_DEN_ANON_KEY_EINFUEGEN') {
+    const msg = document.getElementById('login-msg');
+    msg.textContent = 'Konfigurationsfehler: SUPABASE_ANON_KEY fehlt im Quelltext.';
+    msg.className = 'login-msg error';
+    msg.style.display = 'block';
+    document.getElementById('login-btn').disabled = true;
+    return;
+  }
+  
+  sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: { autoRefreshToken: true, persistSession: true, detectSessionInUrl: true }
+  });
+  
+  init();
+});
+</script>
+</body>
+</html>

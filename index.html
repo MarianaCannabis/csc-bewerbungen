@@ -2492,7 +2492,17 @@ function attachSection1() {
         </div>
       `).join('');
       list.querySelectorAll('.combobox-item').forEach(it => {
-        it.addEventListener('click', () => selectVerein(it.dataset.id));
+        // mousedown statt click — feuert VOR blur des Inputs,
+        // sonst schließt blur die Liste bevor click ausgelöst wird
+        it.addEventListener('mousedown', (e) => {
+          e.preventDefault(); // verhindert blur
+          selectVerein(it.dataset.id);
+        });
+        // touchstart für mobile
+        it.addEventListener('touchstart', (e) => {
+          e.preventDefault();
+          selectVerein(it.dataset.id);
+        }, { passive: false });
       });
     }
     list.classList.add('open');
@@ -2512,7 +2522,8 @@ function attachSection1() {
 
   search.addEventListener('focus', () => renderList(search.value));
   search.addEventListener('input', () => renderList(search.value));
-  search.addEventListener('blur', () => setTimeout(() => list.classList.remove('open'), 200));
+  // Längere Verzögerung — falls jemand doch click statt mousedown verwendet
+  search.addEventListener('blur', () => setTimeout(() => list.classList.remove('open'), 300));
 
   clearBtn.addEventListener('click', () => {
     state.formData.verein_id = null;

@@ -571,7 +571,38 @@ body::before {
   font-size: 0.95rem;
   margin-bottom: 0.2rem;
   color: var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
 }
+
+.role-info-btn {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid var(--olive-500, #6b8e6b);
+  background: transparent;
+  color: var(--olive-500, #6b8e6b);
+  font-size: 0.85rem;
+  font-weight: 700;
+  font-style: italic;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  font-family: Georgia, serif;
+}
+.role-info-btn:hover, .role-info-btn:focus {
+  background: var(--olive-500, #6b8e6b);
+  color: white;
+  outline: none;
+}
+.role-info-btn:active { transform: scale(0.95); }
 
 .role-card-desc {
   font-size: 0.82rem;
@@ -581,6 +612,145 @@ body::before {
 
 .role-card.selected .role-card-title {
   color: var(--olive-900);
+}
+
+/* Positions-Info-Modal */
+.pos-info-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(8, 16, 11, 0.78);
+  z-index: 1000;
+  display: none;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 5vh 16px;
+  overflow-y: auto;
+  backdrop-filter: blur(4px);
+}
+.pos-info-overlay.show { display: flex; }
+
+.pos-info-modal {
+  background: var(--bg, white);
+  color: var(--ink, #1a2a1a);
+  border-radius: 14px;
+  max-width: 760px;
+  width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+}
+.pos-info-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--ink-line, #d0d8d2);
+  background: var(--olive-50, #f0f5ed);
+  flex-shrink: 0;
+}
+.pos-info-header h2 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--olive-900, #2c4a2c);
+}
+.pos-info-close {
+  background: transparent;
+  border: 1px solid var(--ink-line, #d0d8d2);
+  color: var(--ink, #1a2a1a);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.15s;
+}
+.pos-info-close:hover { background: var(--ink-line, #d0d8d2); }
+
+.pos-info-body {
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+  -webkit-overflow-scrolling: touch;
+}
+
+.pos-detail-head {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+.pos-detail-icon {
+  font-size: 2.2rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.pos-detail-title {
+  margin: 0 0 0.2rem 0;
+  font-size: 1.25rem;
+  color: var(--olive-900, #2c4a2c);
+}
+.pos-detail-sub {
+  margin: 0;
+  font-size: 0.92rem;
+  color: var(--ink-mute, #6b7d6b);
+  font-style: italic;
+}
+.pos-detail-intro {
+  margin: 0.7rem 0 1rem 0;
+  line-height: 1.55;
+  font-size: 0.92rem;
+}
+.pos-detail-warn {
+  background: #fff7e0;
+  border-left: 3px solid #d4a000;
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  font-size: 0.88rem;
+  color: #6b5500;
+  line-height: 1.5;
+}
+.pos-detail-pill {
+  display: inline-block;
+  background: var(--olive-50, #f0f5ed);
+  border: 1px solid var(--olive-200, #c5d5c5);
+  border-radius: 999px;
+  padding: 4px 12px;
+  margin: 0 6px 8px 0;
+  font-size: 0.82rem;
+  color: var(--olive-900, #2c4a2c);
+  font-weight: 500;
+}
+.pos-detail-h4 {
+  margin: 1.2rem 0 0.5rem 0;
+  font-size: 0.95rem;
+  color: var(--olive-900, #2c4a2c);
+  font-weight: 600;
+}
+.pos-detail-list {
+  margin: 0;
+  padding-left: 1.2rem;
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+.pos-detail-list li { margin-bottom: 0.4rem; }
+.pos-detail-text {
+  margin: 0.4rem 0;
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+.pos-detail-sep {
+  margin: 1.8rem 0;
+  border: none;
+  border-top: 2px dashed var(--ink-line, #d0d8d2);
+}
+@media (max-width: 600px) {
+  .pos-info-overlay { padding: 0; align-items: stretch; }
+  .pos-info-modal { border-radius: 0; max-height: 100vh; }
+  .pos-detail-title { font-size: 1.1rem; }
 }
 
 /* Conditional Sub-section (Sicherheit, Prävention) */
@@ -1357,6 +1527,7 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const state = {
   lang: 'de',
   i18n: {},
+  positionen: {},   // wird beim init aus positionen.json geladen
   vereine: [],
   currentSection: 1,
   totalSections: 9,
@@ -1488,6 +1659,134 @@ async function loadLang(lang) {
   }
   console.error('Sprach-Datei nicht gefunden. Versuchte Pfade:', paths, 'Letzter Fehler:', lastError);
   return false;
+}
+
+// ============================================================================
+// POSITIONSBESCHREIBUNGEN (positionen.json)
+// ============================================================================
+// Mapping: Rollen-ID im Code → Positions-ID in positionen.json
+// (Code nutzt z.B. "praevention", JSON hat "praeventionsbeauftragter")
+const ROLE_TO_POSITION = {
+  'ausgabe':         'ausgabe',
+  'grower':          'grower',
+  'head_grower':     'grower',                    // Fallback: zeigt Grower-Beschreibung
+  'vorstand':        'vorstand',
+  'stellv_vorstand': 'stellv_vorstand',
+  'springer':        ['springer_grow', 'springer_ausgabe'], // Beide zeigen
+  'praevention':     'praeventionsbeauftragter',
+  // 'reinigung' und 'sicherheit' haben keine Beschreibung in positionen.json
+};
+
+async function loadPositionen() {
+  const paths = ['./positionen.json', 'positionen.json', './i18n/positionen.json'];
+  for (const path of paths) {
+    try {
+      const res = await fetch(path);
+      if (!res.ok) continue;
+      const data = await res.json();
+      state.positionen = data.positionen || data;
+      console.log('Positionsbeschreibungen geladen von:', path);
+      return true;
+    } catch (e) { /* probiere nächsten Pfad */ }
+  }
+  console.warn('positionen.json nicht gefunden — ℹ-Buttons werden nicht aktiv');
+  state.positionen = {};
+  return false;
+}
+
+function getPositionData(roleId) {
+  const mapping = ROLE_TO_POSITION[roleId];
+  if (!mapping || !state.positionen) return null;
+  if (Array.isArray(mapping)) {
+    return mapping.map(id => state.positionen[id]).filter(Boolean);
+  }
+  return state.positionen[mapping] ? [state.positionen[mapping]] : null;
+}
+
+// Liefert true, wenn für diese Rolle eine Beschreibung verfügbar ist
+function hasPositionInfo(roleId) {
+  const data = getPositionData(roleId);
+  return Array.isArray(data) && data.length > 0;
+}
+
+// HTML für eine einzelne Positions-Karte im Modal
+function renderPositionDetail(pos) {
+  const anstellungText = (() => {
+    const a = pos.anstellung || {};
+    if (!a.start) return '';
+    let txt = a.start === 'ehrenamtlich' ? 'Ehrenamtlich' : (a.start || '');
+    if (a.uebergang_moeglich === 'minijob') {
+      const ab = a.uebergang_ab === 'erste_ausgabe' ? 'der ersten Ausgabe' 
+               : a.uebergang_ab === 'erster_anbau' ? 'dem ersten Anbau'
+               : a.uebergang_ab || '';
+      txt += ` → Minijob möglich ab ${ab}${a.uebergang_optional ? ' (optional)' : ''}`;
+    }
+    return txt;
+  })();
+  
+  const voraussetzungen = [];
+  const v = pos.voraussetzungen || {};
+  if (v.mindestalter && v.mindestalter > 18) voraussetzungen.push(`Mindestalter ${v.mindestalter} Jahre`);
+  if (v.fuehrungszeugnis === true) voraussetzungen.push('Sauberes Führungszeugnis erforderlich');
+  else if (v.fuehrungszeugnis === 'moeglich') voraussetzungen.push('Führungszeugnis kann verlangt werden');
+  if (v.sachkunde_pflicht) voraussetzungen.push(`Sachkunde-Schulung${v.sachkunde_anbieter ? ' (' + v.sachkunde_anbieter + ')' : ''} verpflichtend`);
+  if (v.mobilitaet_pflicht) voraussetzungen.push('Mobilität (eigene Anreise zur Anbau-Location)');
+  if (Array.isArray(pos.voraussetzungen_liste)) voraussetzungen.push(...pos.voraussetzungen_liste);
+  
+  const aufgabenHtml = (pos.aufgaben || []).map(a => `
+    <li style="margin-bottom: 0.6rem;">
+      <strong style="color: var(--green, #4caf6a);">${a.titel}:</strong>
+      <span style="opacity: 0.9;"> ${a.beschreibung}</span>
+    </li>
+  `).join('');
+  
+  return `
+    <div class="pos-detail-card">
+      <div class="pos-detail-head">
+        <div class="pos-detail-icon">${pos.icon || '📋'}</div>
+        <div>
+          <h3 class="pos-detail-title">${pos.title}</h3>
+          ${pos.subtitle ? `<p class="pos-detail-sub">${pos.subtitle}</p>` : ''}
+        </div>
+      </div>
+      ${pos.kurzbeschreibung ? `<p class="pos-detail-intro">${pos.kurzbeschreibung}</p>` : ''}
+      ${pos.wichtiger_hinweis ? `<div class="pos-detail-warn">⚠ ${pos.wichtiger_hinweis}</div>` : ''}
+      ${pos.arbeitsaufwand_h_woche ? `<div class="pos-detail-pill">⏱ ca. ${pos.arbeitsaufwand_h_woche} h/Woche</div>` : ''}
+      ${anstellungText ? `<div class="pos-detail-pill">💼 ${anstellungText}</div>` : ''}
+      ${aufgabenHtml ? `
+        <h4 class="pos-detail-h4">Deine Aufgaben</h4>
+        <ul class="pos-detail-list">${aufgabenHtml}</ul>
+      ` : ''}
+      ${voraussetzungen.length ? `
+        <h4 class="pos-detail-h4">Voraussetzungen</h4>
+        <ul class="pos-detail-list">${voraussetzungen.map(v => `<li>${v}</li>`).join('')}</ul>
+      ` : ''}
+      ${pos.wichtig_zu_wissen ? `
+        <h4 class="pos-detail-h4">Wichtig zu wissen</h4>
+        <p class="pos-detail-text">${pos.wichtig_zu_wissen}</p>
+      ` : ''}
+      ${pos.geeignet_fuer ? `
+        <h4 class="pos-detail-h4">Für wen ist diese Rolle geeignet?</h4>
+        <p class="pos-detail-text">${pos.geeignet_fuer}</p>
+      ` : ''}
+    </div>
+  `;
+}
+
+function openPositionInfo(roleId) {
+  const data = getPositionData(roleId);
+  if (!data || !data.length) return;
+  const modal = document.getElementById('pos-info-modal');
+  const body = document.getElementById('pos-info-body');
+  body.innerHTML = data.map(renderPositionDetail).join('<hr class="pos-detail-sep">');
+  modal.classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+
+function closePositionInfo() {
+  const modal = document.getElementById('pos-info-modal');
+  if (modal) modal.classList.remove('show');
+  document.body.style.overflow = '';
 }
 
 function t(key, params = {}) {
@@ -1806,7 +2105,7 @@ function renderSection2() {
     <div class="field-grid cols-2">
       <div class="form-group" id="fg-geburtsdatum">
         <label class="form-label">${s.geburtsdatum}<span class="required">*</span></label>
-        <input type="date" class="form-input" id="i-geburtsdatum" autocomplete="bday">
+        <input type="text" class="form-input" id="i-geburtsdatum" autocomplete="bday" inputmode="numeric" placeholder="TT.MM.JJJJ" maxlength="10" pattern="\d{2}\.\d{2}\.\d{4}">
         <div class="error-message">${t('validation.date_invalid')}</div>
       </div>
       <div class="form-group">
@@ -1933,7 +2232,10 @@ function renderSection3() {
         ${rollen.map(r => `
           <label class="role-card" data-role="${r.id}">
             <input type="checkbox" value="${r.id}" data-role-cb>
-            <div class="role-card-title">${r.title}</div>
+            <div class="role-card-title">
+              <span>${r.title}</span>
+              ${hasPositionInfo(r.id) ? `<button type="button" class="role-info-btn" onclick="event.preventDefault(); event.stopPropagation(); openPositionInfo('${r.id}');" title="Mehr zu dieser Rolle erfahren" aria-label="Mehr zu ${r.title} erfahren">ℹ</button>` : ''}
+            </div>
             <div class="role-card-desc">${r.desc}</div>
           </label>
         `).join('')}
@@ -2780,7 +3082,7 @@ function attachSection2() {
   const fields = [
     ['i-vorname', 'vorname'],
     ['i-nachname', 'nachname'],
-    ['i-geburtsdatum', 'geburtsdatum'],
+    // 'i-geburtsdatum' hat einen eigenen Handler weiter unten (Maske TT.MM.JJJJ)
     ['i-geburtsort', 'geburtsort'],
     ['i-staatsangehoerigkeit', 'staatsangehoerigkeit'],
     ['i-strasse', 'adresse_strasse'],
@@ -2813,9 +3115,24 @@ function attachSection2() {
     }
   });
   
-  // Live-Validierung Geburtsdatum (onBlur)
+  // Geburtsdatum: Eingabe-Maske TT.MM.JJJJ + Live-Validierung
+  // Speichert in state.formData.geburtsdatum das Display-Format (TT.MM.JJJJ)
+  // Der Submit-Payload konvertiert das dann zu ISO (YYYY-MM-DD)
   const geb = document.getElementById('i-geburtsdatum');
   if (geb) {
+    geb.addEventListener('input', e => {
+      // Cursor-Position merken für angenehmes Tippen
+      const before = geb.value;
+      const masked = maskGermanDateInput(before);
+      if (masked !== before) {
+        geb.value = masked;
+      }
+      state.formData.geburtsdatum = masked;
+      // Während des Tippens: noch keine Validierungs-Fehler anzeigen
+      const fg = document.getElementById('fg-geburtsdatum');
+      if (fg && masked.length < 10) fg.classList.remove('has-error');
+      saveDraft();
+    });
     geb.addEventListener('blur', () => {
       const fg = document.getElementById('fg-geburtsdatum');
       const em = fg ? fg.querySelector('.error-message') : null;
@@ -3834,7 +4151,14 @@ function fillFormFromState() {
   const setVal = (id, val) => { const e = document.getElementById(id); if (e && val) e.value = val; };
   setVal('i-vorname', d.vorname);
   setVal('i-nachname', d.nachname);
-  setVal('i-geburtsdatum', d.geburtsdatum);
+  // Geburtsdatum: in state als display-Format halten (TT.MM.JJJJ), Submit konvertiert
+  if (d.geburtsdatum) {
+    const display = toGermanDate(d.geburtsdatum);
+    if (display) {
+      setVal('i-geburtsdatum', display);
+      state.formData.geburtsdatum = display;
+    }
+  }
   setVal('i-geburtsort', d.geburtsort);
   setVal('i-staatsangehoerigkeit', d.staatsangehoerigkeit);
   setVal('i-strasse', d.adresse_strasse);
@@ -4168,12 +4492,52 @@ function validateSection(n) {
 }
 
 function isValidDate(s) {
-  return /^\d{4}-\d{2}-\d{2}$/.test(s) && !isNaN(new Date(s).getTime());
+  if (!s) return false;
+  // Akzeptiert YYYY-MM-DD (ISO) ODER TT.MM.JJJJ (deutsch)
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s) && !isNaN(new Date(s).getTime())) return true;
+  if (/^\d{2}\.\d{2}\.\d{4}$/.test(s)) {
+    const [d, m, y] = s.split('.').map(Number);
+    if (m < 1 || m > 12 || d < 1 || d > 31 || y < 1900 || y > 2100) return false;
+    const dt = new Date(y, m - 1, d);
+    return dt.getFullYear() === y && dt.getMonth() === m - 1 && dt.getDate() === d;
+  }
+  return false;
+}
+
+// Maskiert Roh-Input zu "TT.MM.JJJJ" (Punkte automatisch eingefügt)
+function maskGermanDateInput(raw) {
+  const digits = (raw || '').replace(/\D/g, '').slice(0, 8);
+  let out = '';
+  for (let i = 0; i < digits.length; i++) {
+    if (i === 2 || i === 4) out += '.';
+    out += digits[i];
+  }
+  return out;
+}
+
+// "12.05.1985" → "1985-05-12", "1985-05-12" → "1985-05-12", sonst ''
+function toIsoDate(s) {
+  if (!s) return '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  const m = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(s);
+  if (!m) return '';
+  return `${m[3]}-${m[2]}-${m[1]}`;
+}
+
+// "1985-05-12" → "12.05.1985", "12.05.1985" bleibt, sonst ''
+function toGermanDate(s) {
+  if (!s) return '';
+  if (/^\d{2}\.\d{2}\.\d{4}$/.test(s)) return s;
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+  if (!m) return '';
+  return `${m[3]}.${m[2]}.${m[1]}`;
 }
 
 function calculateAge(dateStr) {
+  const iso = toIsoDate(dateStr);
+  if (!iso) return null;
   const today = new Date();
-  const birth = new Date(dateStr);
+  const birth = new Date(iso);
   let age = today.getFullYear() - birth.getFullYear();
   const monthDiff = today.getMonth() - birth.getMonth();
   if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
@@ -4333,7 +4697,7 @@ async function submitForm() {
     verein_id: d.verein_id,
     vorname: d.vorname.trim(),
     nachname: d.nachname.trim(),
-    geburtsdatum: d.geburtsdatum,
+    geburtsdatum: toIsoDate(d.geburtsdatum) || null,
     staatsangehoerigkeit: d.staatsangehoerigkeit.trim(),
     adresse: { 
       strasse: d.adresse_strasse, 
@@ -4511,6 +4875,9 @@ async function init() {
     return;
   }
 
+  // Positionsbeschreibungen laden (optional — fehlt sie, deaktivieren sich nur die ℹ-Buttons)
+  await loadPositionen();
+
   // Vereine laden
   try {
     await loadVereine();
@@ -4548,7 +4915,26 @@ function showError(msg) {
 }
 
 document.addEventListener('DOMContentLoaded', init);
+
+// ESC-Taste schließt Position-Info-Modal
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    const m = document.getElementById('pos-info-modal');
+    if (m && m.classList.contains('show')) closePositionInfo();
+  }
+});
 </script>
+
+<!-- Positions-Info-Modal (wird bei Klick auf ℹ in Section 3 sichtbar) -->
+<div id="pos-info-modal" class="pos-info-overlay" onclick="if(event.target===this)closePositionInfo()" role="dialog" aria-modal="true" aria-labelledby="pos-info-title">
+  <div class="pos-info-modal">
+    <div class="pos-info-header">
+      <h2 id="pos-info-title">Positionsbeschreibung</h2>
+      <button class="pos-info-close" onclick="closePositionInfo()" aria-label="Schließen">✕ Schließen</button>
+    </div>
+    <div id="pos-info-body" class="pos-info-body"></div>
+  </div>
+</div>
 
 </body>
 </html>

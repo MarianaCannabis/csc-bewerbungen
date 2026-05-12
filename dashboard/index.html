@@ -139,6 +139,8 @@
     .action-btn.warteliste:hover { background: var(--gold-bg); }
     .action-btn.abgelehnt { border-color: #b85959; color: var(--red); }
     .action-btn.abgelehnt:hover { background: var(--red-bg); }
+    .action-btn.loeschen { border-color: #b85959; color: #b85959; margin-left: auto; font-weight: 700; }
+    .action-btn.loeschen:hover { background: #b85959; color: #fff; }
     .action-btn.angenommen { background: var(--green); color: var(--bg); border-color: var(--green); }
     .action-btn.angenommen:hover { background: #5fbe7d; }
     .action-btn.pruefen { border-color: #b88c4d; color: var(--orange); }
@@ -160,12 +162,22 @@
     
     /* Verfügbarkeits-Raster */
     .verfuegbar-section { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 12px; }
-    .verfuegbar-title { font-size: 12px; font-weight: 600; color: var(--tx-dim); margin-bottom: 8px; }
-    .verfuegbar-grid { display: grid; grid-template-columns: 60px repeat(4, 1fr); gap: 4px; font-size: 11px; }
+    .verfuegbar-title { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-size: 12px; font-weight: 600; color: var(--tx-dim); margin-bottom: 10px; flex-wrap: wrap; }
+    .verfuegbar-summary { color: var(--tx); font-weight: 400; font-size: 12px; }
+    .verfuegbar-summary strong { color: var(--green); font-weight: 700; }
+    .verfuegbar-grid { display: grid; gap: 4px; font-size: 11px; }
     .vg-corner, .vg-day, .vg-slot-label { padding: 5px 6px; color: var(--tx-mute); font-weight: 600; text-align: center; text-transform: uppercase; font-size: 11px; letter-spacing: 0.05em; }
     .vg-day { text-align: left; padding-left: 8px; color: var(--tx); font-weight: 500; }
-    .vg-cell { padding: 7px 4px; background: var(--bg-elev); border-radius: 4px; text-align: center; font-size: 13px; color: var(--tx-mute); font-weight: 600; }
+    .vg-slot-label { display: flex; flex-direction: column; align-items: center; gap: 2px; line-height: 1.1; }
+    .vg-slot-time { font-size: 10px; color: var(--green); font-weight: 600; text-transform: none; letter-spacing: 0; font-family: 'DM Mono', monospace; }
+    .vg-slot-sum { color: var(--tx-dim); font-size: 13px; }
+    .vg-cell { padding: 7px 4px; background: var(--bg-elev); border-radius: 4px; text-align: center; font-size: 13px; color: var(--tx-mute); font-weight: 600; cursor: help; }
     .vg-cell.active { background: var(--green); color: var(--bg); }
+    .vg-cell-sum { padding: 7px 4px; background: transparent; text-align: center; font-size: 12px; color: var(--green); font-weight: 700; font-family: 'DM Mono', monospace; border-left: 1px solid var(--border); margin-left: 2px; padding-left: 6px; }
+    .vg-cell-sum-empty { color: var(--tx-mute); font-weight: 400; }
+    .verfuegbar-gesamt { background: var(--green-glow); border: 1px solid var(--green-dim); border-radius: 8px; padding: 10px 14px; margin-bottom: 12px; font-size: 13px; color: var(--tx); display: flex; align-items: center; gap: 8px; }
+    .verfuegbar-gesamt .vg-icon { font-size: 16px; }
+    .verfuegbar-gesamt strong { color: var(--green); font-weight: 700; font-size: 15px; }
     
     /* Soft-Skills */
     .skill-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
@@ -176,11 +188,26 @@
     
     /* Anhänge */
     .anhang-list { display: flex; flex-direction: column; gap: 8px; }
-    .anhang-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--bg-elev); border: 1px solid var(--border); border-radius: 8px; font-size: 13px; }
+    .anhang-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--bg-elev); border: 1px solid var(--border); border-radius: 8px; font-size: 13px; gap: 12px; }
+    .anhang-info { flex: 1; min-width: 0; }
     .anhang-item .name { color: var(--tx); font-weight: 500; }
     .anhang-item .meta { color: var(--tx-mute); font-size: 12px; font-family: 'DM Mono', monospace; }
-    .anhang-link { color: var(--green); text-decoration: none; font-size: 13px; font-weight: 600; padding: 6px 12px; border: 1px solid var(--green-dim); border-radius: 6px; background: transparent; }
+    .anhang-actions { display: flex; gap: 6px; flex-shrink: 0; }
+    .anhang-link { color: var(--green); text-decoration: none; font-size: 13px; font-weight: 600; padding: 6px 12px; border: 1px solid var(--green-dim); border-radius: 6px; background: transparent; cursor: pointer; transition: all 0.15s; }
     .anhang-link:hover { background: var(--green-glow); }
+    
+    /* Vorschau-Modal */
+    .preview-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.85); z-index: 200; display: none; align-items: center; justify-content: center; padding: 24px; }
+    .preview-overlay.show { display: flex; }
+    .preview-container { background: var(--bg-card); border-radius: 12px; max-width: 95vw; max-height: 95vh; display: flex; flex-direction: column; box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7); }
+    .preview-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--border); }
+    .preview-title { font-size: 14px; font-weight: 600; }
+    .preview-close { background: transparent; border: 1px solid var(--border); color: var(--tx); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 14px; }
+    .preview-close:hover { background: var(--bg-elev); }
+    .preview-body { padding: 16px; overflow: auto; flex: 1; display: flex; align-items: center; justify-content: center; min-height: 60vh; }
+    .preview-body img { max-width: 100%; max-height: 80vh; object-fit: contain; border-radius: 6px; }
+    .preview-body iframe { width: 90vw; height: 80vh; max-width: 1000px; border: none; border-radius: 6px; background: white; }
+    .preview-loading { color: var(--tx-dim); font-size: 14px; }
     
     /* Notiz-Bereich */
     .notiz-section { background: var(--bg-card); border: 1px solid var(--border-strong); border-radius: 8px; padding: 14px 16px; margin-bottom: 24px; }
@@ -277,6 +304,17 @@
 
 <div id="toast" class="toast"></div>
 
+<!-- Vorschau-Modal für Anhänge -->
+<div id="preview-overlay" class="preview-overlay" onclick="if(event.target===this)closePreview()">
+  <div class="preview-container">
+    <div class="preview-header">
+      <div id="preview-title" class="preview-title">Vorschau</div>
+      <button class="preview-close" onclick="closePreview()">✕ Schliessen (ESC)</button>
+    </div>
+    <div id="preview-body" class="preview-body"></div>
+  </div>
+</div>
+
 <script>
 const SUPABASE_URL = 'https://gvzayggvtlychyjbnsgv.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd2emF5Z2d2dGx5Y2h5amJuc2d2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3ODEzMTIsImV4cCI6MjA4OTM1NzMxMn0.1L2e98IjFjF8z_-t0Fpm20wwVyrtWfkMdjGG79fJwMg';
@@ -290,6 +328,13 @@ const SPRACHEN_LABELS = { de: 'Deutsch', en: 'Englisch', tr: 'Türkisch', ru: 'R
 const SPRACH_LEVEL = { '': '–', 'a1': 'A1', 'a2': 'A2', 'b1': 'B1', 'b2': 'B2', 'c1': 'C1', 'c2': 'C2', 'native': 'Muttersprache' };
 const WOCHENTAGE = [{ key: 'mo', label: 'Mo' }, { key: 'di', label: 'Di' }, { key: 'mi', label: 'Mi' }, { key: 'do', label: 'Do' }, { key: 'fr', label: 'Fr' }, { key: 'sa', label: 'Sa' }, { key: 'so', label: 'So' }];
 const ZEITSLOTS = ['Morgens', 'Mittags', 'Nachmittags', 'Abends'];
+// Slot-Definition: Label, Uhrzeit, Dauer in Stunden
+const SLOT_DETAILS = [
+  { label: 'Morgens',     zeit: '08–12', stunden: 4 },
+  { label: 'Mittags',     zeit: '12–16', stunden: 4 },
+  { label: 'Nachmittags', zeit: '16–20', stunden: 4 },
+  { label: 'Abends',      zeit: '20–24', stunden: 4 },
+];
 
 let sb = null, session = null, userContext = null, bewerbungen = [], vereine = {}, selectedId = null, activeStatusFilter = '';
 
@@ -492,16 +537,77 @@ async function selectBewerbung(id) {
   function buildVerfuegbarkeitGrid(standort, label) {
     const verf = b.verfuegbarkeit && b.verfuegbarkeit[standort];
     if (!verf) return '';
-    let hasAny = false;
-    WOCHENTAGE.forEach(d => { if (verf[d.key] && verf[d.key].some(x => x)) hasAny = true; });
-    if (!hasAny) return '';
-    return `<div class="verfuegbar-section"><div class="verfuegbar-title">${label}</div><div class="verfuegbar-grid"><div class="vg-corner"></div>${ZEITSLOTS.map(s => `<div class="vg-slot-label">${s}</div>`).join('')}${WOCHENTAGE.map(d => `<div class="vg-day">${d.label}</div>${[0,1,2,3].map(i => `<div class="vg-cell ${verf[d.key]?.[i] ? 'active' : ''}">${verf[d.key]?.[i] ? '✓' : '·'}</div>`).join('')}`).join('')}</div></div>`;
+    
+    // Zähle aktive Slots + summe Stunden
+    let aktiveSlots = 0;
+    let totalStunden = 0;
+    WOCHENTAGE.forEach(d => {
+      (verf[d.key] || []).forEach((checked, i) => {
+        if (checked) {
+          aktiveSlots++;
+          totalStunden += SLOT_DETAILS[i]?.stunden || 4;
+        }
+      });
+    });
+    if (aktiveSlots === 0) return '';
+    
+    // Header: Slot-Label + Uhrzeit
+    const slotHeaders = SLOT_DETAILS.map(s => 
+      `<div class="vg-slot-label"><div>${s.label}</div><div class="vg-slot-time">${s.zeit}</div></div>`
+    ).join('');
+    
+    // Pro Wochentag: Tag-Label + 4 Cells + Tages-Stunden-Summe
+    const rows = WOCHENTAGE.map(d => {
+      const slots = verf[d.key] || [];
+      const dayHours = slots.reduce((sum, checked, i) => sum + (checked ? (SLOT_DETAILS[i]?.stunden || 0) : 0), 0);
+      const cells = [0,1,2,3].map(i => 
+        `<div class="vg-cell ${slots[i] ? 'active' : ''}" title="${SLOT_DETAILS[i].label} (${SLOT_DETAILS[i].zeit} Uhr)">${slots[i] ? '✓' : '·'}</div>`
+      ).join('');
+      const sumCell = dayHours > 0 
+        ? `<div class="vg-cell-sum">${dayHours}h</div>` 
+        : `<div class="vg-cell-sum vg-cell-sum-empty">–</div>`;
+      return `<div class="vg-day">${d.label}</div>${cells}${sumCell}`;
+    }).join('');
+    
+    return `
+      <div class="verfuegbar-section">
+        <div class="verfuegbar-title">
+          <span>${label}</span>
+          <span class="verfuegbar-summary">${aktiveSlots} Slot${aktiveSlots !== 1 ? 's' : ''} · ca. <strong>${totalStunden}h/Woche</strong> möglich</span>
+        </div>
+        <div class="verfuegbar-grid" style="grid-template-columns: 36px repeat(4, 1fr) 50px">
+          <div class="vg-corner"></div>
+          ${slotHeaders}
+          <div class="vg-slot-label vg-slot-sum">Σ</div>
+          ${rows}
+        </div>
+      </div>
+    `;
   }
   
   let verfHtml = '';
   verfHtml += buildVerfuegbarkeitGrid('anbau', 'Anbauanlage');
   verfHtml += buildVerfuegbarkeitGrid('ausgabe', 'Ausgabe');
   verfHtml += buildVerfuegbarkeitGrid('allgemein', 'Allgemein');
+  
+  // Gesamt-Wochenstunden berechnen (Summe ueber alle Standorte)
+  let gesamtStunden = 0;
+  let gesamtSlots = 0;
+  ['anbau', 'ausgabe', 'allgemein'].forEach(standort => {
+    const verf = b.verfuegbarkeit && b.verfuegbarkeit[standort];
+    if (!verf) return;
+    WOCHENTAGE.forEach(d => {
+      (verf[d.key] || []).forEach((checked, i) => {
+        if (checked) {
+          gesamtStunden += SLOT_DETAILS[i]?.stunden || 4;
+          gesamtSlots++;
+        }
+      });
+    });
+  });
+  const gesamtSummaryHtml = gesamtSlots > 0 
+    ? `<div class="verfuegbar-gesamt"><span class="vg-icon">⏱</span> Gesamt-Verfügbarkeit: <strong>${gesamtStunden}h/Woche</strong> in ${gesamtSlots} Slot${gesamtSlots !== 1 ? 's' : ''}</div>` 
+    : '';
   
   const sprachenList = b.sprachen ? Object.entries(b.sprachen).filter(([k, v]) => v && v !== '').map(([k, v]) => `<span class="tag">${SPRACHEN_LABELS[k] || k}: ${SPRACH_LEVEL[v] || v}</span>`).join('') : '';
   
@@ -530,6 +636,7 @@ async function selectBewerbung(id) {
         <button class="action-btn warteliste" onclick="setStatus('${b.id}', 'warteliste')">Warteliste</button>
         <button class="action-btn angenommen" onclick="setStatus('${b.id}', 'angenommen')">Annehmen</button>
         <button class="action-btn abgelehnt" onclick="setStatus('${b.id}', 'abgelehnt')">Ablehnen</button>
+        ${userContext.ist_admin ? `<button class="action-btn loeschen" onclick="deleteBewerbung('${b.id}')" title="Bewerbung dauerhaft löschen (DSGVO)">🗑 Löschen</button>` : ''}
       </div>
     </div>
     
@@ -601,7 +708,7 @@ async function selectBewerbung(id) {
       </div>
       ${b.sperrzeiten ? `<div class="field"><div class="field-label">Sperrzeiten</div><div class="field-value">${fmt(b.sperrzeiten)}</div></div>` : ''}
       ${b.wunsch_zeiten ? `<div class="field" style="margin-top:8px"><div class="field-label">Wunsch-Zeiten (Notiz)</div><div class="field-value">${fmt(b.wunsch_zeiten)}</div></div>` : ''}
-      ${verfHtml ? `<div style="margin-top:14px">${verfHtml}</div>` : ''}
+      ${verfHtml ? `<div style="margin-top:14px">${gesamtSummaryHtml}${verfHtml}</div>` : ''}
     </div>
     
     <div class="section">
@@ -681,15 +788,28 @@ async function selectBewerbung(id) {
     <div class="section">
       <div class="section-title">Anhänge (${anhaenge.length})</div>
       <div class="anhang-list">
-        ${anhaenge.map(a => `
+        ${anhaenge.map((a, idx) => {
+          const filename = a.original_dateiname || a.dateiname || 'datei';
+          const ext = (filename.split('.').pop() || '').toLowerCase();
+          const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic'].includes(ext);
+          const isPdf = ext === 'pdf';
+          const previewable = isImage || isPdf;
+          const storagePath = a.storage_pfad || a.pfad || '';
+          const sizeKb = a.groesse_bytes ? Math.round(a.groesse_bytes/1024) + ' KB' : '';
+          const icon = isImage ? '🖼️' : isPdf ? '📄' : '📎';
+          
+          return `
           <div class="anhang-item">
-            <div>
-              <div class="name">${escapeHtml(a.original_dateiname || a.dateiname || '–')}</div>
-              <div class="meta">${escapeHtml(a.kategorie || '')} · ${a.groesse_bytes ? Math.round(a.groesse_bytes/1024) + ' KB' : ''}</div>
+            <div class="anhang-info">
+              <div class="name">${icon} ${escapeHtml(filename)}</div>
+              <div class="meta">${escapeHtml(a.kategorie || '')}${sizeKb ? ' · ' + sizeKb : ''}${previewable ? ' · klickbar' : ''}</div>
             </div>
-            <button class="anhang-link" onclick="downloadAnhang('${a.storage_pfad || a.pfad || ''}', '${escapeHtml(a.original_dateiname || 'datei')}')">Herunterladen</button>
+            <div class="anhang-actions">
+              ${previewable ? `<button class="anhang-link" onclick="previewAnhang('${storagePath}', '${escapeHtml(filename)}', '${isPdf ? 'pdf' : 'image'}')">👁 Ansehen</button>` : ''}
+              <button class="anhang-link" onclick="downloadAnhang('${storagePath}', '${escapeHtml(filename)}')">⬇ Download</button>
+            </div>
           </div>
-        `).join('')}
+        `;}).join('')}
       </div>
     </div>
     ` : ''}
@@ -895,6 +1015,65 @@ function exportCsv() {
   toast(`${filtered.length} Bewerbungen exportiert`);
 }
 
+// Bewerbung loeschen (Hard-Delete, nur Admin, DSGVO-konform)
+async function deleteBewerbung(id) {
+  if (!userContext || !userContext.ist_admin) {
+    toast('Nur Administratoren können Bewerbungen löschen', true);
+    return;
+  }
+  
+  const b = bewerbungen.find(x => x.id === id);
+  if (!b) return;
+  
+  // 1. Bestätigung: Bewerbungs-Daten
+  const name = `${b.vorname || ''} ${b.nachname || ''}`.trim() || '(ohne Namen)';
+  const c1 = confirm(
+    `⚠️ Bewerbung dauerhaft löschen?\n\n` +
+    `${name}\n` +
+    `Eingegangen: ${fmtDate(b.eingegangen_am)}\n` +
+    `Status: ${STATUS_LABELS[b.status] || b.status}\n\n` +
+    `Diese Aktion ist NICHT rückgängig zu machen.\n` +
+    `Alle Bewerbungsdaten und Anhänge werden aus dem System entfernt.\n\n` +
+    `Wirklich fortfahren?`
+  );
+  if (!c1) return;
+  
+  // 2. Bestätigung: Tippen
+  const c2 = prompt(
+    `Letzte Bestätigung:\n\nTippe LÖSCHEN (in Großbuchstaben) und drücke OK, um die Bewerbung von ${name} endgültig zu löschen.`
+  );
+  if (c2 !== 'LÖSCHEN') {
+    toast('Löschung abgebrochen', false);
+    return;
+  }
+  
+  try {
+    // Storage-Anhänge zuerst löschen
+    const { data: anh } = await sb.from('csc_bewerbung_anhaenge').select('storage_pfad').eq('bewerbung_id', id);
+    if (anh && anh.length > 0) {
+      const paths = anh.map(a => a.storage_pfad).filter(Boolean);
+      if (paths.length > 0) {
+        const { error: storageErr } = await sb.storage.from('bewerbung-anhaenge').remove(paths);
+        if (storageErr) console.warn('Storage-Löschung teilweise fehlgeschlagen:', storageErr);
+      }
+    }
+    
+    // DB-Eintrag löschen (CASCADE löscht zugehörige anhaenge-Einträge)
+    const { error } = await sb.from('csc_bewerbungen').delete().eq('id', id);
+    if (error) throw error;
+    
+    // Aus lokalem State entfernen
+    bewerbungen = bewerbungen.filter(x => x.id !== id);
+    selectedId = null;
+    document.getElementById('detail-panel').innerHTML = '<div class="empty-state">Bewerbung links auswählen</div>';
+    renderList();
+    renderStats();
+    toast(`Bewerbung von ${name} wurde gelöscht`);
+  } catch (e) {
+    toast('Löschfehler: ' + e.message, true);
+  }
+}
+
 async function downloadAnhang(storagePfad, filename) {
   if (!storagePfad) { toast('Kein Storage-Pfad hinterlegt', true); return; }
   try {
@@ -903,6 +1082,53 @@ async function downloadAnhang(storagePfad, filename) {
     const a = document.createElement('a'); a.href = data.signedUrl; a.download = filename; a.click();
   } catch (e) { toast('Download-Fehler: ' + e.message, true); }
 }
+
+async function previewAnhang(storagePfad, filename, type) {
+  if (!storagePfad) { toast('Kein Storage-Pfad hinterlegt', true); return; }
+  
+  // Modal anzeigen mit Loading-State
+  const overlay = document.getElementById('preview-overlay');
+  const titleEl = document.getElementById('preview-title');
+  const bodyEl = document.getElementById('preview-body');
+  
+  if (!overlay) { toast('Vorschau-Modal nicht gefunden', true); return; }
+  
+  titleEl.textContent = filename;
+  bodyEl.innerHTML = '<div class="preview-loading">⏳ Lade Vorschau...</div>';
+  overlay.classList.add('show');
+  
+  try {
+    // Signed URL holen (5 Min gueltig fuer Vorschau)
+    const { data, error } = await sb.storage.from('bewerbung-anhaenge').createSignedUrl(storagePfad, 300);
+    if (error) throw error;
+    const url = data.signedUrl;
+    
+    if (type === 'image') {
+      bodyEl.innerHTML = `<img src="${url}" alt="${escapeHtml(filename)}">`;
+    } else if (type === 'pdf') {
+      bodyEl.innerHTML = `<iframe src="${url}#toolbar=1" title="${escapeHtml(filename)}"></iframe>`;
+    } else {
+      bodyEl.innerHTML = `<div class="preview-loading">Vorschau f&uuml;r diesen Dateityp nicht m&ouml;glich. Bitte herunterladen.</div>`;
+    }
+  } catch (e) {
+    bodyEl.innerHTML = `<div class="preview-loading" style="color:var(--red)">Fehler: ${escapeHtml(e.message)}</div>`;
+  }
+}
+
+function closePreview() {
+  const overlay = document.getElementById('preview-overlay');
+  if (overlay) {
+    overlay.classList.remove('show');
+    // Body leeren damit Videos/PDFs nicht im Hintergrund weiterlaufen
+    const bodyEl = document.getElementById('preview-body');
+    if (bodyEl) bodyEl.innerHTML = '';
+  }
+}
+
+// ESC-Taste schliesst Vorschau
+window.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closePreview();
+});
 
 function escapeHtml(s) {
   if (s == null) return '';

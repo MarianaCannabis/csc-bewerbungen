@@ -548,13 +548,17 @@ async function selectBewerbung(id) {
       <div class="section-title">Kontakt &amp; Person</div>
       <div class="field-grid">
         <div class="field"><div class="field-label">E-Mail</div><div class="field-value"><a href="mailto:${escapeHtml(b.email || '')}" style="color:var(--blue);text-decoration:none">${fmt(b.email)}</a></div></div>
-        <div class="field"><div class="field-label">Telefon</div><div class="field-value">${fmt(b.telefon)}</div></div>
+        <div class="field"><div class="field-label">Telefon</div><div class="field-value"><a href="tel:${escapeHtml(b.telefon || '')}" style="color:var(--blue);text-decoration:none">${fmt(b.telefon)}</a></div></div>
         <div class="field"><div class="field-label">Geburtsdatum</div><div class="field-value">${fmtDate(b.geburtsdatum)}</div></div>
+        <div class="field"><div class="field-label">Geburtsort</div><div class="field-value">${fmt(b.geburtsort)}</div></div>
+        <div class="field"><div class="field-label">Staatsangehörigkeit</div><div class="field-value">${fmt(b.staatsangehoerigkeit)}</div></div>
         <div class="field"><div class="field-label">Adresse</div><div class="field-value">${fmt(adresseStr)}</div></div>
         <div class="field"><div class="field-label">Wohnsitz Deutschland (6 Mon.)</div><div class="field-value">${fmtBool(b.wohnsitz_d_6_monate)}</div></div>
         <div class="field"><div class="field-label">Volljährig</div><div class="field-value">${fmtBool(b.ist_volljaehrig)}</div></div>
+        <div class="field"><div class="field-label">Nicht-EU-Bürger</div><div class="field-value">${fmtBool(b.ist_nicht_eu)}</div></div>
         ${b.arbeitserlaubnis !== null && b.arbeitserlaubnis !== undefined ? `<div class="field"><div class="field-label">Arbeitserlaubnis</div><div class="field-value">${fmtBool(b.arbeitserlaubnis)}</div></div>` : ''}
-        ${b.ist_mitglied ? `<div class="field"><div class="field-label">CSC-Mitglied</div><div class="field-value">${fmt(b.ist_mitglied)}</div></div>` : ''}
+        <div class="field"><div class="field-label">CSC-Mitglied</div><div class="field-value">${fmt(b.ist_mitglied)}</div></div>
+        <div class="field"><div class="field-label">Sprache des Bogens</div><div class="field-value">${(b.sprache || 'de').toUpperCase()}</div></div>
       </div>
     </div>
     
@@ -562,78 +566,101 @@ async function selectBewerbung(id) {
       <div class="section-title">Bewerbung &amp; Rolle</div>
       <div class="field"><div class="field-label">Rolle(n)</div><div class="tag-list">${fmtRoles(b.rollen)}</div></div>
       <div class="field" style="margin-top:12px"><div class="field-label">Anstellungsform(en)</div><div class="tag-list">${fmtList(b.anstellungsformen)}</div></div>
-      ${b.standort_wunsch ? `<div class="field" style="margin-top:12px"><div class="field-label">Standort-Wunsch</div><div class="field-value">${fmt(b.standort_wunsch)}</div></div>` : ''}
+      ${Array.isArray(b.rollen_standorte) && b.rollen_standorte.length ? `<div class="field" style="margin-top:12px"><div class="field-label">Rollen-Standorte</div><div class="tag-list">${b.rollen_standorte.map(s => `<span class="tag">${escapeHtml(s)}</span>`).join('')}</div></div>` : ''}
+      ${b.standort_konflikt ? `<div class="field" style="margin-top:12px"><div class="field-label" style="color:var(--orange)">⚠ Standort-Konflikt</div><div class="field-value">Bewerber hat Rollen aus Anbau UND Ausgabe gewählt — Konflikt: ${fmtBool(b.standort_konflikt)}, bestätigt: ${fmtBool(b.bestaetigt_zwei_standorte)}</div></div>` : ''}
+      ${b.motivation ? `<div class="field" style="margin-top:12px"><div class="field-label">Motivation</div><div class="field-value" style="white-space:pre-wrap;background:var(--bg-card);padding:12px;border-radius:6px;border:1px solid var(--border);margin-top:4px">${escapeHtml(b.motivation)}</div></div>` : ''}
     </div>
     
     <div class="section">
       <div class="section-title">Verfügbarkeit</div>
       <div class="field-grid" style="margin-bottom:14px">
         <div class="field"><div class="field-label">Wunsch-Stunden / Woche</div><div class="field-value">${b.wunsch_stunden_min || '?'}–${b.wunsch_stunden_max || '?'} Std.</div></div>
-        <div class="field"><div class="field-label">Frühester Einstieg</div><div class="field-value">${fmtDate(b.eintritt_fruehestens || b.fruehester_start)}</div></div>
+        <div class="field"><div class="field-label">Frühester Einstieg</div><div class="field-value">${fmtDate(b.eintritt_fruehestens)}</div></div>
         <div class="field"><div class="field-label">Kündigungsfrist</div><div class="field-value">${fmt(b.kuendigungsfrist)}</div></div>
         ${anfahrtAusgabe ? `<div class="field"><div class="field-label">Max. Anfahrt Ausgabe</div><div class="field-value">${escapeHtml(anfahrtAusgabe)}</div></div>` : ''}
         ${anfahrtAnbau ? `<div class="field"><div class="field-label">Max. Anfahrt Anbau</div><div class="field-value">${escapeHtml(anfahrtAnbau)}</div></div>` : ''}
         <div class="field"><div class="field-label">Wochenende möglich</div><div class="field-value">${fmtBool(b.bereit_we)}</div></div>
         <div class="field"><div class="field-label">Feiertag möglich</div><div class="field-value">${fmtBool(b.bereit_feiertag)}</div></div>
         <div class="field"><div class="field-label">Nacht möglich</div><div class="field-value">${fmtBool(b.bereit_nacht)}</div></div>
-        <div class="field"><div class="field-label">Jobticket gewünscht</div><div class="field-value">${fmtBool(b.jobticket)}</div></div>
+        <div class="field"><div class="field-label">Jobticket gewünscht</div><div class="field-value">${fmt(b.jobticket)}</div></div>
         <div class="field"><div class="field-label">Eigenes Fahrzeug</div><div class="field-value">${fmtBool(b.eigenes_fahrzeug)}</div></div>
-        <div class="field"><div class="field-label">Führerschein</div><div class="field-value">${fmtBool(b.fuehrerschein)}</div></div>
-        <div class="field"><div class="field-label">Probearbeit möglich</div><div class="field-value">${fmtBool(b.probearbeit_bereit || b.probearbeit)}</div></div>
+        <div class="field"><div class="field-label">Führerschein</div><div class="field-value">${Array.isArray(b.fuehrerschein) && b.fuehrerschein.length ? b.fuehrerschein.map(f => `<span class="tag">${escapeHtml(f)}</span>`).join(' ') : fmtBool(b.fuehrerschein)}</div></div>
       </div>
       ${b.sperrzeiten ? `<div class="field"><div class="field-label">Sperrzeiten</div><div class="field-value">${fmt(b.sperrzeiten)}</div></div>` : ''}
       ${b.wunsch_zeiten ? `<div class="field" style="margin-top:8px"><div class="field-label">Wunsch-Zeiten (Notiz)</div><div class="field-value">${fmt(b.wunsch_zeiten)}</div></div>` : ''}
       ${verfHtml ? `<div style="margin-top:14px">${verfHtml}</div>` : ''}
     </div>
     
-    ${(b.bildungsabschluss || b.letzte_taetigkeit || b.vorerfahrung || sprachenList || softSkillsHtml) ? `
+    <div class="section">
+      <div class="section-title">Probearbeit</div>
+      <div class="field-grid">
+        <div class="field"><div class="field-label">Bereit für Probearbeit</div><div class="field-value">${fmtBool(b.probearbeit_bereit)}</div></div>
+        ${b.probearbeit_dauer ? `<div class="field"><div class="field-label">Dauer</div><div class="field-value">${fmt(b.probearbeit_dauer)}</div></div>` : ''}
+        ${Array.isArray(b.probearbeit_orte) && b.probearbeit_orte.length ? `<div class="field" style="grid-column:1/-1"><div class="field-label">Mögliche Orte für Probearbeit</div><div class="tag-list">${b.probearbeit_orte.map(o => `<span class="tag">${escapeHtml(o)}</span>`).join('')}</div></div>` : ''}
+        ${b.probearbeit_anmerkung ? `<div class="field" style="grid-column:1/-1"><div class="field-label">Anmerkung Probearbeit</div><div class="field-value" style="white-space:pre-wrap">${escapeHtml(b.probearbeit_anmerkung)}</div></div>` : ''}
+      </div>
+    </div>
+    
     <div class="section">
       <div class="section-title">Qualifikationen &amp; Erfahrung</div>
       <div class="field-grid" style="margin-bottom:14px">
-        ${b.bildungsabschluss ? `<div class="field"><div class="field-label">Bildungsabschluss</div><div class="field-value">${fmt(b.bildungsabschluss)}</div></div>` : ''}
-        ${b.letzte_taetigkeit ? `<div class="field"><div class="field-label">Letzte Tätigkeit</div><div class="field-value">${fmt(b.letzte_taetigkeit)}</div></div>` : ''}
+        <div class="field"><div class="field-label">Bildungsabschluss</div><div class="field-value">${fmt(b.bildungsabschluss)}</div></div>
+        <div class="field"><div class="field-label">Letzte Tätigkeit</div><div class="field-value">${fmt(b.letzte_taetigkeit)}</div></div>
       </div>
-      ${b.vorerfahrung ? `<div class="field" style="margin-bottom:14px"><div class="field-label">Vorerfahrung</div><div class="field-value" style="white-space:pre-wrap">${escapeHtml(b.vorerfahrung)}</div></div>` : ''}
+      ${b.vorerfahrung ? `<div class="field" style="margin-bottom:14px"><div class="field-label">Vorerfahrung</div><div class="field-value" style="white-space:pre-wrap;background:var(--bg-card);padding:12px;border-radius:6px;border:1px solid var(--border);margin-top:4px">${escapeHtml(b.vorerfahrung)}</div></div>` : ''}
       ${sprachenList ? `<div class="field" style="margin-bottom:14px"><div class="field-label">Sprachen</div><div class="tag-list">${sprachenList}</div></div>` : ''}
-      ${softSkillsHtml ? `<div><div class="field-label" style="margin-bottom:8px">Soft Skills (Selbsteinschätzung)</div>${softSkillsHtml}</div>` : ''}
+      ${softSkillsHtml ? `<div><div class="field-label" style="margin-bottom:8px">Soft Skills (Selbsteinschätzung 1-5)</div>${softSkillsHtml}</div>` : ''}
     </div>
-    ` : ''}
     
-    ${(b.praevention_sachkunde || b.sicherheit_nachweis !== null) ? `
     <div class="section">
-      <div class="section-title">Nachweise</div>
+      <div class="section-title">Nachweise &amp; Sachkunde</div>
       <div class="field-grid">
-        ${b.praevention_sachkunde ? `<div class="field"><div class="field-label">Präventions-Sachkunde</div><div class="field-value">${fmt(b.praevention_sachkunde)}</div></div>` : ''}
-        ${b.sicherheit_nachweis !== null && b.sicherheit_nachweis !== undefined ? `<div class="field"><div class="field-label">Sicherheits-Nachweis</div><div class="field-value">${fmtBool(b.sicherheit_nachweis)}</div></div>` : ''}
+        <div class="field"><div class="field-label">Präventions-Sachkunde</div><div class="field-value">${fmt(b.praevention_sachkunde)}</div></div>
+        <div class="field"><div class="field-label">Sicherheits-Nachweis</div><div class="field-value">${b.sicherheit_nachweis === null || b.sicherheit_nachweis === undefined ? '<span class="empty">–</span>' : fmtBool(b.sicherheit_nachweis)}</div></div>
+        <div class="field"><div class="field-label">Sucht-relevant</div><div class="field-value">${fmt(b.sucht_relevant)}</div></div>
+        ${b.sucht_details ? `<div class="field" style="grid-column:1/-1"><div class="field-label">Details zu Sucht</div><div class="field-value" style="white-space:pre-wrap">${escapeHtml(b.sucht_details)}</div></div>` : ''}
       </div>
     </div>
-    ` : ''}
     
-    ${b.schwerbehinderung ? `
+    ${b.schwerbehinderung && b.schwerbehinderung !== 'nein' ? `
     <div class="section">
       <div class="section-title">Schwerbehinderung</div>
       <div class="field-grid">
-        <div class="field"><div class="field-label">GdB</div><div class="field-value">${fmt(b.schwerbehinderung_gdb)}</div></div>
+        <div class="field"><div class="field-label">Status</div><div class="field-value">${fmt(b.schwerbehinderung)}</div></div>
+        <div class="field"><div class="field-label">GdB</div><div class="field-value">${b.schwerbehinderung_gdb ? escapeHtml(String(b.schwerbehinderung_gdb)) : '<span class="empty">–</span>'}</div></div>
         <div class="field"><div class="field-label">Einschränkungen</div><div class="field-value">${fmt(b.schwerbehinderung_einschr)}</div></div>
-        <div class="field"><div class="field-label">Anpassungen gewünscht</div><div class="field-value">${fmt(b.schwerbehinderung_anpassungen)}</div></div>
+        <div class="field" style="grid-column:1/-1"><div class="field-label">Anpassungen gewünscht</div><div class="field-value">${fmt(b.schwerbehinderung_anpassungen)}</div></div>
       </div>
     </div>
     ` : ''}
     
-    ${b.iban ? `
     <div class="section">
-      <div class="section-title">Bankverbindung</div>
+      <div class="section-title">Personalien für Anstellung</div>
       <div class="field-grid">
+        <div class="field"><div class="field-label">Steuer-ID</div><div class="field-value mono">${fmt(b.steuer_id)}</div></div>
+        <div class="field"><div class="field-label">Sozialversicherungs-Nr.</div><div class="field-value mono">${fmt(b.sv_nummer)}</div></div>
+        <div class="field"><div class="field-label">Krankenkasse</div><div class="field-value">${fmt(b.krankenkasse)}</div></div>
         <div class="field"><div class="field-label">IBAN</div><div class="field-value mono">${fmt(b.iban)}</div></div>
-        <div class="field"><div class="field-label">Kontoinhaber</div><div class="field-value">${fmt(b.kontoinhaber)}</div></div>
       </div>
     </div>
-    ` : ''}
     
-    ${b.motivation || b.nachricht ? `
     <div class="section">
-      <div class="section-title">Motivation / Nachricht</div>
-      <div class="field-value" style="white-space:pre-wrap;background:var(--bg-card);padding:14px;border-radius:8px;border:1px solid var(--border)">${escapeHtml(b.motivation || b.nachricht)}</div>
+      <div class="section-title">Compliance &amp; Audit</div>
+      <div class="field-grid">
+        <div class="field"><div class="field-label">DSGVO-Zustimmung</div><div class="field-value">${fmtBool(b.dsgvo_zustimmung)} ${b.dsgvo_zeitstempel ? '<span style="color:var(--tx-mute);font-size:12px"> · ' + new Date(b.dsgvo_zeitstempel).toLocaleString('de-DE') + '</span>' : ''}</div></div>
+        <div class="field"><div class="field-label">Sensible Daten — Einwilligung</div><div class="field-value">${fmtBool(b.sensible_einwilligung)}</div></div>
+        <div class="field"><div class="field-label">Letzte Aktualisierung</div><div class="field-value">${b.updated_at ? new Date(b.updated_at).toLocaleString('de-DE') : '<span class="empty">–</span>'}</div></div>
+        ${b.status_geaendert_am ? `<div class="field"><div class="field-label">Status zuletzt geändert</div><div class="field-value">${new Date(b.status_geaendert_am).toLocaleString('de-DE')}${b.status_geaendert_von ? ' · ' + escapeHtml(b.status_geaendert_von) : ''}</div></div>` : ''}
+      </div>
+    </div>
+    
+    ${(b.score_gesamt !== null && b.score_gesamt !== undefined) || (b.score_pro_rolle && Object.keys(b.score_pro_rolle).length) ? `
+    <div class="section">
+      <div class="section-title">Bewertung / Score</div>
+      <div class="field-grid">
+        ${b.score_gesamt !== null && b.score_gesamt !== undefined ? `<div class="field"><div class="field-label">Gesamt-Score</div><div class="field-value" style="font-size:20px;color:var(--green);font-weight:700">${b.score_gesamt}</div></div>` : ''}
+        ${b.score_pro_rolle && typeof b.score_pro_rolle === 'object' ? Object.entries(b.score_pro_rolle).map(([role, score]) => `<div class="field"><div class="field-label">${ROLE_LABELS[role] || role}</div><div class="field-value">${score}</div></div>`).join('') : ''}
+      </div>
     </div>
     ` : ''}
     
@@ -664,9 +691,12 @@ async function setStatus(id, newStatus) {
   const confirmed = confirm(`Status auf "${STATUS_LABELS[newStatus]}" setzen?\n\n${b.vorname} ${b.nachname}`);
   if (!confirmed) return;
   try {
+    // status_geaendert_am und status_geaendert_von werden via Trigger automatisch gesetzt
     const { error } = await sb.from('csc_bewerbungen').update({ status: newStatus }).eq('id', id);
     if (error) throw error;
-    b.status = newStatus; b.status_geaendert_am = new Date().toISOString();
+    b.status = newStatus; 
+    b.status_geaendert_am = new Date().toISOString();
+    b.status_geaendert_von = session.user.email;
     renderList(); selectBewerbung(id); renderStats();
     toast('Status auf "' + STATUS_LABELS[newStatus] + '" gesetzt');
   } catch (e) { toast('Fehler: ' + e.message, true); }
@@ -735,26 +765,43 @@ function exportCsv() {
     return;
   }
   
-  // CSV-Spalten
+  // CSV-Spalten — vollständige Bewerber-Daten für Excel/Vorstand
   const headers = [
     'Eingegangen', 'Status', 'Bewerbungs-ID', 'Verein', 'Bundesland',
     'Vorname', 'Nachname', 'E-Mail', 'Telefon',
-    'Geburtsdatum', 'PLZ', 'Stadt', 'Adresse',
-    'Rollen', 'Anstellungsform', 
-    'Stunden min', 'Stunden max', 'Frühester Einstieg',
+    'Geburtsdatum', 'Geburtsort', 'Staatsangehörigkeit',
+    'PLZ', 'Stadt', 'Straße',
+    'Wohnsitz DE 6 Mon.', 'Volljährig', 'Nicht-EU', 'Arbeitserlaubnis', 'CSC-Mitglied',
+    'Rollen', 'Anstellungsform', 'Standorte',
+    'Motivation',
+    'Stunden min', 'Stunden max', 'Frühester Einstieg', 'Kündigungsfrist',
     'Max Anfahrt Ausgabe', 'Max Anfahrt Anbau',
-    'Wochenende', 'Feiertag', 'Nacht',
-    'Bildung', 'Letzte Tätigkeit',
-    'Sachkunde', 'GdB',
-    'Notiz', 'Notiz geändert am', 'Notiz von'
+    'Wochenende', 'Feiertag', 'Nacht', 'Jobticket', 'Fahrzeug', 'Führerschein',
+    'Wunsch-Zeiten', 'Sperrzeiten',
+    'Probearbeit bereit', 'Probearbeit Dauer', 'Probearbeit Orte', 'Probearbeit Anmerkung',
+    'Bildung', 'Letzte Tätigkeit', 'Vorerfahrung',
+    'Sprachen', 'Soft-Skills',
+    'Sachkunde Prävention', 'Sicherheits-Nachweis',
+    'Sucht relevant', 'Sucht Details',
+    'Schwerbehinderung', 'GdB', 'Einschränkungen', 'Anpassungen',
+    'Steuer-ID', 'SV-Nr.', 'Krankenkasse', 'IBAN',
+    'DSGVO-Zustimmung', 'DSGVO-Zeitstempel',
+    'Notiz', 'Notiz geändert am', 'Notiz von',
+    'Status geändert am', 'Status geändert von'
   ];
   
   const rows = filtered.map(b => {
     const v = vereine[b.verein_id];
     const rollen = Array.isArray(b.rollen) ? b.rollen.map(r => ROLE_LABELS[r] || r).join('; ') : '';
     const anstellung = Array.isArray(b.anstellungsformen) ? b.anstellungsformen.join('; ') : '';
+    const standorte = Array.isArray(b.rollen_standorte) ? b.rollen_standorte.join('; ') : '';
     const anfA = b.max_anfahrt ? (ANFAHRT_LABELS_AUSGABE[String(b.max_anfahrt)] || b.max_anfahrt) : '';
     const anfB = b.max_anfahrt_anbau ? (ANFAHRT_LABELS_ANBAU[String(b.max_anfahrt_anbau)] || b.max_anfahrt_anbau) : '';
+    const fs = Array.isArray(b.fuehrerschein) ? b.fuehrerschein.join('; ') : (b.fuehrerschein === true ? 'Ja' : (b.fuehrerschein === false ? 'Nein' : ''));
+    const probeOrte = Array.isArray(b.probearbeit_orte) ? b.probearbeit_orte.join('; ') : '';
+    const sprachen = b.sprachen ? Object.entries(b.sprachen).filter(([k,v]) => v && v !== '').map(([k,v]) => (SPRACHEN_LABELS[k] || k) + ': ' + (SPRACH_LEVEL[v] || v)).join('; ') : '';
+    const softSkills = b.soft_skills ? Object.entries(b.soft_skills).filter(([k,v]) => v > 0).map(([k,v]) => (SOFT_SKILL_LABELS[k] || k) + ': ' + v + '/5').join('; ') : '';
+    
     return [
       b.eingegangen_am ? new Date(b.eingegangen_am).toLocaleDateString('de-DE') : '',
       STATUS_LABELS[b.status || 'eingegangen'] || b.status || '',
@@ -762,20 +809,43 @@ function exportCsv() {
       v?.name || '', v?.bundesland || '',
       b.vorname || '', b.nachname || '', b.email || '', b.telefon || '',
       b.geburtsdatum ? new Date(b.geburtsdatum).toLocaleDateString('de-DE') : '',
-      b.adresse?.plz || '', b.adresse?.ort || b.adresse?.stadt || '', 
-      b.adresse?.strasse || '',
-      rollen, anstellung,
+      b.geburtsort || '', b.staatsangehoerigkeit || '',
+      b.adresse?.plz || '', b.adresse?.ort || b.adresse?.stadt || '', b.adresse?.strasse || '',
+      b.wohnsitz_d_6_monate === true ? 'Ja' : (b.wohnsitz_d_6_monate === false ? 'Nein' : ''),
+      b.ist_volljaehrig === true ? 'Ja' : (b.ist_volljaehrig === false ? 'Nein' : ''),
+      b.ist_nicht_eu === true ? 'Ja' : (b.ist_nicht_eu === false ? 'Nein' : ''),
+      b.arbeitserlaubnis === true ? 'Ja' : (b.arbeitserlaubnis === false ? 'Nein' : ''),
+      b.ist_mitglied || '',
+      rollen, anstellung, standorte,
+      b.motivation || '',
       b.wunsch_stunden_min || '', b.wunsch_stunden_max || '',
-      b.eintritt_fruehestens ? new Date(b.eintritt_fruehestens).toLocaleDateString('de-DE') : (b.fruehester_start ? new Date(b.fruehester_start).toLocaleDateString('de-DE') : ''),
+      b.eintritt_fruehestens ? new Date(b.eintritt_fruehestens).toLocaleDateString('de-DE') : '',
+      b.kuendigungsfrist || '',
       anfA, anfB,
       b.bereit_we === true ? 'Ja' : (b.bereit_we === false ? 'Nein' : ''),
       b.bereit_feiertag === true ? 'Ja' : (b.bereit_feiertag === false ? 'Nein' : ''),
       b.bereit_nacht === true ? 'Ja' : (b.bereit_nacht === false ? 'Nein' : ''),
-      b.bildungsabschluss || '', b.letzte_taetigkeit || '',
-      b.praevention_sachkunde || '', b.schwerbehinderung_gdb || '',
+      b.jobticket || '',
+      b.eigenes_fahrzeug === true ? 'Ja' : (b.eigenes_fahrzeug === false ? 'Nein' : ''),
+      fs,
+      b.wunsch_zeiten || '', b.sperrzeiten || '',
+      b.probearbeit_bereit === true ? 'Ja' : (b.probearbeit_bereit === false ? 'Nein' : ''),
+      b.probearbeit_dauer || '', probeOrte, b.probearbeit_anmerkung || '',
+      b.bildungsabschluss || '', b.letzte_taetigkeit || '', b.vorerfahrung || '',
+      sprachen, softSkills,
+      b.praevention_sachkunde || '',
+      b.sicherheit_nachweis === true ? 'Ja' : (b.sicherheit_nachweis === false ? 'Nein' : ''),
+      b.sucht_relevant || '', b.sucht_details || '',
+      b.schwerbehinderung || '', b.schwerbehinderung_gdb || '',
+      b.schwerbehinderung_einschr || '', b.schwerbehinderung_anpassungen || '',
+      b.steuer_id || '', b.sv_nummer || '', b.krankenkasse || '', b.iban || '',
+      b.dsgvo_zustimmung === true ? 'Ja' : '',
+      b.dsgvo_zeitstempel ? new Date(b.dsgvo_zeitstempel).toLocaleString('de-DE') : '',
       b.vorstand_notiz || '',
       b.notiz_geaendert_am ? new Date(b.notiz_geaendert_am).toLocaleString('de-DE') : '',
-      b.notiz_geaendert_von || ''
+      b.notiz_geaendert_von || '',
+      b.status_geaendert_am ? new Date(b.status_geaendert_am).toLocaleString('de-DE') : '',
+      b.status_geaendert_von || ''
     ];
   });
   

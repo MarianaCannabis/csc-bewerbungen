@@ -1068,10 +1068,11 @@ async function deleteBewerbung(id) {
   
   // 1. Bestätigung: Bewerbungs-Daten
   const name = `${b.vorname || ''} ${b.nachname || ''}`.trim() || '(ohne Namen)';
+  const eingegangenStr = b.eingegangen_am ? new Date(b.eingegangen_am).toLocaleDateString('de-DE') : '–';
   const c1 = confirm(
     `⚠️ Bewerbung dauerhaft löschen?\n\n` +
     `${name}\n` +
-    `Eingegangen: ${fmtDate(b.eingegangen_am)}\n` +
+    `Eingegangen: ${eingegangenStr}\n` +
     `Status: ${STATUS_LABELS[b.status] || b.status}\n\n` +
     `Diese Aktion ist NICHT rückgängig zu machen.\n` +
     `Alle Bewerbungsdaten und Anhänge werden aus dem System entfernt.\n\n` +

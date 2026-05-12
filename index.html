@@ -1363,6 +1363,10 @@ const state = {
     ist_volljaehrig: false,
     wohnsitz_d_6_monate: false,
     ist_mitglied: null,
+    mitgliedsnummer: '',
+    moechte_mitglied_werden: false,
+    terptrain_weitergeleitet_am: null,
+    terptrain_anmeldung_bestaetigt: null,
     ist_nicht_eu: false,
     arbeitserlaubnis: null,
     vorname: '',
@@ -1543,19 +1547,27 @@ async function loadVereine() {
 // ============================================================================
 // DRAFT SPEICHERN / LADEN
 // ============================================================================
+// DRAFT SPEICHERN / LADEN
+// localStorage statt sessionStorage damit der Draft auch nach Browser-Schliessen
+// erhalten bleibt — wichtig wenn Bewerber zu Terptrain wechselt und spaeter zurueckkommt.
+// Draft wird nach erfolgreichem Submit automatisch geloescht.
+// ============================================================================
 function saveDraft() {
   try {
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
       lang: state.lang,
       currentSection: state.currentSection,
-      formData: state.formData
+      formData: state.formData,
+      savedAt: new Date().toISOString()
     }));
   } catch (e) {}
 }
 
 function loadDraft() {
   try {
-    const raw = sessionStorage.getItem(STORAGE_KEY);
+    // Auch alten sessionStorage-Eintrag pruefen fuer Migration
+    let raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) raw = sessionStorage.getItem(STORAGE_KEY);
     if (!raw) return false;
     const d = JSON.parse(raw);
     if (d.lang) state.lang = d.lang;
@@ -1566,8 +1578,24 @@ function loadDraft() {
 }
 
 function clearDraft() {
-  try { sessionStorage.removeItem(STORAGE_KEY); } catch (e) {}
+  try { 
+    localStorage.removeItem(STORAGE_KEY);
+    sessionStorage.removeItem(STORAGE_KEY);
+  } catch (e) {}
 }
+
+// Tracking: Bewerber hat auf Terptrain-Link geklickt
+// Wird vom inline onClick im Bewerbungsbogen aufgerufen
+function trackTerptrainClick() {
+  state.formData.terptrain_weitergeleitet_am = new Date().toISOString();
+  saveDraft();
+  // Rueckkehr-Frage einblenden (mit kurzer Verzoegerung damit der neue Tab erst aufgeht)
+  setTimeout(() => {
+    const ret = document.getElementById('terptrain-return');
+    if (ret) ret.style.display = '';
+  }, 200);
+}
+window.trackTerptrainClick = trackTerptrainClick;
 
 // ============================================================================
 // RENDERING DER SEKTIONEN
@@ -1654,6 +1682,47 @@ function renderSection1() {
         </label>
       </div>
       <div class="error-message">${t('validation.required')}</div>
+    </div>
+
+    <!-- Mitgliedsnummer (erscheint nur wenn ja) -->
+    <div class="form-group" id="fg-mitgliedsnummer" style="display:none;">
+      <label class="form-label" for="input-mitgliedsnummer">${s.mitgliedsnummer_label}<span class="required">*</span></label>
+      <input type="text" class="form-input" id="input-mitgliedsnummer" placeholder="${s.mitgliedsnummer_placeholder}" autocomplete="off">
+      <div class="form-hint">${s.mitgliedsnummer_hint}</div>
+      <div class="error-message">${t('validation.required')}</div>
+    </div>
+
+    <!-- Terptrain-Info (erscheint nur wenn wird_mitglied) -->
+    <div class="form-group" id="fg-terptrain" style="display:none;">
+      <div style="background: var(--c-bg-soft, #f4f7ee); border-left: 4px solid var(--c-primary, #4a5a32); padding: 16px 20px; border-radius: 8px; margin-bottom: 12px;">
+        <h4 style="margin: 0 0 8px 0; color: var(--c-primary, #4a5a32); font-size: 1rem;">${s.terptrain_info_title}</h4>
+        <p style="margin: 0 0 14px 0; font-size: 0.95rem; line-height: 1.5;">${s.terptrain_info_text}</p>
+        <a href="https://app.terptrain.de/anmeldung" target="_blank" rel="noopener" 
+           id="terptrain-link"
+           class="btn btn-primary" 
+           style="display: inline-block; text-decoration: none;"
+           onclick="trackTerptrainClick()">
+          ${s.terptrain_button}
+        </a>
+      </div>
+      
+      <!-- Rückkehr-Frage (erscheint nach Klick auf Terptrain-Link) -->
+      <div id="terptrain-return" style="display:none; margin-top: 14px;">
+        <label class="form-label">${s.terptrain_back_question}</label>
+        <div class="checkbox-stack">
+          <label class="checkbox-block">
+            <input type="radio" name="terptrain_done" value="ja">
+            <span class="checkbox-label"><strong>${s.terptrain_back_yes}</strong></span>
+          </label>
+          <label class="checkbox-block">
+            <input type="radio" name="terptrain_done" value="nein">
+            <span class="checkbox-label">${s.terptrain_back_no}</span>
+          </label>
+        </div>
+        <div id="terptrain-confirmed-hint" style="display:none; margin-top: 10px; padding: 10px 14px; background: rgba(76, 175, 106, 0.12); border-radius: 6px; font-size: 0.9rem; color: var(--c-primary, #4a5a32);">
+          ✓ ${s.terptrain_confirmed_hint}
+        </div>
+      </div>
     </div>
 
     <div class="form-group" id="fg-nicht-eu">
@@ -2551,7 +2620,60 @@ function attachSection1() {
   document.querySelectorAll('input[name="mitglied"]').forEach(r => {
     r.addEventListener('change', e => {
       state.formData.ist_mitglied = e.target.value;
+      
+      // Mitgliedsnummer-Feld nur bei "ja" anzeigen
+      document.getElementById('fg-mitgliedsnummer').style.display = 
+        e.target.value === 'ja' ? '' : 'none';
+      
+      // Terptrain-Info nur bei "wird_mitglied"
+      document.getElementById('fg-terptrain').style.display = 
+        e.target.value === 'wird_mitglied' ? '' : 'none';
+      
+      // moechte_mitglied_werden Flag setzen
+      state.formData.moechte_mitglied_werden = (e.target.value === 'wird_mitglied');
+      
+      // Blocker nur bei "nein"
       document.getElementById('blocker-mitglied').classList.toggle('active', e.target.value === 'nein');
+      
+      // Bei Wechsel weg von "ja": Mitgliedsnummer löschen
+      if (e.target.value !== 'ja') {
+        state.formData.mitgliedsnummer = '';
+        const mnInput = document.getElementById('input-mitgliedsnummer');
+        if (mnInput) mnInput.value = '';
+      }
+      
+      // Bei Wechsel weg von "wird_mitglied": Terptrain-Tracking zurücksetzen
+      if (e.target.value !== 'wird_mitglied') {
+        state.formData.terptrain_weitergeleitet_am = null;
+        state.formData.terptrain_anmeldung_bestaetigt = null;
+        const ret = document.getElementById('terptrain-return');
+        if (ret) ret.style.display = 'none';
+        document.querySelectorAll('input[name="terptrain_done"]').forEach(r => r.checked = false);
+      }
+      
+      saveDraft();
+    });
+  });
+
+  // Mitgliedsnummer-Input
+  const mnInput = document.getElementById('input-mitgliedsnummer');
+  if (mnInput) {
+    mnInput.addEventListener('input', e => {
+      state.formData.mitgliedsnummer = e.target.value.trim();
+      saveDraft();
+    });
+  }
+
+  // Terptrain Rückkehr-Frage
+  document.querySelectorAll('input[name="terptrain_done"]').forEach(r => {
+    r.addEventListener('change', e => {
+      const isYes = e.target.value === 'ja';
+      state.formData.terptrain_anmeldung_bestaetigt = isYes;
+      
+      // "Super!"-Hinweis nur bei Ja
+      const hint = document.getElementById('terptrain-confirmed-hint');
+      if (hint) hint.style.display = isYes ? '' : 'none';
+      
       saveDraft();
     });
   });
@@ -3572,6 +3694,35 @@ function fillFormFromState() {
     const r = document.querySelector(`input[name="mitglied"][value="${d.ist_mitglied}"]`);
     if (r) r.checked = true;
     document.getElementById('blocker-mitglied').classList.toggle('active', d.ist_mitglied === 'nein');
+    
+    // Mitgliedsnummer-Feld einblenden + Wert setzen wenn "ja"
+    const fgMn = document.getElementById('fg-mitgliedsnummer');
+    if (fgMn) fgMn.style.display = d.ist_mitglied === 'ja' ? '' : 'none';
+    if (d.ist_mitglied === 'ja' && d.mitgliedsnummer) {
+      const mnInput = document.getElementById('input-mitgliedsnummer');
+      if (mnInput) mnInput.value = d.mitgliedsnummer;
+    }
+    
+    // Terptrain-Bereich einblenden wenn "wird_mitglied"
+    const fgTt = document.getElementById('fg-terptrain');
+    if (fgTt) fgTt.style.display = d.ist_mitglied === 'wird_mitglied' ? '' : 'none';
+    
+    // Wenn Bewerber schon zu Terptrain weitergeleitet wurde, Rueckkehr-Frage zeigen
+    if (d.ist_mitglied === 'wird_mitglied' && d.terptrain_weitergeleitet_am) {
+      const ret = document.getElementById('terptrain-return');
+      if (ret) ret.style.display = '';
+      
+      // Falls bereits beantwortet, Radio-Button wieder setzen
+      if (d.terptrain_anmeldung_bestaetigt === true) {
+        const r = document.querySelector('input[name="terptrain_done"][value="ja"]');
+        if (r) r.checked = true;
+        const hint = document.getElementById('terptrain-confirmed-hint');
+        if (hint) hint.style.display = '';
+      } else if (d.terptrain_anmeldung_bestaetigt === false) {
+        const r = document.querySelector('input[name="terptrain_done"][value="nein"]');
+        if (r) r.checked = true;
+      }
+    }
   }
   if (d.ist_nicht_eu) {
     document.getElementById('cb-nicht-eu').checked = true;
@@ -3801,6 +3952,12 @@ function validateSection(n) {
     if (!d.wohnsitz_d_6_monate) state.errors.wohnsitz = true;
     if (!d.ist_mitglied) state.errors.mitglied = true;
     else if (d.ist_mitglied === 'nein') state.errors.mitglied = true;
+    
+    // Mitgliedsnummer Pflicht wenn bereits Mitglied
+    if (d.ist_mitglied === 'ja' && (!d.mitgliedsnummer || !d.mitgliedsnummer.trim())) {
+      state.errors.mitgliedsnummer = true;
+    }
+    
     if (d.ist_nicht_eu && !d.arbeitserlaubnis) state.errors.arbeitserlaubnis = true;
   }
 
@@ -4091,6 +4248,10 @@ async function submitForm() {
     ist_volljaehrig: d.ist_volljaehrig,
     wohnsitz_d_6_monate: d.wohnsitz_d_6_monate,
     ist_mitglied: d.ist_mitglied,
+    mitgliedsnummer: d.ist_mitglied === 'ja' ? (d.mitgliedsnummer || '').trim() : null,
+    moechte_mitglied_werden: d.ist_mitglied === 'wird_mitglied',
+    terptrain_weitergeleitet_am: d.terptrain_weitergeleitet_am,
+    terptrain_anmeldung_bestaetigt: d.terptrain_anmeldung_bestaetigt,
     ist_nicht_eu: d.ist_nicht_eu,
     arbeitserlaubnis: d.ist_nicht_eu ? d.arbeitserlaubnis : null,
     rollen: d.rollen,

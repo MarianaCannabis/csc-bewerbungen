@@ -1,0 +1,248 @@
+{
+  "$schema": "Positionsbeschreibungen CSC Mariana Cannabis",
+  "stand": "2026-05-12",
+  "quelle": "Positionsbeschreibungen___1_.pdf",
+  "hinweis_anstellung_allgemein": "Alle Rollen starten ehrenamtlich. Übergang in Minijob-Anstellung ab Beginn der bezahlten Phase (erste Ausgabe bzw. erster Anbau am Standort), sofern für die Rolle vorgesehen.",
+  "positionen": {
+    "vorstand": {
+      "id": "vorstand",
+      "title": "Vorstand",
+      "subtitle": "Leitung, Verantwortung und offizielle Vertretung",
+      "icon": "🧭",
+      "kurzbeschreibung": "Als Vorstandsmitglied leitest du den Zweigverein in allen wesentlichen organisatorischen, strategischen und rechtlichen Belangen. Du vertrittst den Zweigverein nach außen und gegenüber dem Hauptverein und trägst die offizielle Verantwortung für Struktur, Organisation und die Umsetzung vereinsspezifischer Anforderungen.",
+      "aufgaben": [
+        {"titel": "Offizielle Vertretung", "beschreibung": "Du bist die rechtlich anerkannte Vertretung des Zweigvereins gegenüber den Behörden, dem Hauptverein Mariana und anderen Zweigvereinen."},
+        {"titel": "Organisation & Struktur", "beschreibung": "Planung und Koordination von Mitgliederversammlungen, Workshops, Meetings und internen Abläufen."},
+        {"titel": "Teamführung", "beschreibung": "Du strukturierst Aufgabenbereiche, verteilst Verantwortlichkeiten und sorgst für eine klare Kommunikationskette im Team."},
+        {"titel": "Entscheidungen & Umsetzung", "beschreibung": "Du bereitest Entscheidungen gemeinsam mit dem Team vor und setzt diese um."},
+        {"titel": "Mitgliederbetreuung", "beschreibung": "Ansprechpartner für Fragen, Anliegen, Konflikte und Verbesserungsvorschläge; Förderung der aktiven Einbindung aller Mitglieder."},
+        {"titel": "Koordination mit dem Hauptverein", "beschreibung": "Aktive Teilnahme an Vorstands-Calls, Absprachen, Übergaben und administrativen Prozessen."}
+      ],
+      "wichtig_zu_wissen": "Die Tätigkeit beginnt ehrenamtlich und bleibt dies bis zur ersten Ausgabe an deinem Standort. Mit wachsender Verantwortung kann sie, auf deinen Wunsch, in eine vergütete Anstellung auf Minijob-Basis übergehen. Als ehrenamtlicher Vorstand verfügst du bereits von Beginn an über vollumfängliche Vertretungsrechte gegenüber Behörden und Partnern.",
+      "geeignet_fuer": "Für Menschen mit organisatorischem Talent, Führungsstärke, Verantwortungsbewusstsein und Freude daran, Strukturen zu gestalten und Entscheidungen zu treffen.",
+      "anstellung": {
+        "start": "ehrenamtlich",
+        "uebergang_moeglich": "minijob",
+        "uebergang_ab": "erste_ausgabe",
+        "uebergang_optional": true
+      },
+      "voraussetzungen": {
+        "mindestalter": 18,
+        "fuehrungszeugnis": false,
+        "sachkunde_pflicht": false,
+        "mitgliedschaft_pflicht": true,
+        "vertretungsrechte": "vollumfaenglich_extern"
+      }
+    },
+    "stellv_vorstand": {
+      "id": "stellv_vorstand",
+      "title": "Stellvertretender Vorstand",
+      "subtitle": "Unterstützung, Koordination und interne Verantwortung",
+      "icon": "🤝",
+      "kurzbeschreibung": "Als stellvertretendes Vorstandsmitglied unterstützt du den Vorstand in allen internen Bereichen und übernimmst Verantwortung innerhalb des Vereins. Die Rolle ist rein ehrenamtlich und ohne offizielle Außenvertretungsrechte gegenüber Behörden oder externen Stellen.",
+      "aufgaben": [
+        {"titel": "Unterstützung des Vorstands", "beschreibung": "Entlastung bei organisatorischen Aufgaben, Vorbereitung von Terminen, Mitarbeit bei Projekten und Prozessen."},
+        {"titel": "Kommunikation im Team", "beschreibung": "Bindeglied zwischen Vorstand, Team und Mitgliedern; Unterstützung bei der Koordination von Aufgaben."},
+        {"titel": "Praktische Mitarbeit", "beschreibung": "Hilfe bei Veranstaltungen, Stammtischen, Mitgliederbetreuung und genereller Organisation des Vereinsalltags."},
+        {"titel": "Dokumentation & Struktur", "beschreibung": "Unterstützung bei internen Verwaltungsprozessen, z. B. Listenpflege, Absprachen, interne Planung."},
+        {"titel": "Vertretung im Team", "beschreibung": "Interne Vertretung des Vorstands, aber keine rechtliche oder offizielle Vertretung gegenüber den Behörden."}
+      ],
+      "wichtig_zu_wissen": "Diese Aufgabe ist rein ehrenamtlich und basiert auf Freiwilligkeit. Das bedeutet auch: Du kannst dich aus privaten Gründen wie Urlaub, Krankheit oder anderen Verpflichtungen jederzeit zurückziehen oder eine Pause einlegen. Flexibilität und gegenseitige Unterstützung stehen im Vordergrund.",
+      "geeignet_fuer": "Für Mitglieder, die Verantwortung übernehmen wollen, gut organisieren können und den Verein aktiv mitgestalten möchten, ohne die vollständige behördliche Verantwortung tragen zu müssen.",
+      "anstellung": {
+        "start": "ehrenamtlich",
+        "uebergang_moeglich": null,
+        "uebergang_ab": null,
+        "uebergang_optional": false
+      },
+      "voraussetzungen": {
+        "mindestalter": 18,
+        "fuehrungszeugnis": false,
+        "sachkunde_pflicht": false,
+        "mitgliedschaft_pflicht": true,
+        "vertretungsrechte": "intern_nur"
+      }
+    },
+    "ansprechperson": {
+      "id": "ansprechperson",
+      "title": "Ansprechperson",
+      "subtitle": "Die kommunikative Brücke im Verein",
+      "icon": "💬",
+      "kurzbeschreibung": "Als Ansprechperson bist du die kommunikative Brücke zwischen dem Gesamtverein Mariana und den Mitgliedern vor Ort. Du sorgst dafür, dass Informationen fließen, Fragen beantwortet werden und sich alle gut aufgehoben fühlen.",
+      "aufgaben": [
+        {"titel": "Kommunikation im Discord-Kanal", "beschreibung": "Du pflegst den lokalen Discord-Kanal und sorgst für regelmäßige Posts, damit alle Mitglieder auf dem Laufenden bleiben, ob Termine, Neuigkeiten oder wichtige Infos aus dem Verein."},
+        {"titel": "Erster Kontakt für Fragen", "beschreibung": "Du bist Ansprechperson für alle Fragen der Mitglieder und gerne auch für Interessierte. Dabei geht es vor allem darum, Informationen zu teilen oder bei Bedarf an die richtigen Stellen zu verweisen."},
+        {"titel": "Teilnahme an Ansprechpersonen-Meetings", "beschreibung": "Einmal wöchentlich (aktuell mittwochs) findet ein Meeting aller Ansprechpersonen im Discord statt. Hier tauscht ihr euch aus, klärt offene Fragen und koordiniert die nächsten Schritte. Die Teilnahme ist wichtig, kann aber bei Bedarf flexibel gehandhabt werden."},
+        {"titel": "Mariana Stammtisch", "beschreibung": "Du nimmst regelmäßig am Mariana Stammtisch teil (aktuell sonntags), um im direkten Austausch mit anderen Mitgliedern zu stehen und ein Gefühl für die Stimmung und Bedürfnisse im Verein zu bekommen."},
+        {"titel": "Organisation von Treffen", "beschreibung": "Du unterstützt bei der Organisation von Treffen über Discord, sei es durch Terminfindung, Erinnerungen oder die Koordination von Teilnehmenden."}
+      ],
+      "wichtig_zu_wissen": "Diese Aufgabe ist rein ehrenamtlich und basiert auf Freiwilligkeit. Das bedeutet auch: Du kannst dich aus privaten Gründen wie Urlaub, Krankheit oder anderen Verpflichtungen jederzeit zurückziehen oder eine Pause einlegen. Flexibilität und gegenseitige Unterstützung stehen im Vordergrund.",
+      "geeignet_fuer": "Du bist kommunikativ, magst den Austausch mit Menschen und hast Lust, aktiv zur Vernetzung im Verein beizutragen? Dann bist du hier genau richtig.",
+      "anstellung": {
+        "start": "ehrenamtlich",
+        "uebergang_moeglich": null,
+        "uebergang_ab": null,
+        "uebergang_optional": false
+      },
+      "voraussetzungen": {
+        "mindestalter": 18,
+        "fuehrungszeugnis": false,
+        "sachkunde_pflicht": false,
+        "mitgliedschaft_pflicht": true
+      }
+    },
+    "praeventionsbeauftragter": {
+      "id": "praeventionsbeauftragter",
+      "title": "Präventionsbeauftragte/r",
+      "subtitle": "Aufklärung und Unterstützung für risikominimierenden Konsum",
+      "icon": "🛡️",
+      "kurzbeschreibung": "Als Präventionsbeauftragte/r bist du die zentrale Ansprechperson für alle Fragen rund um Gesundheit, Prävention und risikominimierenden Cannabiskonsum. Du unterstützt die Mitglieder durch Information, Beratung und Aufklärung und sorgst dafür, dass Jugendschutz und verantwortungsvoller Umgang im Verein gelebt werden.",
+      "wichtiger_hinweis": "Solange vom Gesetzgeber keine präzisen Vorgaben verabschiedet werden, dient diese Tätigkeitsbeschreibung als Leitfaden. Einige Aufgabenbereiche, wie die Telefonsprechstunde oder die Betreuung bei der Cannabis-Ausgabe, sind noch nicht sofort umsetzbar und werden schrittweise eingeführt.",
+      "aufgaben": [
+        {"titel": "Anwesenheit und Beratung vor Ort", "beschreibung": "Du bist bei Cannabis-Ausgaben anwesend und/oder übernimmst Telefondienste für die Mitglieder (je nach lokalem Bedarf). Du bist Ansprechperson für Fragen rund um Konsum, Gesundheit und Prävention. Zusätzlich richtest du eine Telefonsprechstunde für die Mitglieder deines CSC-Zweigvereins ein, mindestens einmal pro Woche für mindestens eine Stunde."},
+        {"titel": "Vermittlung an RICO", "beschreibung": "Du kannst Mitglieder jederzeit an die Beratungsstelle RICO weiterleiten, insbesondere wenn sich zu viele Anfragen häufen oder du dich durch spezifische Fragestellungen überfordert fühlst. RICO steht dir und den Mitgliedern mit fachlicher Expertise zur Seite. Auch komplexe Problemstellungen können bereits nach einem Erstgespräch an RICO weitergeleitet werden. Die weitere Gesprächsführung kann auf Wunsch durch einen Mitarbeiter von RICO „gecoacht\" werden."},
+        {"titel": "Umgang mit psychischen Dispositionen", "beschreibung": "Falls bei einem Mitglied die Vermutung auf eine psychische Disposition nach ICD-10 oder ICD-11 besteht (nähere Informationen dazu erhältst du durch RICO), empfiehlst du den Betroffenen, sich an die entsprechende örtliche Fachstelle zu wenden. Auf Wunsch kannst du den Transfer zu einer geeigneten Beratungsstelle persönlich begleiten."},
+        {"titel": "Erkennung und Weiterleitung illegaler Handlungen", "beschreibung": "Du wirst in Schulungen darauf vorbereitet, illegale Handlungen zu erkennen, richtig damit umzugehen und sie weiterzuleiten. Im Ernstfall ist es wichtig, auch die Behörden in Kenntnis zu setzen. Der Verein gibt Illegalität keinen Raum und vertritt einen aktiven Jugendschutz."},
+        {"titel": "Schulungen und Fortbildungen", "beschreibung": "Du absolvierst eine gesetzlich verpflichtende Schulung der Bundeszentrale für gesundheitliche Aufklärung (BzgA), die vom Gesamtverein finanziert wird. Die Schulung dauert 2 bis 3 Tage und ist Voraussetzung für deine Tätigkeit. Zusätzlich bieten wir eigene, durch RICO zertifizierte Fortbildungen an. Die Auffrischung deiner Schulung muss einmal pro Jahr erfolgen."},
+        {"titel": "Informationsmaterial und Kampagnen", "beschreibung": "Du erhältst umfangreiches Informationsmaterial zu Jugendschutz und risikominimierendem Cannabiskonsum, in Form von Flyern, Schulungen und Socialising, zur Verfügung gestellt von RICO. Zukünftige Kampagnen erarbeiten wir gemeinsam in Workshops."},
+        {"titel": "Vernetzung und Austausch", "beschreibung": "Wir planen 1 bis 2 Treffen pro Jahr mit allen Präventionsbeauftragten. Dort werden neue Informationen geteilt, Erfahrungen ausgetauscht sowie zukünftige Fortbildungsinhalte geplant und gestaltet."}
+      ],
+      "wichtig_zu_wissen": "Die Tätigkeit beginnt ehrenamtlich und bleibt dies bis zur ersten Ausgabe an deinem Standort. Mit wachsender Verantwortung kann sie in eine vergütete Anstellung auf Minijob-Basis übergehen. Du erhältst auf Wunsch einen besonderen Mitgliederstatus, sodass du von den monatlichen Vereinsbeiträgen befreit bist, zum Beispiel bei Nicht-Konsum. Wenn du allerdings Cannabis, Stecklinge oder Samen erhalten möchtest, musst du den entsprechenden Mitgliedsbeitrag weiterhin überweisen. Natürlich kannst du dich bei Urlaub, Krankheit oder anderen privaten Verpflichtungen vertreten lassen.",
+      "geeignet_fuer": "Du bist empathisch, kommunikativ und hast ein Interesse an Gesundheitsthemen und Prävention? Du möchtest Menschen unterstützen, bist bereit, dich fortzubilden, und gehst verantwortungsvoll mit sensiblen Themen um? Du stehst hinter den Werten des Vereins (Jugendschutz, Aufklärung und Legalität)? Dann bist du als Präventionsbeauftragte/r genau richtig.",
+      "anstellung": {
+        "start": "ehrenamtlich",
+        "uebergang_moeglich": "minijob",
+        "uebergang_ab": "erste_ausgabe",
+        "uebergang_optional": false
+      },
+      "voraussetzungen": {
+        "mindestalter": 18,
+        "fuehrungszeugnis": false,
+        "sachkunde_pflicht": true,
+        "sachkunde_anbieter": "BzgA",
+        "sachkunde_dauer_tage": [2, 3],
+        "sachkunde_auffrischung": "jaehrlich",
+        "mitgliedschaft_pflicht": true,
+        "besonderer_mitgliederstatus": "beitragsbefreit_optional_bei_nicht_konsum"
+      }
+    },
+    "grower": {
+      "id": "grower",
+      "title": "Grower",
+      "subtitle": "Verantwortung für den gesamten Anbauzyklus",
+      "icon": "🌱",
+      "kurzbeschreibung": "Als Grower bist du für den gesamten Lebenszyklus der Cannabispflanze verantwortlich, vom ersten Wachstum bis zur fertigen Ernte. Du sorgst dafür, dass die Pflanzen unter optimalen Bedingungen gedeihen und am Ende ein hochwertiges Produkt für die Vereinsmitglieder entsteht. Da die genauen Arbeitsabläufe für Grower noch nicht in allen Details definiert sind, haben wir die Beschreibung bewusst allgemeiner gehalten, du hast also auch die Chance, Prozesse aktiv mitzugestalten.",
+      "arbeitsaufwand_h_woche": 8,
+      "aufgaben": [
+        {"titel": "Anbau und Pflege von Cannabispflanzen", "beschreibung": "Du begleitest den gesamten Anbauzyklus der Pflanzen, von der Keimung über die Wachstumsphase bis hin zur Blüte und Ernte. Dazu gehört die kontinuierliche Überwachung der Wachstumsbedingungen, die bedarfsgerechte Nährstoffzufuhr, die Bewässerung sowie die Schädlingsbekämpfung."},
+        {"titel": "Optimierung des Anbauprozesses", "beschreibung": "Du setzt moderne Anbautechniken und Methoden ein, um die Erträge zu maximieren und die Qualität kontinuierlich zu verbessern. Dabei optimierst du die Wachstumsumgebung in allen relevanten Bereichen, von Licht über Temperatur und Luftfeuchtigkeit bis hin zur Bodenzusammensetzung."},
+        {"titel": "Qualitätskontrolle", "beschreibung": "Du stellst sicher, dass alle Pflanzen den höchsten Qualitätsstandards entsprechen. Dazu führst du regelmäßige Kontrollen und Tests durch, um die Gesundheit und Qualität der Pflanzen jederzeit zu gewährleisten."},
+        {"titel": "Ernte und Nachbearbeitung", "beschreibung": "Du planst und führst die Ernte durch und kümmerst dich um die anschließende Verarbeitung der Pflanzen. Dazu gehören die Trocknung, Aushärtung und Trimmung."},
+        {"titel": "Dokumentation", "beschreibung": "Du führst sorgfältige Aufzeichnungen über alle Anbauprozesse und -ergebnisse, von den einzelnen Wachstumsphasen über die Erträge bis hin zu den verwendeten Methoden. Dabei stellst du sicher, dass alle gesetzlichen Anforderungen an Anbau und Dokumentation eingehalten werden."},
+        {"titel": "Teamarbeit", "beschreibung": "Du arbeitest eng mit anderen Vereinsmitgliedern zusammen, insbesondere mit dem Qualitätsmanagement und dem Head-Grower."}
+      ],
+      "wichtig_zu_wissen": "Die Tätigkeit beginnt ehrenamtlich und bleibt dies bis zum Beginn des ersten Anbaus für deinen Standort. Ab dann wird sie in eine vergütete Anstellung auf Minijob-Basis übergehen. Der Vorstand deines Standortes kann aufgrund der besonderen Verantwortung dieser Position ein Führungszeugnis von dir verlangen.",
+      "geeignet_fuer": "Du hast Freude an der Arbeit mit Pflanzen, bist bereit, Verantwortung zu übernehmen und möchtest aktiv zur Qualität des Vereins beitragen? Dann bist du als Grower genau richtig.",
+      "voraussetzungen_liste": [
+        "Mindestalter 21 Jahre",
+        "Motiviert und zuverlässig: Du arbeitest selbstständig und gewissenhaft",
+        "Mobil: Du kannst die Anbaulocation regelmäßig erreichen",
+        "Sauberes Führungszeugnis (erforderlich aufgrund der gesetzlichen Vorgaben)"
+      ],
+      "anstellung": {
+        "start": "ehrenamtlich",
+        "uebergang_moeglich": "minijob",
+        "uebergang_ab": "erster_anbau",
+        "uebergang_optional": false
+      },
+      "voraussetzungen": {
+        "mindestalter": 21,
+        "fuehrungszeugnis": true,
+        "sachkunde_pflicht": false,
+        "mitgliedschaft_pflicht": true,
+        "mobilitaet_pflicht": true
+      }
+    },
+    "ausgabe": {
+      "id": "ausgabe",
+      "title": "Ausgabe",
+      "subtitle": "Verantwortungsvolle Übergabe an die Mitglieder",
+      "icon": "📦",
+      "kurzbeschreibung": "In der Ausgabe bist du die zentrale Person, die dafür sorgt, dass die Ernte sicher, korrekt und nach allen gesetzlichen Vorgaben an die Mitglieder ausgegeben wird. Du trägst Verantwortung für einen reibungslosen Ablauf und die gewissenhafte Dokumentation aller Vorgänge.",
+      "aufgaben": [
+        {"titel": "Ausgabe an Mitglieder", "beschreibung": "Du übernimmst die direkte Ausgabe der Ernte an die berechtigten Vereinsmitglieder. Dabei achtest du darauf, dass alle gesetzlichen Vorgaben strikt eingehalten werden, von Mengenbegrenzungen über Identitätsprüfung bis hin zu den vorgeschriebenen Abgabezeiten und -bedingungen. Du sorgst für einen respektvollen und professionellen Umgang mit den Mitgliedern und bist während der Ausgabe die erste Ansprechperson vor Ort."},
+        {"titel": "Dokumentation der ausgegebenen Mengen", "beschreibung": "Eine zentrale Aufgabe ist die sorgfältige und lückenlose Dokumentation aller ausgegebenen Mengen. Du führst Protokoll darüber, wer wann welche Menge erhalten hat, und stellst sicher, dass alle Daten korrekt erfasst und archiviert werden. Diese Dokumentation ist gesetzlich vorgeschrieben und dient dem Schutz des Vereins."},
+        {"titel": "Einhaltung der gesetzlichen Vorgaben", "beschreibung": "Du bist mit den aktuellen gesetzlichen Regelungen vertraut und setzt diese konsequent um. Dazu gehört unter anderem die Überprüfung der Mitgliedschaft, die Einhaltung von Höchstmengen und die Sicherstellung, dass alle Vorgaben des Konsumcannabisgesetzes (KCanG) eingehalten werden."}
+      ],
+      "wichtig_zu_wissen": "Die Tätigkeit beginnt ehrenamtlich und bleibt dies bis zum Beginn der ersten Ausgabe für deinen Standort. Ab dann wird sie in eine vergütete Anstellung auf Minijob-Basis übergehen. Der Vorstand deines Standortes kann aufgrund der besonderen Verantwortung dieser Position ein Führungszeugnis von dir verlangen.",
+      "geeignet_fuer": "Du arbeitest gewissenhaft und zuverlässig, hast ein Auge fürs Detail und gehst verantwortungsvoll mit sensiblen Aufgaben um? Du bleibst auch in stressigen Situationen ruhig und freundlich? Dann bist du in der Ausgabe genau richtig.",
+      "anstellung": {
+        "start": "ehrenamtlich",
+        "uebergang_moeglich": "minijob",
+        "uebergang_ab": "erste_ausgabe",
+        "uebergang_optional": false
+      },
+      "voraussetzungen": {
+        "mindestalter": 18,
+        "fuehrungszeugnis": "moeglich",
+        "sachkunde_pflicht": false,
+        "mitgliedschaft_pflicht": true
+      }
+    },
+    "springer_grow": {
+      "id": "springer_grow",
+      "title": "Springer Grow",
+      "subtitle": "Flexible Unterstützung im Anbaubereich",
+      "icon": "🌿",
+      "kurzbeschreibung": "Als Springer im Grow-Bereich bist du flexibel einsetzbar, sobald im Anbau Unterstützung benötigt wird. Du übernimmst Aufgaben je nach Bedarf und unterstützt das Anbauteam aktiv bei allen notwendigen Arbeiten.",
+      "aufgaben": [
+        {"titel": "Pflege der Pflanzen", "beschreibung": "Gießen, Schädlingskontrolle"},
+        {"titel": "Unterstützung bei Ernteprozessen", "beschreibung": "Mithilfe bei Ernte, Trocknung, Trimmung"},
+        {"titel": "Vorbereitung und Reinigung", "beschreibung": "Vorbereitung, Reinigung und Organisation der Arbeitsbereiche"},
+        {"titel": "Dokumentation", "beschreibung": "Dokumentation der durchgeführten Maßnahmen"},
+        {"titel": "Transport und Logistik", "beschreibung": "Unterstützung bei Transport und Logistik innerhalb des Anbaubereichs"}
+      ],
+      "wichtig_zu_wissen": "Die Tätigkeit beginnt ehrenamtlich und bleibt dies bis zum Beginn des ersten Anbaus für deinen Standort. Ab dann wird sie in eine vergütete Anstellung auf Minijob-Basis übergehen. Der Vorstand deines Standortes kann aufgrund der besonderen Verantwortung dieser Position ein Führungszeugnis von dir verlangen.",
+      "geeignet_fuer": "Du bist flexibel, zuverlässig und motiviert, unterschiedliche Aufgaben im Anbau zu übernehmen? Du möchtest aktiv zur Qualität und Effizienz des Grow-Bereichs beitragen? Dann bist du als Springer im Grow-Bereich genau richtig.",
+      "anstellung": {
+        "start": "ehrenamtlich",
+        "uebergang_moeglich": "minijob",
+        "uebergang_ab": "erster_anbau",
+        "uebergang_optional": false
+      },
+      "voraussetzungen": {
+        "mindestalter": 18,
+        "fuehrungszeugnis": "moeglich",
+        "sachkunde_pflicht": false,
+        "mitgliedschaft_pflicht": true
+      }
+    },
+    "springer_ausgabe": {
+      "id": "springer_ausgabe",
+      "title": "Springer Ausgabe",
+      "subtitle": "Flexible Unterstützung in der Ausgabestelle",
+      "icon": "🎯",
+      "kurzbeschreibung": "Als Springer in der Ausgabestelle unterstützt du das Team flexibel dort, wo gerade Bedarf ist. Du springst kurzfristig ein, übernimmst verschiedene Aufgaben und sorgst dafür, dass der Ablauf geordnet und stressfrei bleibt.",
+      "aufgaben": [
+        {"titel": "Einlass und Mitgliederkontrolle", "beschreibung": "Unterstützung bei Einlass und Mitgliederkontrolle"},
+        {"titel": "Vorbereitung der Abgabe", "beschreibung": "Vorbereitung der Abgabe und der Dokumentation"},
+        {"titel": "Protokolle", "beschreibung": "Prüfung und Ausfüllen von Protokollen, sofern erforderlich"},
+        {"titel": "Reibungsloser Ablauf", "beschreibung": "Sicherstellung eines reibungslosen Ablaufs und professioneller Betreuung der Mitglieder"}
+      ],
+      "wichtig_zu_wissen": "Die Tätigkeit beginnt ehrenamtlich und bleibt dies bis zum Beginn der ersten Ausgabe für deinen Standort. Ab dann wird sie in eine vergütete Anstellung auf Minijob-Basis übergehen. Der Vorstand deines Standortes kann aufgrund der besonderen Verantwortung dieser Position ein Führungszeugnis von dir verlangen.",
+      "geeignet_fuer": "Du bist zuverlässig, flexibel einsetzbar und hast Freude daran, das Team zu entlasten und Abläufe im Verein aktiv zu unterstützen? Dann bist du als Springer in der Ausgabestelle genau richtig.",
+      "anstellung": {
+        "start": "ehrenamtlich",
+        "uebergang_moeglich": "minijob",
+        "uebergang_ab": "erste_ausgabe",
+        "uebergang_optional": false
+      },
+      "voraussetzungen": {
+        "mindestalter": 18,
+        "fuehrungszeugnis": "moeglich",
+        "sachkunde_pflicht": false,
+        "mitgliedschaft_pflicht": true
+      }
+    }
+  }
+}

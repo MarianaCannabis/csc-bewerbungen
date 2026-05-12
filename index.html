@@ -1389,6 +1389,10 @@ const state = {
     iban: '',
     kk_name: '',
     kk_mitgl: '',
+    // Online-Profile (freiwillig) — neu in v2
+    profil_linkedin: '',
+    profil_xing: '',
+    profil_weitere: '',
     rollen: [],
     bestaetigt_zwei_standorte: false,
     motivation: '',
@@ -1430,6 +1434,8 @@ const state = {
     schwerbehinderung_gdb: '',
     schwerbehinderung_einschr: '',
     schwerbehinderung_anpassungen: '',
+    // Freitext „Willst du uns noch was mitteilen?" — neu in v2
+    mitteilung: '',
     dsgvo_zustimmung: false,
     wahrheitsgemaess: false,
     anhaenge: [],  // Array von { kategorie, file, filename, size, mimetype, uploaded: false, storage_path: null }
@@ -1878,6 +1884,26 @@ function renderSection2() {
         <input type="text" class="form-input" id="i-kk-mitgl">
       </div>
     </div>
+
+    <h3 class="section-subtitle" style="margin-top: 1.5rem;">${s.profile_heading || 'Online-Profile (freiwillig)'}</h3>
+    <p class="form-hint" style="margin-bottom: 1rem;">${s.profile_hint || 'Wenn du ein LinkedIn-, Xing- oder anderes berufliches Profil hast, kannst du es hier verlinken. Wir nutzen die Angaben nur, um deinen beruflichen Werdegang besser einordnen zu können.'}</p>
+
+    <div class="field-grid cols-2">
+      <div class="form-group">
+        <label class="form-label">${s.profil_linkedin_label || 'LinkedIn-Profil'}</label>
+        <input type="url" class="form-input" id="i-profil-linkedin" placeholder="${s.profil_linkedin_placeholder || 'https://www.linkedin.com/in/...'}" inputmode="url" autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label class="form-label">${s.profil_xing_label || 'Xing-Profil'}</label>
+        <input type="url" class="form-input" id="i-profil-xing" placeholder="${s.profil_xing_placeholder || 'https://www.xing.com/profile/...'}" inputmode="url" autocomplete="off">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">${s.profil_weitere_label || 'Weitere Profile / Webseite'}</label>
+      <input type="text" class="form-input" id="i-profil-weitere" placeholder="${s.profil_weitere_placeholder || 'z. B. GitHub, persönliche Webseite, Instagram-Business, …'}" autocomplete="off">
+      <p class="form-hint" style="margin-top: 0.4rem;">${s.profil_weitere_hint || 'Eine URL oder mehrere durch Komma getrennt.'}</p>
+    </div>
   `;
 }
 
@@ -2066,6 +2092,32 @@ function renderSection4() {
   `;
 }
 
+// Standort-spezifische Slot-Definitionen — wird auch im Dashboard verwendet (identisch halten!)
+// Index 0..4 muss konsistent zur DB-Struktur (boolean[5]) bleiben
+const SLOTS_BY_STANDORT = {
+  anbau: [
+    { key: 'morgen',     label: 'Morgen',     zeit: '06–10', stunden: 4 },
+    { key: 'mittag',     label: 'Mittag',     zeit: '10–14', stunden: 4 },
+    { key: 'nachmittag', label: 'Nachmittag', zeit: '14–18', stunden: 4 },
+    { key: 'abend',      label: 'Abend',      zeit: '18–22', stunden: 4 },
+    { key: 'nacht',      label: 'Nacht',      zeit: '22–06', stunden: 8 }
+  ],
+  ausgabe: [
+    { key: 'frueh',      label: 'Früh',       zeit: '06–09', stunden: 3 },
+    { key: 'vormittag',  label: 'Vormittag',  zeit: '09–12', stunden: 3 },
+    { key: 'mittag',     label: 'Mittag',     zeit: '12–15', stunden: 3 },
+    { key: 'nachmittag', label: 'Nachmittag', zeit: '15–18', stunden: 3 },
+    { key: 'abend',      label: 'Abend',      zeit: '18–22', stunden: 4 }
+  ],
+  allgemein: [
+    { key: 'frueh',      label: 'Früh',       zeit: '06–09', stunden: 3 },
+    { key: 'vormittag',  label: 'Vormittag',  zeit: '09–12', stunden: 3 },
+    { key: 'mittag',     label: 'Mittag',     zeit: '12–15', stunden: 3 },
+    { key: 'nachmittag', label: 'Nachmittag', zeit: '15–18', stunden: 3 },
+    { key: 'abend',      label: 'Abend',      zeit: '18–22', stunden: 4 }
+  ]
+};
+
 // SEKTION 5 — Verfügbarkeit (mit Standort-aware Mehrfach-Rastern)
 function renderSection5() {
   const s = state.i18n.sections['5'];
@@ -2073,7 +2125,6 @@ function renderSection5() {
     ['mo', s.tag_mo], ['di', s.tag_di], ['mi', s.tag_mi], ['do', s.tag_do],
     ['fr', s.tag_fr], ['sa', s.tag_sa], ['so', s.tag_so]
   ];
-  const slots = [s.slot_frueh, s.slot_vormittag, s.slot_mittag, s.slot_nachmittag, s.slot_abend];
 
   // Welche Standorte brauchen wir?
   const standorte = rolleStandorte(state.formData.rollen);
@@ -2091,17 +2142,24 @@ function renderSection5() {
   function rasterHTML(standort) {
     const titel = s[`matrix_titel_${standort}`] || s.matrix_titel;
     const hint = s[`matrix_hint_${standort}`] || s.matrix_hint;
+    const slotDefs = SLOTS_BY_STANDORT[standort] || SLOTS_BY_STANDORT.allgemein;
+    // Tag-Stunden für diesen Standort (Index der Tabelle)
     return `
       <h3 class="section-subtitle">${titel}</h3>
       <p class="form-hint" style="margin-bottom: 1rem;">${hint}</p>
       <div class="form-group" id="fg-verfuegbarkeit-${standort}">
         <div class="grid-availability">
           <div class="grid-cell-header"></div>
-          ${slots.map(sl => `<div class="grid-cell-header">${sl}</div>`).join('')}
+          ${slotDefs.map(sl => `
+            <div class="grid-cell-header" title="${sl.label} (${sl.zeit} Uhr, ca. ${sl.stunden}h)">
+              <div style="line-height:1.15;">${sl.label}</div>
+              <div style="font-size:0.62rem; opacity:0.7; font-weight:400; margin-top:2px;">${sl.zeit}</div>
+            </div>
+          `).join('')}
           ${tage.map(([d, label]) => `
             <div class="grid-cell-day">${label}</div>
-            ${[0,1,2,3,4].map(i => `
-              <div class="grid-slot" data-standort="${standort}" data-day="${d}" data-slot="${i}">·</div>
+            ${slotDefs.map((sl, i) => `
+              <div class="grid-slot" data-standort="${standort}" data-day="${d}" data-slot="${i}" title="${sl.label} (${sl.zeit} Uhr)">·</div>
             `).join('')}
           `).join('')}
         </div>
@@ -2487,6 +2545,13 @@ function renderSection8() {
       </div>
 
     </div>
+
+    <!-- „Willst du uns noch was mitteilen?" — Freitext am Ende der Sektion, NICHT in sensiblen Block -->
+    <div class="form-group" style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--ink-line, #1e3a2a);">
+      <label class="form-label">${s.mitteilung_label || 'Möchtest du uns noch etwas mitteilen?'}</label>
+      <p class="form-hint" style="margin-bottom: 0.6rem;">${s.mitteilung_hint || 'Alles, was du uns über dich oder deine Bewerbung sagen möchtest und was bisher keinen Platz gefunden hat. Freiwillig.'}</p>
+      <textarea class="form-textarea" id="i-mitteilung" placeholder="${s.mitteilung_placeholder || 'z. B. besondere Wünsche, Fragen an uns, Anmerkungen zur Bewerbung, …'}" style="min-height: 110px;"></textarea>
+    </div>
   `;
 }
 
@@ -2727,7 +2792,10 @@ function attachSection2() {
     ['i-sv-nummer', 'sv_nummer'],
     ['i-iban', 'iban'],
     ['i-kk-name', 'kk_name'],
-    ['i-kk-mitgl', 'kk_mitgl']
+    ['i-kk-mitgl', 'kk_mitgl'],
+    ['i-profil-linkedin', 'profil_linkedin'],
+    ['i-profil-xing', 'profil_xing'],
+    ['i-profil-weitere', 'profil_weitere']
   ];
   fields.forEach(([id, key]) => {
     const el = document.getElementById(id);
@@ -3615,6 +3683,14 @@ function attachSection8() {
       saveDraft();
     });
   }
+  // „Möchtest du uns noch was mitteilen?" — neu in v2
+  const mitt = document.getElementById('i-mitteilung');
+  if (mitt) {
+    mitt.addEventListener('input', e => {
+      state.formData.mitteilung = e.target.value;
+      saveDraft();
+    });
+  }
 }
 
 function attachSection9() {
@@ -3771,6 +3847,9 @@ function fillFormFromState() {
   setVal('i-iban', d.iban);
   setVal('i-kk-name', d.kk_name);
   setVal('i-kk-mitgl', d.kk_mitgl);
+  setVal('i-profil-linkedin', d.profil_linkedin);
+  setVal('i-profil-xing', d.profil_xing);
+  setVal('i-profil-weitere', d.profil_weitere);
   
   // Adress-Status restoren
   if (d.adresse_verifiziert) {
@@ -3953,6 +4032,8 @@ function fillFormFromState() {
       }
     }
   }
+  // „Möchtest du uns noch was mitteilen?" — neu in v2 (immer restoren, unabhängig von sensible Einwilligung)
+  setVal('i-mitteilung', d.mitteilung);
 
   // Sektion 9
   if (d.dsgvo_zustimmung) document.getElementById('cb-dsgvo').checked = true;
@@ -4317,6 +4398,12 @@ async function submitForm() {
     schwerbehinderung_gdb: (d.sensible_einwilligung && d.schwerbehinderung === 'ja' && d.schwerbehinderung_gdb) ? d.schwerbehinderung_gdb : null,
     schwerbehinderung_einschr: (d.sensible_einwilligung && d.schwerbehinderung === 'ja' && d.schwerbehinderung_einschr) ? d.schwerbehinderung_einschr.trim() : null,
     schwerbehinderung_anpassungen: (d.sensible_einwilligung && d.schwerbehinderung === 'ja' && d.schwerbehinderung_anpassungen) ? d.schwerbehinderung_anpassungen.trim() : null,
+    // Online-Profile (immer freiwillig, KEINE sensible_einwilligung nötig — sind keine Art-9-Daten)
+    profil_linkedin: d.profil_linkedin?.trim() || null,
+    profil_xing: d.profil_xing?.trim() || null,
+    profil_weitere: d.profil_weitere?.trim() || null,
+    // Freitext „Möchtest du uns noch was mitteilen?" — freiwillig, unabhängig
+    mitteilung: d.mitteilung?.trim() || null,
     dsgvo_zustimmung: d.dsgvo_zustimmung,
     captcha_token: d.captcha_token || null,
     sprache: state.lang

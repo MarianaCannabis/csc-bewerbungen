@@ -328,14 +328,34 @@ const SPRACHEN_LABELS = { de: 'Deutsch', en: 'Englisch', tr: 'Türkisch', ru: 'R
 const SPRACH_LEVEL = { '': '–', 'a1': 'A1', 'a2': 'A2', 'b1': 'B1', 'b2': 'B2', 'c1': 'C1', 'c2': 'C2', 'native': 'Muttersprache' };
 const WOCHENTAGE = [{ key: 'mo', label: 'Mo' }, { key: 'di', label: 'Di' }, { key: 'mi', label: 'Mi' }, { key: 'do', label: 'Do' }, { key: 'fr', label: 'Fr' }, { key: 'sa', label: 'Sa' }, { key: 'so', label: 'So' }];
 const ZEITSLOTS = ['Früh', 'Vormittag', 'Mittag', 'Nachmittag', 'Abend'];
-// Slot-Definition: Label, Uhrzeit, Dauer in Stunden
-const SLOT_DETAILS = [
-  { label: 'Früh',        zeit: '06–09', stunden: 3 },
-  { label: 'Vormittag',   zeit: '09–12', stunden: 3 },
-  { label: 'Mittag',      zeit: '12–15', stunden: 3 },
-  { label: 'Nachmittag',  zeit: '15–18', stunden: 3 },
-  { label: 'Abend',       zeit: '18–22', stunden: 4 },
-];
+// Standort-spezifische Slot-Definitionen — IDENTISCH zu bewerbung.html halten!
+// Index 0..4 muss konsistent zur DB-Struktur (boolean[5]) bleiben
+const SLOTS_BY_STANDORT = {
+  anbau: [
+    { key: 'morgen',     label: 'Morgen',     zeit: '06–10', stunden: 4 },
+    { key: 'mittag',     label: 'Mittag',     zeit: '10–14', stunden: 4 },
+    { key: 'nachmittag', label: 'Nachmittag', zeit: '14–18', stunden: 4 },
+    { key: 'abend',      label: 'Abend',      zeit: '18–22', stunden: 4 },
+    { key: 'nacht',      label: 'Nacht',      zeit: '22–06', stunden: 8 }
+  ],
+  ausgabe: [
+    { label: 'Früh',       zeit: '06–09', stunden: 3 },
+    { label: 'Vormittag',  zeit: '09–12', stunden: 3 },
+    { label: 'Mittag',     zeit: '12–15', stunden: 3 },
+    { label: 'Nachmittag', zeit: '15–18', stunden: 3 },
+    { label: 'Abend',      zeit: '18–22', stunden: 4 }
+  ],
+  allgemein: [
+    { label: 'Früh',       zeit: '06–09', stunden: 3 },
+    { label: 'Vormittag',  zeit: '09–12', stunden: 3 },
+    { label: 'Mittag',     zeit: '12–15', stunden: 3 },
+    { label: 'Nachmittag', zeit: '15–18', stunden: 3 },
+    { label: 'Abend',      zeit: '18–22', stunden: 4 }
+  ]
+};
+function slotsFor(standort) { return SLOTS_BY_STANDORT[standort] || SLOTS_BY_STANDORT.allgemein; }
+// Legacy-Alias für Backwards-Compat in Code, der noch SLOT_DETAILS erwartet
+const SLOT_DETAILS = SLOTS_BY_STANDORT.allgemein;
 
 let sb = null, session = null, userContext = null, bewerbungen = [], vereine = {}, selectedId = null, activeStatusFilter = '';
 
@@ -539,6 +559,9 @@ async function selectBewerbung(id) {
     const verf = b.verfuegbarkeit && b.verfuegbarkeit[standort];
     if (!verf) return '';
     
+    // Standort-spezifische Slot-Definitionen
+    const slotDefs = slotsFor(standort);
+    
     // Zähle aktive Slots + summe Stunden
     let aktiveSlots = 0;
     let totalStunden = 0;
@@ -546,23 +569,23 @@ async function selectBewerbung(id) {
       (verf[d.key] || []).forEach((checked, i) => {
         if (checked) {
           aktiveSlots++;
-          totalStunden += SLOT_DETAILS[i]?.stunden || 4;
+          totalStunden += slotDefs[i]?.stunden || 4;
         }
       });
     });
     if (aktiveSlots === 0) return '';
     
     // Header: Slot-Label + Uhrzeit
-    const slotHeaders = SLOT_DETAILS.map(s => 
+    const slotHeaders = slotDefs.map(s => 
       `<div class="vg-slot-label"><div>${s.label}</div><div class="vg-slot-time">${s.zeit}</div></div>`
     ).join('');
     
     // Pro Wochentag: Tag-Label + 5 Cells + Tages-Stunden-Summe
     const rows = WOCHENTAGE.map(d => {
       const slots = verf[d.key] || [];
-      const dayHours = slots.reduce((sum, checked, i) => sum + (checked ? (SLOT_DETAILS[i]?.stunden || 0) : 0), 0);
-      const cells = [0,1,2,3,4].map(i => 
-        `<div class="vg-cell ${slots[i] ? 'active' : ''}" title="${SLOT_DETAILS[i].label} (${SLOT_DETAILS[i].zeit} Uhr)">${slots[i] ? '✓' : '·'}</div>`
+      const dayHours = slots.reduce((sum, checked, i) => sum + (checked ? (slotDefs[i]?.stunden || 0) : 0), 0);
+      const cells = slotDefs.map((sl, i) => 
+        `<div class="vg-cell ${slots[i] ? 'active' : ''}" title="${sl.label} (${sl.zeit} Uhr)">${slots[i] ? '✓' : '·'}</div>`
       ).join('');
       const sumCell = dayHours > 0 
         ? `<div class="vg-cell-sum">${dayHours}h</div>` 
@@ -597,10 +620,11 @@ async function selectBewerbung(id) {
   ['anbau', 'ausgabe', 'allgemein'].forEach(standort => {
     const verf = b.verfuegbarkeit && b.verfuegbarkeit[standort];
     if (!verf) return;
+    const slotDefs = slotsFor(standort);
     WOCHENTAGE.forEach(d => {
       (verf[d.key] || []).forEach((checked, i) => {
         if (checked) {
-          gesamtStunden += SLOT_DETAILS[i]?.stunden || 4;
+          gesamtStunden += slotDefs[i]?.stunden || 4;
           gesamtSlots++;
         }
       });
@@ -681,6 +705,15 @@ async function selectBewerbung(id) {
         }</div></div>
         <div class="field"><div class="field-label">Sprache des Bogens</div><div class="field-value">${(b.sprache || 'de').toUpperCase()}</div></div>
       </div>
+      ${(b.profil_linkedin || b.profil_xing || b.profil_weitere) ? `
+      <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+        <div class="field-label" style="margin-bottom:8px">Online-Profile</div>
+        <div class="field-grid">
+          ${b.profil_linkedin ? `<div class="field"><div class="field-label">LinkedIn</div><div class="field-value"><a href="${escapeHtml(b.profil_linkedin)}" target="_blank" rel="noopener noreferrer" style="color:var(--blue);text-decoration:none">${escapeHtml(b.profil_linkedin)} ↗</a></div></div>` : ''}
+          ${b.profil_xing ? `<div class="field"><div class="field-label">Xing</div><div class="field-value"><a href="${escapeHtml(b.profil_xing)}" target="_blank" rel="noopener noreferrer" style="color:var(--blue);text-decoration:none">${escapeHtml(b.profil_xing)} ↗</a></div></div>` : ''}
+          ${b.profil_weitere ? `<div class="field" style="grid-column:1/-1"><div class="field-label">Weitere</div><div class="field-value" style="white-space:pre-wrap">${escapeHtml(b.profil_weitere)}</div></div>` : ''}
+        </div>
+      </div>` : ''}
     </div>
     
     <div class="section">
@@ -721,6 +754,13 @@ async function selectBewerbung(id) {
         ${b.probearbeit_anmerkung ? `<div class="field" style="grid-column:1/-1"><div class="field-label">Anmerkung Probearbeit</div><div class="field-value" style="white-space:pre-wrap">${escapeHtml(b.probearbeit_anmerkung)}</div></div>` : ''}
       </div>
     </div>
+    
+    ${b.mitteilung ? `
+    <div class="section">
+      <div class="section-title">📝 Mitteilung der Bewerber:in</div>
+      <div class="field-value" style="white-space:pre-wrap;background:var(--bg-card);padding:14px;border-radius:6px;border:1px solid var(--green-dim, var(--border));border-left:3px solid var(--green);margin-top:4px;line-height:1.55">${escapeHtml(b.mitteilung)}</div>
+    </div>
+    ` : ''}
     
     <div class="section">
       <div class="section-title">Qualifikationen &amp; Erfahrung</div>

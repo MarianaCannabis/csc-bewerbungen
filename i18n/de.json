@@ -70,7 +70,16 @@
       "sv_nummer": "Sozialversicherungsnummer",
       "iban": "IBAN",
       "kk_name": "Krankenkasse",
-      "kk_mitgl": "Mitgliedsnummer Krankenkasse"
+      "kk_mitgl": "Mitgliedsnummer Krankenkasse",
+      "profile_heading": "Online-Profile (freiwillig)",
+      "profile_hint": "Wenn du ein LinkedIn-, Xing- oder anderes berufliches Profil hast, kannst du es hier verlinken. Wir nutzen die Angaben nur, um deinen beruflichen Werdegang besser einordnen zu können.",
+      "profil_linkedin_label": "LinkedIn-Profil",
+      "profil_linkedin_placeholder": "https://www.linkedin.com/in/...",
+      "profil_xing_label": "Xing-Profil",
+      "profil_xing_placeholder": "https://www.xing.com/profile/...",
+      "profil_weitere_label": "Weitere Profile / Webseite",
+      "profil_weitere_placeholder": "z. B. GitHub, persönliche Webseite, Instagram-Business, …",
+      "profil_weitere_hint": "Eine URL oder mehrere durch Komma getrennt."
     },
     "3": {
       "title": "Rolle und Motivation",
@@ -180,7 +189,7 @@
       "matrix_titel": "Wochenraster",
       "matrix_hint": "Kein Vertrag — wir verstehen das als grobe Verfügbarkeit. Genaue Schichten besprechen wir später.",
       "matrix_titel_anbau": "Verfügbarkeit Anbauanlage",
-      "matrix_hint_anbau": "Wann könntest du in der Anbauanlage arbeiten? Schichten dort orientieren sich oft an Pflanzenphasen (Tag/Nacht-Rhythmus) und können auch früh morgens oder am Wochenende sein.",
+      "matrix_hint_anbau": "Wann könntest du in der Anbauanlage arbeiten? Schichten dort orientieren sich an Pflanzenphasen (Tag/Nacht-Rhythmus), inkl. Nachtschicht 22–06 Uhr.",
       "matrix_titel_ausgabe": "Verfügbarkeit Ausgabestelle",
       "matrix_hint_ausgabe": "Wann könntest du in der Ausgabestelle arbeiten? Schichten richten sich nach den Mitglieder-Öffnungszeiten (oft Nachmittag bis Abend, auch Samstag).",
       "matrix_titel_allgemein": "Allgemeine Verfügbarkeit",
@@ -243,7 +252,17 @@
       "probearbeit_anmerkung_label": "Anmerkungen zur Probearbeit (freiwillig)",
       "probearbeit_anmerkung_placeholder": "z. B. besondere Wünsche, zeitliche Einschränkungen, …",
       "probearbeit_reisekosten_titel": "Reisekosten",
-      "probearbeit_reisekosten_text": "Bei Probearbeit außerhalb deines Bewerbungsvereins (z. B. in Göttingen) übernehmen wir Reisekosten gegen Beleg bis zu 100 € pro Probearbeitstermin (Bahnticket 2. Klasse, ggf. Übernachtung). Details besprechen wir vor der Probearbeit."
+      "probearbeit_reisekosten_text": "Bei Probearbeit außerhalb deines Bewerbungsvereins (z. B. in Göttingen) übernehmen wir Reisekosten gegen Beleg bis zu 100 € pro Probearbeitstermin (Bahnticket 2. Klasse, ggf. Übernachtung). Details besprechen wir vor der Probearbeit.",
+      "slot_anbau_morgen": "06–10",
+      "slot_anbau_mittag": "10–14",
+      "slot_anbau_nachmittag": "14–18",
+      "slot_anbau_abend": "18–22",
+      "slot_anbau_nacht": "22–06",
+      "slot_anbau_morgen_label": "Morgen",
+      "slot_anbau_mittag_label": "Mittag",
+      "slot_anbau_nachmittag_label": "Nachmittag",
+      "slot_anbau_abend_label": "Abend",
+      "slot_anbau_nacht_label": "Nacht"
     },
     "6": {
       "title": "Anstellungsform",
@@ -332,7 +351,10 @@
       "schwerbehinderung_einschr_hint": "Damit wir prüfen können, ob die Rolle zu dir passt oder ob wir den Arbeitsplatz anpassen können.",
       "schwerbehinderung_einschr_placeholder": "z. B. eingeschränkte Belastbarkeit beim Heben, Sehbeeinträchtigung, Hörbeeinträchtigung, Mobilitätseinschränkung, …",
       "schwerbehinderung_anpassungen_label": "Werden Arbeitsplatz-Anpassungen benötigt?",
-      "schwerbehinderung_anpassungen_placeholder": "z. B. ergonomischer Arbeitsplatz, höhenverstellbarer Tisch, leichtere körperliche Tätigkeit, flexible Pausen, …"
+      "schwerbehinderung_anpassungen_placeholder": "z. B. ergonomischer Arbeitsplatz, höhenverstellbarer Tisch, leichtere körperliche Tätigkeit, flexible Pausen, …",
+      "mitteilung_label": "Möchtest du uns noch etwas mitteilen?",
+      "mitteilung_hint": "Alles, was du uns über dich oder deine Bewerbung sagen möchtest und was bisher keinen Platz gefunden hat. Freiwillig.",
+      "mitteilung_placeholder": "z. B. besondere Wünsche, Fragen an uns, Anmerkungen zur Bewerbung, …"
     },
     "9": {
       "title": "Datenschutz und Absenden",

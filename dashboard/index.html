@@ -557,7 +557,20 @@ async function selectBewerbung(id) {
         <div class="field"><div class="field-label">Volljährig</div><div class="field-value">${fmtBool(b.ist_volljaehrig)}</div></div>
         <div class="field"><div class="field-label">Nicht-EU-Bürger</div><div class="field-value">${fmtBool(b.ist_nicht_eu)}</div></div>
         ${b.arbeitserlaubnis !== null && b.arbeitserlaubnis !== undefined ? `<div class="field"><div class="field-label">Arbeitserlaubnis</div><div class="field-value">${fmtBool(b.arbeitserlaubnis)}</div></div>` : ''}
-        <div class="field"><div class="field-label">CSC-Mitglied</div><div class="field-value">${fmt(b.ist_mitglied)}</div></div>
+        <div class="field"><div class="field-label">CSC-Mitglied</div><div class="field-value">${
+          b.ist_mitglied === 'ja' 
+            ? `<span style="color:var(--green);font-weight:600">✓ Ja</span>${b.mitgliedsnummer ? ` <span class="mono" style="color:var(--tx-dim);margin-left:6px">#${escapeHtml(b.mitgliedsnummer)}</span>` : ''}`
+            : b.ist_mitglied === 'wird_mitglied' || b.moechte_mitglied_werden
+              ? `<span style="color:var(--orange)">⟳ Möchte Mitglied werden</span>${b.terptrain_weitergeleitet_am 
+                  ? `<div style="font-size:12px;color:var(--tx-mute);margin-top:2px">Terptrain weitergeleitet ${new Date(b.terptrain_weitergeleitet_am).toLocaleString('de-DE', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}${
+                      b.terptrain_anmeldung_bestaetigt === true ? ' · <strong style=\\"color:var(--green)\\">Anmeldung bestätigt ✓</strong>' 
+                      : b.terptrain_anmeldung_bestaetigt === false ? ' · <em>noch nicht angemeldet</em>' 
+                      : ''}</div>` 
+                  : ''}`
+              : b.ist_mitglied === 'nein'
+                ? '<span style="color:var(--red)">Nein</span>'
+                : fmt(b.ist_mitglied)
+        }</div></div>
         <div class="field"><div class="field-label">Sprache des Bogens</div><div class="field-value">${(b.sprache || 'de').toUpperCase()}</div></div>
       </div>
     </div>
@@ -771,7 +784,7 @@ function exportCsv() {
     'Vorname', 'Nachname', 'E-Mail', 'Telefon',
     'Geburtsdatum', 'Geburtsort', 'Staatsangehörigkeit',
     'PLZ', 'Stadt', 'Straße',
-    'Wohnsitz DE 6 Mon.', 'Volljährig', 'Nicht-EU', 'Arbeitserlaubnis', 'CSC-Mitglied',
+    'Wohnsitz DE 6 Mon.', 'Volljährig', 'Nicht-EU', 'Arbeitserlaubnis', 'CSC-Mitglied', 'Mitgliedsnummer', 'Möchte Mitglied werden', 'Terptrain weitergeleitet', 'Terptrain bestätigt',
     'Rollen', 'Anstellungsform', 'Standorte',
     'Motivation',
     'Stunden min', 'Stunden max', 'Frühester Einstieg', 'Kündigungsfrist',
@@ -816,6 +829,10 @@ function exportCsv() {
       b.ist_nicht_eu === true ? 'Ja' : (b.ist_nicht_eu === false ? 'Nein' : ''),
       b.arbeitserlaubnis === true ? 'Ja' : (b.arbeitserlaubnis === false ? 'Nein' : ''),
       b.ist_mitglied || '',
+      b.mitgliedsnummer || '',
+      b.moechte_mitglied_werden === true ? 'Ja' : '',
+      b.terptrain_weitergeleitet_am ? new Date(b.terptrain_weitergeleitet_am).toLocaleString('de-DE') : '',
+      b.terptrain_anmeldung_bestaetigt === true ? 'Ja' : (b.terptrain_anmeldung_bestaetigt === false ? 'Noch nicht' : ''),
       rollen, anstellung, standorte,
       b.motivation || '',
       b.wunsch_stunden_min || '', b.wunsch_stunden_max || '',

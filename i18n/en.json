@@ -70,7 +70,16 @@
       "sv_nummer": "Social security number",
       "iban": "IBAN",
       "kk_name": "Health insurance",
-      "kk_mitgl": "Insurance member number"
+      "kk_mitgl": "Insurance member number",
+      "profile_heading": "Online profiles (optional)",
+      "profile_hint": "If you have a LinkedIn, Xing or other professional profile, you can link it here. We only use this information to better understand your professional background.",
+      "profil_linkedin_label": "LinkedIn profile",
+      "profil_linkedin_placeholder": "https://www.linkedin.com/in/...",
+      "profil_xing_label": "Xing profile",
+      "profil_xing_placeholder": "https://www.xing.com/profile/...",
+      "profil_weitere_label": "Other profiles / website",
+      "profil_weitere_placeholder": "e.g. GitHub, personal website, Instagram Business, …",
+      "profil_weitere_hint": "One URL or several, separated by commas."
     },
     "3": {
       "title": "Role and motivation",
@@ -180,7 +189,7 @@
       "matrix_titel": "Weekly grid",
       "matrix_hint": "Not a contract — we read this as rough availability. Specific shifts will be agreed later.",
       "matrix_titel_anbau": "Availability Cultivation Facility",
-      "matrix_hint_anbau": "When could you work at the cultivation facility? Shifts there often follow plant phases (day/night cycles) and may include early mornings or weekends.",
+      "matrix_hint_anbau": "When could you work at the grow facility? Shifts are based on plant phases (day/night rhythm), including night shifts 22:00–06:00.",
       "matrix_titel_ausgabe": "Availability Dispensing Point",
       "matrix_hint_ausgabe": "When could you work at the dispensing point? Shifts follow member opening hours (often afternoon to evening, including Saturdays).",
       "matrix_titel_allgemein": "General availability",
@@ -243,7 +252,17 @@
       "probearbeit_anmerkung_label": "Notes about trial work (optional)",
       "probearbeit_anmerkung_placeholder": "e.g. special requests, time constraints, …",
       "probearbeit_reisekosten_titel": "Travel expenses",
-      "probearbeit_reisekosten_text": "For trial work outside your application club (e.g. in Göttingen), we cover travel expenses against receipts up to €100 per trial session (2nd class train ticket, accommodation if needed). Details to be agreed before the trial work."
+      "probearbeit_reisekosten_text": "For trial work outside your application club (e.g. in Göttingen), we cover travel expenses against receipts up to €100 per trial session (2nd class train ticket, accommodation if needed). Details to be agreed before the trial work.",
+      "slot_anbau_morgen": "06–10",
+      "slot_anbau_mittag": "10–14",
+      "slot_anbau_nachmittag": "14–18",
+      "slot_anbau_abend": "18–22",
+      "slot_anbau_nacht": "22–06",
+      "slot_anbau_morgen_label": "Morning",
+      "slot_anbau_mittag_label": "Midday",
+      "slot_anbau_nachmittag_label": "Afternoon",
+      "slot_anbau_abend_label": "Evening",
+      "slot_anbau_nacht_label": "Night"
     },
     "6": {
       "title": "Employment type",
@@ -332,7 +351,10 @@
       "schwerbehinderung_einschr_hint": "So we can check whether the role fits you or whether we can adapt the workplace.",
       "schwerbehinderung_einschr_placeholder": "e.g. limited lifting capacity, visual impairment, hearing impairment, mobility restriction, …",
       "schwerbehinderung_anpassungen_label": "Are workplace adaptations needed?",
-      "schwerbehinderung_anpassungen_placeholder": "e.g. ergonomic workstation, height-adjustable desk, lighter physical work, flexible breaks, …"
+      "schwerbehinderung_anpassungen_placeholder": "e.g. ergonomic workstation, height-adjustable desk, lighter physical work, flexible breaks, …",
+      "mitteilung_label": "Anything else you would like to tell us?",
+      "mitteilung_hint": "Anything you want to share about yourself or your application that did not fit elsewhere. Optional.",
+      "mitteilung_placeholder": "e.g. special wishes, questions for us, notes on the application, …"
     },
     "9": {
       "title": "Privacy and submission",

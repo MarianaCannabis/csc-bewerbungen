@@ -327,13 +327,14 @@ const SOFT_SKILL_LABELS = { stress: 'Stress-Resistenz', kunde: 'Kunden-Umgang', 
 const SPRACHEN_LABELS = { de: 'Deutsch', en: 'Englisch', tr: 'Türkisch', ru: 'Russisch', ar: 'Arabisch', pl: 'Polnisch', fr: 'Französisch', es: 'Spanisch' };
 const SPRACH_LEVEL = { '': '–', 'a1': 'A1', 'a2': 'A2', 'b1': 'B1', 'b2': 'B2', 'c1': 'C1', 'c2': 'C2', 'native': 'Muttersprache' };
 const WOCHENTAGE = [{ key: 'mo', label: 'Mo' }, { key: 'di', label: 'Di' }, { key: 'mi', label: 'Mi' }, { key: 'do', label: 'Do' }, { key: 'fr', label: 'Fr' }, { key: 'sa', label: 'Sa' }, { key: 'so', label: 'So' }];
-const ZEITSLOTS = ['Morgens', 'Mittags', 'Nachmittags', 'Abends'];
+const ZEITSLOTS = ['Früh', 'Vormittag', 'Mittag', 'Nachmittag', 'Abend'];
 // Slot-Definition: Label, Uhrzeit, Dauer in Stunden
 const SLOT_DETAILS = [
-  { label: 'Morgens',     zeit: '08–12', stunden: 4 },
-  { label: 'Mittags',     zeit: '12–16', stunden: 4 },
-  { label: 'Nachmittags', zeit: '16–20', stunden: 4 },
-  { label: 'Abends',      zeit: '20–24', stunden: 4 },
+  { label: 'Früh',        zeit: '06–09', stunden: 3 },
+  { label: 'Vormittag',   zeit: '09–12', stunden: 3 },
+  { label: 'Mittag',      zeit: '12–15', stunden: 3 },
+  { label: 'Nachmittag',  zeit: '15–18', stunden: 3 },
+  { label: 'Abend',       zeit: '18–22', stunden: 4 },
 ];
 
 let sb = null, session = null, userContext = null, bewerbungen = [], vereine = {}, selectedId = null, activeStatusFilter = '';
@@ -556,11 +557,11 @@ async function selectBewerbung(id) {
       `<div class="vg-slot-label"><div>${s.label}</div><div class="vg-slot-time">${s.zeit}</div></div>`
     ).join('');
     
-    // Pro Wochentag: Tag-Label + 4 Cells + Tages-Stunden-Summe
+    // Pro Wochentag: Tag-Label + 5 Cells + Tages-Stunden-Summe
     const rows = WOCHENTAGE.map(d => {
       const slots = verf[d.key] || [];
       const dayHours = slots.reduce((sum, checked, i) => sum + (checked ? (SLOT_DETAILS[i]?.stunden || 0) : 0), 0);
-      const cells = [0,1,2,3].map(i => 
+      const cells = [0,1,2,3,4].map(i => 
         `<div class="vg-cell ${slots[i] ? 'active' : ''}" title="${SLOT_DETAILS[i].label} (${SLOT_DETAILS[i].zeit} Uhr)">${slots[i] ? '✓' : '·'}</div>`
       ).join('');
       const sumCell = dayHours > 0 
@@ -575,7 +576,7 @@ async function selectBewerbung(id) {
           <span>${label}</span>
           <span class="verfuegbar-summary">${aktiveSlots} Slot${aktiveSlots !== 1 ? 's' : ''} · ca. <strong>${totalStunden}h/Woche</strong> möglich</span>
         </div>
-        <div class="verfuegbar-grid" style="grid-template-columns: 36px repeat(4, 1fr) 50px">
+        <div class="verfuegbar-grid" style="grid-template-columns: 36px repeat(5, 1fr) 50px">
           <div class="vg-corner"></div>
           ${slotHeaders}
           <div class="vg-slot-label vg-slot-sum">Σ</div>

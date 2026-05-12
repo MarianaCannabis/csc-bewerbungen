@@ -597,11 +597,11 @@ body::before {
 
 .conditional-block .form-label:first-child { margin-top: 0; }
 
-/* Availability Grid (7 Tage × 4 Slots) */
+/* Availability Grid (7 Tage × 5 Slots: Frueh, Vormittag, Mittag, Nachmittag, Abend) */
 .grid-availability {
   display: grid;
-  grid-template-columns: 60px repeat(4, 1fr);
-  gap: 4px;
+  grid-template-columns: 50px repeat(5, 1fr);
+  gap: 3px;
   background: var(--sand-100);
   padding: 6px;
   border-radius: var(--radius-md);
@@ -661,11 +661,13 @@ body::before {
 
 @media (max-width: 540px) {
   .grid-availability {
-    grid-template-columns: 50px repeat(4, 1fr);
-    font-size: 0.75rem;
+    grid-template-columns: 40px repeat(5, 1fr);
+    font-size: 0.7rem;
+    gap: 2px;
   }
-  .grid-cell-day { font-size: 0.75rem; }
-  .grid-slot { padding: 10px 2px; font-size: 0.7rem; }
+  .grid-cell-day { font-size: 0.7rem; }
+  .grid-slot { padding: 9px 1px; font-size: 0.65rem; }
+  .grid-cell-header { font-size: 0.65rem; padding: 6px 2px; }
 }
 
 /* Adress-Verifikation Status */
@@ -1398,9 +1400,9 @@ const state = {
     sprachen: { de: '', en: '', tr: '', ru: '', ar: '', pl: '', fr: '', es: '' },
     soft_skills: { stress: 0, kunde: 0, verschwiegenheit: 0, team: 0, genauigkeit: 0 },
     verfuegbarkeit: { 
-      anbau:     { mo:[false,false,false,false], di:[false,false,false,false], mi:[false,false,false,false], do:[false,false,false,false], fr:[false,false,false,false], sa:[false,false,false,false], so:[false,false,false,false] },
-      ausgabe:   { mo:[false,false,false,false], di:[false,false,false,false], mi:[false,false,false,false], do:[false,false,false,false], fr:[false,false,false,false], sa:[false,false,false,false], so:[false,false,false,false] },
-      allgemein: { mo:[false,false,false,false], di:[false,false,false,false], mi:[false,false,false,false], do:[false,false,false,false], fr:[false,false,false,false], sa:[false,false,false,false], so:[false,false,false,false] }
+      anbau:     { mo:[false,false,false,false,false], di:[false,false,false,false,false], mi:[false,false,false,false,false], do:[false,false,false,false,false], fr:[false,false,false,false,false], sa:[false,false,false,false,false], so:[false,false,false,false,false] },
+      ausgabe:   { mo:[false,false,false,false,false], di:[false,false,false,false,false], mi:[false,false,false,false,false], do:[false,false,false,false,false], fr:[false,false,false,false,false], sa:[false,false,false,false,false], so:[false,false,false,false,false] },
+      allgemein: { mo:[false,false,false,false,false], di:[false,false,false,false,false], mi:[false,false,false,false,false], do:[false,false,false,false,false], fr:[false,false,false,false,false], sa:[false,false,false,false,false], so:[false,false,false,false,false] }
     },
     wunsch_zeiten: '',
     wunsch_stunden_min: '',
@@ -1572,7 +1574,22 @@ function loadDraft() {
     const d = JSON.parse(raw);
     if (d.lang) state.lang = d.lang;
     if (d.currentSection) state.currentSection = d.currentSection;
-    if (d.formData) Object.assign(state.formData, d.formData);
+    if (d.formData) {
+      // Migration: 4-Slot-Drafts (alt) auf 5-Slot (neu) erweitern
+      if (d.formData.verfuegbarkeit) {
+        ['anbau', 'ausgabe', 'allgemein'].forEach(standort => {
+          const v = d.formData.verfuegbarkeit[standort];
+          if (!v) return;
+          ['mo','di','mi','do','fr','sa','so'].forEach(day => {
+            const arr = v[day];
+            if (Array.isArray(arr) && arr.length < 5) {
+              while (arr.length < 5) arr.push(false);
+            }
+          });
+        });
+      }
+      Object.assign(state.formData, d.formData);
+    }
     return true;
   } catch (e) { return false; }
 }
@@ -2056,7 +2073,7 @@ function renderSection5() {
     ['mo', s.tag_mo], ['di', s.tag_di], ['mi', s.tag_mi], ['do', s.tag_do],
     ['fr', s.tag_fr], ['sa', s.tag_sa], ['so', s.tag_so]
   ];
-  const slots = [s.slot_morgens, s.slot_mittags, s.slot_nachmittags, s.slot_abends];
+  const slots = [s.slot_frueh, s.slot_vormittag, s.slot_mittag, s.slot_nachmittag, s.slot_abend];
 
   // Welche Standorte brauchen wir?
   const standorte = rolleStandorte(state.formData.rollen);
@@ -2083,7 +2100,7 @@ function renderSection5() {
           ${slots.map(sl => `<div class="grid-cell-header">${sl}</div>`).join('')}
           ${tage.map(([d, label]) => `
             <div class="grid-cell-day">${label}</div>
-            ${[0,1,2,3].map(i => `
+            ${[0,1,2,3,4].map(i => `
               <div class="grid-slot" data-standort="${standort}" data-day="${d}" data-slot="${i}">·</div>
             `).join('')}
           `).join('')}
@@ -3296,11 +3313,18 @@ function attachSection5() {
       // Defensive: state.formData.verfuegbarkeit[standort] muss existieren
       if (!state.formData.verfuegbarkeit[standort]) {
         state.formData.verfuegbarkeit[standort] = { 
-          mo:[false,false,false,false], di:[false,false,false,false], mi:[false,false,false,false], 
-          do:[false,false,false,false], fr:[false,false,false,false], sa:[false,false,false,false], 
-          so:[false,false,false,false] 
+          mo:[false,false,false,false,false], di:[false,false,false,false,false], mi:[false,false,false,false,false], 
+          do:[false,false,false,false,false], fr:[false,false,false,false,false], sa:[false,false,false,false,false], 
+          so:[false,false,false,false,false] 
         };
       }
+      // Migration alter Drafts (4 → 5 Slots): mit false auffuellen falls noetig
+      ['mo','di','mi','do','fr','sa','so'].forEach(d => {
+        const arr = state.formData.verfuegbarkeit[standort][d];
+        if (Array.isArray(arr) && arr.length < 5) {
+          while (arr.length < 5) arr.push(false);
+        }
+      });
       
       state.formData.verfuegbarkeit[standort][day][idx] = !state.formData.verfuegbarkeit[standort][day][idx];
       slot.classList.toggle('selected', state.formData.verfuegbarkeit[standort][day][idx]);

@@ -139,8 +139,10 @@
     .action-btn.warteliste:hover { background: var(--gold-bg); }
     .action-btn.abgelehnt { border-color: #b85959; color: var(--red); }
     .action-btn.abgelehnt:hover { background: var(--red-bg); }
-    .action-btn.loeschen { border-color: #b85959; color: #b85959; margin-left: auto; font-weight: 700; }
+    .action-btn.loeschen { border-color: #b85959; color: #b85959; font-weight: 700; }
     .action-btn.loeschen:hover { background: #b85959; color: #fff; }
+    .action-btn.pdf-btn { border-color: var(--tx-dim); color: var(--tx); margin-left: auto; }
+    .action-btn.pdf-btn:hover { background: var(--bg-elev); border-color: var(--green-dim); color: var(--green); }
     .action-btn.angenommen { background: var(--green); color: var(--bg); border-color: var(--green); }
     .action-btn.angenommen:hover { background: #5fbe7d; }
     .action-btn.pruefen { border-color: #b88c4d; color: var(--orange); }
@@ -1218,6 +1220,7 @@ async function selectBewerbung(id) {
         <button class="action-btn warteliste" onclick="setStatus('${b.id}', 'warteliste')">Warteliste</button>
         <button class="action-btn angenommen" onclick="setStatus('${b.id}', 'angenommen')">Annehmen</button>
         <button class="action-btn abgelehnt" onclick="setStatus('${b.id}', 'abgelehnt')">Ablehnen</button>
+        <button class="action-btn pdf-btn" onclick="printBewerbung('${b.id}')" title="Bewerbung als PDF speichern oder ausdrucken (DSGVO-Akte)" aria-label="PDF erzeugen oder drucken">📄 PDF / Drucken</button>
         ${userContext.ist_admin ? `<button class="action-btn loeschen" onclick="deleteBewerbung('${b.id}')" title="Bewerbung dauerhaft löschen (DSGVO)">🗑 Löschen</button>` : ''}
       </div>
     </div>
@@ -1755,8 +1758,260 @@ function toast(msg, isError = false) {
 }
 
 // ============================================================================
-// STATISTIK-MODAL (nur für Hauptverein-Admin)
+// PDF-EXPORT / DRUCKEN einer Bewerbung
 // ============================================================================
+function printBewerbung(id) {
+  const b = bewerbungen.find(x => x.id === id);
+  if (!b) { toast('Bewerbung nicht gefunden', true); return; }
+  const v = vereine[b.verein_id];
+  const html = generatePrintHtml(b, v);
+  const w = window.open('', '_blank', 'width=900,height=1100');
+  if (!w) { toast('Bitte Pop-up-Blocker für diese Seite deaktivieren', true); return; }
+  w.document.open();
+  w.document.write(html);
+  w.document.close();
+  // Print-Dialog automatisch öffnen nach kurzem Wait (damit das Layout rendert)
+  w.addEventListener('load', () => setTimeout(() => w.print(), 200));
+}
+
+function generatePrintHtml(b, v) {
+  // Helper für sicheres Rendern
+  const E = (v) => String(v == null ? '' : v).replace(/[<>&"']/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c]));
+  const fmt = (val) => (val == null || val === '' ? '<span class="empty">—</span>' : E(val));
+  const fmtBool = (val) => val === true ? '✓ Ja' : val === false ? '✗ Nein' : '<span class="empty">—</span>';
+  const fmtDateIso = (iso) => {
+    if (!iso) return '—';
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
+    return m ? `${m[3]}.${m[2]}.${m[1]}` : iso;
+  };
+  const fmtArr = (arr, labels) => Array.isArray(arr) && arr.length 
+    ? arr.map(x => labels?.[x] || x).join(', ') 
+    : '<span class="empty">—</span>';
+  
+  const status = b.status || 'eingegangen';
+  const eingegangenStr = b.eingegangen_am 
+    ? new Date(b.eingegangen_am).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' })
+    : '—';
+  const druckDatum = new Date().toLocaleString('de-DE', { dateStyle: 'long', timeStyle: 'short' });
+  const idShort = b.id ? b.id.slice(0, 8).toUpperCase() : '—';
+  
+  // Adresse
+  const adr = b.adresse || {};
+  const adrLine = [adr.strasse, [adr.plz, adr.ort].filter(Boolean).join(' ')].filter(Boolean).join(', ') || '—';
+  
+  // Sprachen (jsonb: { de: 'muttersprache', en: 'B2', ... })
+  const SPRACH_LBL = { de:'Deutsch', en:'Englisch', tr:'Türkisch', ru:'Russisch', ar:'Arabisch', pl:'Polnisch', fr:'Französisch', es:'Spanisch' };
+  const LEVEL_LBL = { muttersprache:'Muttersprache', a1:'A1', a2:'A2', b1:'B1', b2:'B2', c1:'C1', c2:'C2' };
+  const spracheneintraege = b.sprachen && typeof b.sprachen === 'object'
+    ? Object.entries(b.sprachen).filter(([_, lvl]) => lvl).map(([k, lvl]) => `${SPRACH_LBL[k]||k}: ${LEVEL_LBL[lvl]||lvl}`).join(', ')
+    : '';
+  
+  // Soft Skills (jsonb: { teamfaehigkeit: 4, kommunikation: 3, ... })
+  const SOFT_LBL = { teamfaehigkeit:'Teamfähigkeit', kommunikation:'Kommunikation', zuverlaessigkeit:'Zuverlässigkeit', flexibilitaet:'Flexibilität', stressresistenz:'Stressresistenz' };
+  const softSkills = b.soft_skills && typeof b.soft_skills === 'object'
+    ? Object.entries(b.soft_skills).filter(([_, val]) => val != null && val !== 0).map(([k, val]) => `${SOFT_LBL[k]||k}: ${val}/5`).join(', ')
+    : '';
+  
+  // Verfügbarkeit (jsonb: { standort1: { mo: ['frueh','vormittag'], ... }, ... })
+  const STANDORT_LBL = { anbau:'Anbauanlage', ausgabe:'Ausgabestelle', allgemein:'Allgemein' };
+  const TAG_LBL = { mo:'Mo', di:'Di', mi:'Mi', do:'Do', fr:'Fr', sa:'Sa', so:'So' };
+  const SLOT_LBL = { frueh:'Früh', vormittag:'Vormittag', mittag:'Mittag', nachmittag:'Nachmittag', abend:'Abend' };
+  function renderVerf() {
+    if (!b.verfuegbarkeit || typeof b.verfuegbarkeit !== 'object') return '<span class="empty">Keine Angaben</span>';
+    const standorte = Object.keys(b.verfuegbarkeit);
+    if (!standorte.length) return '<span class="empty">Keine Angaben</span>';
+    return standorte.map(s => {
+      const tage = b.verfuegbarkeit[s] || {};
+      const eintraege = Object.entries(tage).filter(([_, slots]) => Array.isArray(slots) && slots.length).map(([tag, slots]) => 
+        `<strong>${TAG_LBL[tag]||tag}:</strong> ${slots.map(x => SLOT_LBL[x]||x).join(', ')}`
+      ).join(' · ');
+      if (!eintraege) return '';
+      return `<div class="verf-block"><div class="verf-titel">${STANDORT_LBL[s]||s}</div><div>${eintraege}</div></div>`;
+    }).filter(Boolean).join('') || '<span class="empty">Keine Angaben</span>';
+  }
+  
+  // Tags
+  const tags = Array.isArray(b.tags) ? b.tags : [];
+  const tagsHtml = tags.length 
+    ? tags.map(t => {
+        const ti = tagInfo(t);
+        return `<span class="tag-print">${ti.e} ${E(ti.l)}</span>`;
+      }).join(' ')
+    : '<span class="empty">keine</span>';
+
+  return `<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>Bewerbung ${E(b.vorname)} ${E(b.nachname)} – Mariana</title>
+<style>
+  @page { size: A4; margin: 18mm 15mm; }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+    color: #1a1a1a; font-size: 10pt; line-height: 1.4; margin: 0; padding: 20px; max-width: 800px; }
+  h1 { font-size: 18pt; margin: 0 0 4px 0; color: #2d5a2d; }
+  h2 { font-size: 11pt; margin: 18px 0 8px 0; color: #2d5a2d; text-transform: uppercase;
+    letter-spacing: 0.05em; border-bottom: 1.5pt solid #2d5a2d; padding-bottom: 3px; }
+  .meta { color: #666; font-size: 9pt; margin-bottom: 18px; }
+  .meta-row { display: flex; gap: 20px; flex-wrap: wrap; }
+  .meta-row > span { white-space: nowrap; }
+  .meta strong { color: #1a1a1a; }
+  table.kv { width: 100%; border-collapse: collapse; margin: 0; }
+  table.kv td { padding: 4px 8px; vertical-align: top; border-bottom: 1px solid #eee; }
+  table.kv td:first-child { width: 32%; color: #666; font-weight: 500; }
+  table.kv td:last-child { color: #1a1a1a; }
+  .empty { color: #999; font-style: italic; }
+  .status-box { display: inline-block; padding: 3px 12px; font-size: 9pt; font-weight: 600;
+    background: #e8f4ea; color: #2d5a2d; border: 1px solid #2d5a2d; border-radius: 3px; }
+  .notiz-box { background: #fffbe6; border: 1px solid #ffe066; padding: 10px 14px; 
+    border-radius: 4px; margin: 8px 0; white-space: pre-wrap; font-size: 9.5pt; }
+  .verf-block { margin: 6px 0; padding: 6px 10px; background: #f8f8f8; border-left: 3px solid #2d5a2d; }
+  .verf-titel { font-weight: 600; color: #2d5a2d; font-size: 9pt; text-transform: uppercase; letter-spacing: 0.03em; }
+  .tag-print { display: inline-block; padding: 2px 8px; font-size: 9pt; background: #f0f0f0;
+    border-radius: 10px; margin-right: 4px; }
+  .dsgvo-footer { margin-top: 30px; padding-top: 12px; border-top: 1px solid #ccc;
+    font-size: 8pt; color: #666; line-height: 1.5; }
+  .header-line { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 14px; }
+  .header-logo { font-size: 14pt; font-weight: 700; color: #2d5a2d; letter-spacing: -0.01em; }
+  .header-id { font-family: 'Courier New', monospace; font-size: 9pt; color: #666; }
+  .print-btn { position: fixed; top: 12px; right: 12px; padding: 8px 16px;
+    background: #2d5a2d; color: white; border: none; border-radius: 4px;
+    font-size: 13px; cursor: pointer; z-index: 100; }
+  .print-btn:hover { background: #1f3f1f; }
+  @media print {
+    .print-btn { display: none !important; }
+    body { padding: 0; }
+  }
+</style>
+</head>
+<body>
+  <button class="print-btn" onclick="window.print()" type="button">🖨 Drucken / Als PDF speichern</button>
+  
+  <div class="header-line">
+    <div>
+      <div class="header-logo">🌿 MARIANA CANNABIS</div>
+      <div style="font-size:9pt;color:#666">Bewerbung · DSGVO-Akte</div>
+    </div>
+    <div class="header-id">
+      ID: ${E(idShort)}<br>
+      Gedruckt: ${E(druckDatum)}
+    </div>
+  </div>
+
+  <h1>${E(b.vorname || '')} ${E(b.nachname || '')}</h1>
+  <div class="meta">
+    <div class="meta-row">
+      <span><strong>Status:</strong> <span class="status-box">${E(STATUS_LABELS[status] || status)}</span></span>
+      <span><strong>Eingegangen:</strong> ${E(eingegangenStr)}</span>
+      <span><strong>Verein:</strong> ${E(v?.name || '—')}${v?.bundesland ? ' (' + E(v.bundesland) + ')' : ''}</span>
+    </div>
+    <div class="meta-row" style="margin-top:4px">
+      <span><strong>Tags:</strong> ${tagsHtml}</span>
+    </div>
+  </div>
+
+  <h2>1. Kontakt & Stammdaten</h2>
+  <table class="kv">
+    <tr><td>Geburtsdatum</td><td>${fmtDateIso(b.geburtsdatum)}${b.geburtsort ? ' in ' + E(b.geburtsort) : ''}</td></tr>
+    <tr><td>Staatsangehörigkeit</td><td>${fmt(b.staatsangehoerigkeit)}</td></tr>
+    <tr><td>Adresse</td><td>${E(adrLine)}</td></tr>
+    <tr><td>E-Mail</td><td>${fmt(b.email)}</td></tr>
+    <tr><td>Telefon</td><td>${fmt(b.telefon)}</td></tr>
+    <tr><td>Nicht-EU-Bürger:in</td><td>${fmtBool(b.ist_nicht_eu)}</td></tr>
+    <tr><td>Arbeitserlaubnis</td><td>${fmtBool(b.arbeitserlaubnis)}</td></tr>
+    <tr><td>CSC-Mitglied</td><td>${b.ist_mitglied === 'ja' ? '✓ Ja, bereits Mitglied' : b.ist_mitglied === 'wird_mitglied' ? 'Wird Mitglied' : '—'}${b.mitgliedsnummer ? ' (Nr. ' + E(b.mitgliedsnummer) + ')' : ''}</td></tr>
+  </table>
+
+  <h2>2. Bewerbung &amp; Rolle</h2>
+  <table class="kv">
+    <tr><td>Beworbene Rolle(n)</td><td>${fmtArr(b.rollen, ROLE_LABELS)}</td></tr>
+    <tr><td>Anstellungsform(en)</td><td>${fmtArr(b.anstellungsformen, {ehrenamt:'Ehrenamtlich',minijob:'Minijob',teilzeit:'Teilzeit',vollzeit:'Vollzeit'})}</td></tr>
+    <tr><td>Standorte für Rollen</td><td>${fmtArr(b.rollen_standorte, {anbauanlage:'Anbauanlage',ausgabestelle:'Ausgabestelle',allgemein:'Allgemein'})}</td></tr>
+    <tr><td>Bestätigt zwei Standorte</td><td>${fmtBool(b.bestaetigt_zwei_standorte)}</td></tr>
+    <tr><td>Motivation</td><td style="white-space:pre-wrap">${fmt(b.motivation)}</td></tr>
+    <tr><td>Sachkunde Prävention</td><td>${fmt({vorhanden:'Vorhanden',wird_erworben:'Wird erworben'}[b.praevention_sachkunde] || b.praevention_sachkunde)}</td></tr>
+    <tr><td>Nachweis Sicherheit</td><td>${fmt({'34a_80h':'§34a-Sachkunde (80h)','unterrichtung_40h':'Unterrichtung (40h)','wird_erworben':'Wird erworben','keiner':'Keiner'}[b.sicherheit_nachweis] || b.sicherheit_nachweis)}</td></tr>
+  </table>
+
+  <h2>3. Qualifikationen</h2>
+  <table class="kv">
+    <tr><td>Bildungsabschluss</td><td>${fmt(b.bildungsabschluss)}</td></tr>
+    <tr><td>Letzte Tätigkeit</td><td>${fmt(b.letzte_taetigkeit)}</td></tr>
+    <tr><td>Vorerfahrung</td><td style="white-space:pre-wrap">${fmt(b.vorerfahrung)}</td></tr>
+    <tr><td>Sprachen</td><td>${spracheneintraege || '<span class="empty">—</span>'}</td></tr>
+    <tr><td>Soft Skills</td><td>${softSkills || '<span class="empty">—</span>'}</td></tr>
+  </table>
+
+  <h2>4. Verfügbarkeit, Anstellung &amp; Anfahrt</h2>
+  <table class="kv">
+    <tr><td>Wunsch-Stunden/W</td><td>${b.wunsch_stunden_min != null || b.wunsch_stunden_max != null ? (b.wunsch_stunden_min || '?') + '–' + (b.wunsch_stunden_max || '?') + ' h' : '—'}</td></tr>
+    <tr><td>Wunsch-Zeiten</td><td>${fmt(b.wunsch_zeiten)}</td></tr>
+    <tr><td>Sperrzeiten</td><td>${fmt(b.sperrzeiten)}</td></tr>
+    <tr><td>Wochenende möglich</td><td>${fmtBool(b.bereit_we)}</td></tr>
+    <tr><td>Feiertag möglich</td><td>${fmtBool(b.bereit_feiertag)}</td></tr>
+    <tr><td>Nacht möglich</td><td>${fmtBool(b.bereit_nacht)}</td></tr>
+    <tr><td>Eintritt frühestens</td><td>${fmtDateIso(b.eintritt_fruehestens)}</td></tr>
+    <tr><td>Kündigungsfrist</td><td>${fmt(b.kuendigungsfrist)}</td></tr>
+    <tr><td>Max. Anfahrt Ausgabe</td><td>${b.max_anfahrt != null ? E(b.max_anfahrt) + ' Min' : '—'}</td></tr>
+    <tr><td>Max. Anfahrt Anbau</td><td>${b.max_anfahrt_anbau != null ? E(b.max_anfahrt_anbau) + ' Min' : '—'}</td></tr>
+    <tr><td>Eigenes Fahrzeug</td><td>${fmtBool(b.eigenes_fahrzeug)}</td></tr>
+    <tr><td>Jobticket möglich</td><td>${fmt({ja:'Ja',nein:'Nein',unsicher:'Unsicher'}[b.jobticket] || b.jobticket)}</td></tr>
+    <tr><td>Führerschein-Klassen</td><td>${fmtArr(b.fuehrerschein)}</td></tr>
+  </table>
+  <div style="margin-top:8px"><strong style="font-size:9.5pt;color:#666">Verfügbarkeits-Raster:</strong></div>
+  ${renderVerf()}
+
+  <h2>5. Probearbeit</h2>
+  <table class="kv">
+    <tr><td>Bereit für Probearbeit</td><td>${fmtBool(b.probearbeit_bereit)}</td></tr>
+    <tr><td>Mögliche Dauer</td><td>${fmt({'1_tag':'1 Tag','2_3_tage':'2-3 Tage','1_woche':'1 Woche','mehr_als_woche':'Mehr als 1 Woche','flexibel':'Flexibel'}[b.probearbeit_dauer] || b.probearbeit_dauer)}</td></tr>
+    <tr><td>Mögliche Orte</td><td>${fmtArr(b.probearbeit_orte, {eigener_verein:'Eigener Verein',goettingen:'Göttingen',andere_standorte:'Andere Standorte'})}</td></tr>
+    <tr><td>Anmerkung</td><td style="white-space:pre-wrap">${fmt(b.probearbeit_anmerkung)}</td></tr>
+  </table>
+
+  ${b.mitteilung ? `
+  <h2>6. Mitteilung an Vorstand</h2>
+  <div style="white-space:pre-wrap;font-size:10pt">${fmt(b.mitteilung)}</div>` : ''}
+
+  <h2>${b.mitteilung ? '7' : '6'}. Sensible Daten</h2>
+  <table class="kv">
+    <tr><td>Einwilligung sensible Daten</td><td>${fmtBool(b.sensible_einwilligung)}</td></tr>
+    <tr><td>Sucht relevant</td><td>${fmt({ja:'Ja',nein:'Nein',keine_angabe:'Keine Angabe'}[b.sucht_relevant] || b.sucht_relevant)}</td></tr>
+    ${b.sucht_relevant === 'ja' ? `<tr><td>Sucht-Details</td><td style="white-space:pre-wrap">${fmt(b.sucht_details)}</td></tr>` : ''}
+    <tr><td>Schwerbehinderung</td><td>${fmt({ja:'Ja',nein:'Nein',keine_angabe:'Keine Angabe'}[b.schwerbehinderung] || b.schwerbehinderung)}</td></tr>
+    ${b.schwerbehinderung === 'ja' ? `
+    <tr><td>GdB (Grad)</td><td>${fmt(b.schwerbehinderung_gdb)}</td></tr>
+    <tr><td>Einschränkungen</td><td style="white-space:pre-wrap">${fmt(b.schwerbehinderung_einschr)}</td></tr>
+    <tr><td>Notwendige Anpassungen</td><td style="white-space:pre-wrap">${fmt(b.schwerbehinderung_anpassungen)}</td></tr>` : ''}
+  </table>
+
+  <h2>${b.mitteilung ? '8' : '7'}. Personalien (für Anstellung)</h2>
+  <table class="kv">
+    <tr><td>Steuer-ID</td><td>${fmt(b.steuer_id)}</td></tr>
+    <tr><td>Sozialversicherungs-Nr.</td><td>${fmt(b.sv_nummer)}</td></tr>
+    <tr><td>IBAN</td><td>${fmt(b.iban)}</td></tr>
+    <tr><td>Krankenkasse</td><td>${fmt(b.krankenkasse?.name)}${b.krankenkasse?.mitglied_nr ? ' (Mitgl.-Nr. ' + E(b.krankenkasse.mitglied_nr) + ')' : ''}</td></tr>
+  </table>
+
+  ${b.vorstand_notiz ? `
+  <h2>${b.mitteilung ? '9' : '8'}. Vorstand-Notizen (intern)</h2>
+  <div class="notiz-box">${fmt(b.vorstand_notiz)}</div>
+  ${b.notiz_geaendert_am ? `<div style="font-size:8pt;color:#999;margin-top:4px">zuletzt geändert: ${E(new Date(b.notiz_geaendert_am).toLocaleString('de-DE'))}${b.notiz_geaendert_von ? ' · ' + E(b.notiz_geaendert_von) : ''}</div>` : ''}
+  ` : ''}
+
+  <div class="dsgvo-footer">
+    <strong>Datenschutzhinweis (Art. 13 DSGVO):</strong> Dieses Dokument enthält personenbezogene Daten und ist vertraulich zu behandeln.
+    Die Daten wurden im Rahmen einer Bewerbung bei einem der Cannabis Social Clubs unter dem Dach von Mariana Cannabis erhoben.
+    Verantwortlicher: Mariana Cannabis · ${E(v?.name || 'Verein')}.
+    Die betroffene Person hat Recht auf Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung,
+    Datenübertragbarkeit und Widerspruch gemäß Art. 15–21 DSGVO.
+    Aufbewahrungsfrist nach Ablehnung: max. 6 Monate. Nach Annahme: gemäß handels- und steuerrechtlicher Aufbewahrungspflichten.
+  </div>
+</body>
+</html>`;
+}
+
+
 function openStatsModal() {
   if (!userContext?.ist_admin) return;
   const overlay = document.getElementById('st-overlay');

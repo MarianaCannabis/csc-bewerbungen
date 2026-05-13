@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mariana Cannabis · Bewerbungs-Dashboard v2</title>
+  <!-- DASHBOARD_BUILD: 2026-05-14T0042 (Anhang-Spalten-Fix, Krankenkasse-Object-Fix) -->
+  <script>window.__DASHBOARD_BUILD = '2026-05-14T0042';</script>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -1504,20 +1506,21 @@ async function selectBewerbung(id) {
       <div class="section-title">Anhänge (${anhaenge.length})</div>
       <div class="anhang-list">
         ${anhaenge.map((a, idx) => {
-          const filename = a.original_dateiname || a.dateiname || 'datei';
+          const filename = a.dateiname || 'datei';
           const ext = (filename.split('.').pop() || '').toLowerCase();
           const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic'].includes(ext);
           const isPdf = ext === 'pdf';
           const previewable = isImage || isPdf;
-          const storagePath = a.storage_pfad || a.pfad || '';
+          const storagePath = a.storage_path || '';
           const sizeKb = a.groesse_bytes ? Math.round(a.groesse_bytes/1024) + ' KB' : '';
           const icon = isImage ? '🖼️' : isPdf ? '📄' : '📎';
+          const typ = a.typ || '';
           
           return `
           <div class="anhang-item">
             <div class="anhang-info">
               <div class="name">${icon} ${escapeHtml(filename)}</div>
-              <div class="meta">${escapeHtml(a.kategorie || '')}${sizeKb ? ' · ' + sizeKb : ''}${previewable ? ' · klickbar' : ''}</div>
+              <div class="meta">${escapeHtml(typ)}${sizeKb ? ' · ' + sizeKb : ''}${previewable ? ' · klickbar' : ''}</div>
             </div>
             <div class="anhang-actions">
               ${previewable ? `<button class="anhang-link" onclick="previewAnhang('${storagePath}', '${escapeHtml(filename)}', '${isPdf ? 'pdf' : 'image'}')">👁 Ansehen</button>` : ''}

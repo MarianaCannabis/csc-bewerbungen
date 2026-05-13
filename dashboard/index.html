@@ -45,6 +45,48 @@
     label { display: block; font-size: 12px; color: var(--tx-dim); margin-bottom: 6px; font-weight: 500; }
     input[type=email], input[type=text], select, textarea { width: 100%; background: var(--bg-elev); border: 1px solid var(--border); border-radius: 8px; padding: 11px 13px; color: var(--tx); font-family: inherit; font-size: 14px; transition: border-color 0.15s, background 0.15s; }
     input:focus, select:focus, textarea:focus { outline: none; border-color: var(--green); background: #1d2e23; }
+    
+    /* ===== ACCESSIBILITY: Skip-Link + Tastatur-Fokus ===== */
+    .skip-link {
+      position: absolute; top: -50px; left: 8px;
+      background: var(--green); color: var(--bg);
+      padding: 10px 18px; border-radius: 6px;
+      font-weight: 600; text-decoration: none;
+      z-index: 9999; transition: top 0.2s;
+    }
+    .skip-link:focus { top: 8px; outline: 3px solid var(--gold); outline-offset: 2px; }
+    
+    /* Sichtbarer Fokus für ALLE interaktiven Elemente — wichtig für Screenreader/Tastatur */
+    :focus-visible {
+      outline: 2px solid var(--green) !important;
+      outline-offset: 2px;
+      border-radius: 4px;
+    }
+    button:focus-visible, a:focus-visible, [tabindex]:focus-visible {
+      outline: 2px solid var(--green) !important;
+      outline-offset: 2px;
+    }
+    input:focus-visible, select:focus-visible, textarea:focus-visible {
+      outline: 2px solid var(--green) !important;
+      outline-offset: 1px;
+      border-color: var(--green);
+    }
+    
+    /* Visually-hidden für Screenreader-Texte */
+    .sr-only {
+      position: absolute; width: 1px; height: 1px;
+      padding: 0; margin: -1px; overflow: hidden;
+      clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+    }
+    
+    /* Bewegungs-Sensitivität respektieren */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
     button { cursor: pointer; font-family: inherit; border: none; transition: all 0.15s; }
     .btn-primary { background: var(--green); color: #0a120d; font-weight: 600; padding: 12px 18px; border-radius: 8px; width: 100%; font-size: 14px; margin-top: 16px; }
     .btn-primary:hover { background: #5fbe7d; transform: translateY(-1px); box-shadow: 0 6px 20px var(--green-glow); }
@@ -261,7 +303,12 @@
       width: 16px; height: 16px; cursor: pointer;
       accent-color: var(--green);
     }
-    .list-item-content { flex: 1; min-width: 0; }
+    .list-item-content { 
+      flex: 1; min-width: 0; 
+      background: none; border: none; padding: 0; margin: 0; 
+      color: inherit; font: inherit; text-align: left; cursor: pointer;
+      display: block; width: 100%;
+    }
     .list-item.bulk-selected {
       background: linear-gradient(to right, var(--green-glow) 0%, transparent 30%);
       border-left: 2px solid var(--green);
@@ -635,15 +682,17 @@
 </head>
 <body>
 
-<div id="login">
+<a href="#main-content" class="skip-link">Zum Hauptinhalt springen</a>
+
+<div id="login" role="region" aria-label="Anmeldung">
   <div class="login-card">
-    <div class="brand-mark">Mariana Cannabis</div>
+    <div class="brand-mark" aria-hidden="true">Mariana Cannabis</div>
     <h1>Bewerbungs-Dashboard</h1>
     <p class="sub">Login per Magic-Link. Du bekommst eine E-Mail mit einem Login-Link.</p>
     <label for="login-email">E-Mail-Adresse</label>
-    <input type="email" id="login-email" placeholder="vorstand@mariana-cannabis.de" autocomplete="email">
+    <input type="email" id="login-email" placeholder="vorstand@mariana-cannabis.de" autocomplete="email" aria-required="true">
     <button class="btn-primary" id="login-btn" onclick="sendMagicLink()">Login-Link senden</button>
-    <div id="login-msg" class="login-msg" style="display:none"></div>
+    <div id="login-msg" class="login-msg" style="display:none" role="status" aria-live="polite"></div>
   </div>
 </div>
 
@@ -655,16 +704,16 @@
     </div>
     <div class="header-right">
       <span class="user-email" id="user-email"></span>
-      <button class="btn-ghost stats-btn-header" onclick="openStatsModal()" title="Statistik-Übersicht" style="display:none" aria-label="Statistik öffnen">📊 Statistik</button>
-      <button class="btn-ghost" onclick="exportCsv()" title="Aktuell sichtbare Bewerbungen als CSV/Excel exportieren">⬇ Export</button>
-      <button class="btn-ghost" onclick="logout()">Abmelden</button>
+      <button class="btn-ghost stats-btn-header" onclick="openStatsModal()" title="Statistik-Übersicht" style="display:none" aria-label="Statistik-Übersicht öffnen"><span aria-hidden="true">📊</span> Statistik</button>
+      <button class="btn-ghost" onclick="exportCsv()" title="Aktuell sichtbare Bewerbungen als CSV/Excel exportieren" aria-label="Aktuell sichtbare Bewerbungen als CSV exportieren"><span aria-hidden="true">⬇</span> Export</button>
+      <button class="btn-ghost" onclick="logout()" aria-label="Abmelden">Abmelden</button>
     </div>
   </header>
   
   <div class="stats-bar" id="stats-bar"></div>
   
-  <div class="main">
-    <div class="list-panel">
+  <div class="main" id="main-content">
+    <aside class="list-panel" aria-label="Bewerbungs-Liste mit Filtern">
       <div class="list-header">
         <div class="list-title">
           Bewerbungen <span class="count" id="list-count">–</span>
@@ -690,7 +739,8 @@
           </div>
         </div>
         <div class="filter-row">
-          <select id="filter-status" onchange="renderList()">
+          <label for="filter-status" class="sr-only">Nach Status filtern</label>
+          <select id="filter-status" onchange="renderList()" aria-label="Nach Status filtern">
             <option value="">Alle Status</option>
             <option value="eingegangen">Eingegangen</option>
             <option value="in_pruefung">In Prüfung</option>
@@ -699,12 +749,14 @@
             <option value="angenommen">Angenommen</option>
             <option value="abgelehnt">Abgelehnt</option>
           </select>
-          <select id="filter-verein" onchange="renderList()" style="display:none">
+          <label for="filter-verein" class="sr-only">Nach Verein filtern</label>
+          <select id="filter-verein" onchange="renderList()" style="display:none" aria-label="Nach Verein filtern">
             <option value="">Alle Vereine</option>
           </select>
         </div>
         <div class="filter-row">
-          <select id="filter-rolle" onchange="renderList()">
+          <label for="filter-rolle" class="sr-only">Nach Rolle filtern</label>
+          <select id="filter-rolle" onchange="renderList()" aria-label="Nach Rolle filtern">
             <option value="">Alle Rollen</option>
             <option value="vorstand">Vorstand</option>
             <option value="stellv_vorstand">Stellv. Vorstand</option>
@@ -716,26 +768,32 @@
             <option value="reinigung">Reinigung</option>
             <option value="sicherheit">Sicherheit</option>
           </select>
-          <select id="filter-bundesland" onchange="renderList()" style="display:none">
+          <label for="filter-bundesland" class="sr-only">Nach Bundesland filtern</label>
+          <select id="filter-bundesland" onchange="renderList()" style="display:none" aria-label="Nach Bundesland filtern">
             <option value="">Alle Bundesländer</option>
           </select>
         </div>
         <div class="filter-row">
-          <select id="filter-tag" onchange="renderList()">
+          <label for="filter-tag" class="sr-only">Nach Tag filtern</label>
+          <select id="filter-tag" onchange="renderList()" aria-label="Nach Tag filtern">
             <option value="">Alle Tags</option>
             <option value="__keine__">— Ohne Tags —</option>
           </select>
         </div>
         <div class="filter-row" style="gap:6px">
-          <input type="date" id="filter-date-from" onchange="renderList()" title="Eingegangen ab" style="flex:1">
-          <input type="date" id="filter-date-to" onchange="renderList()" title="Eingegangen bis" style="flex:1">
-          <button class="edit-btn" onclick="resetDateFilter()" title="Datums-Filter zurücksetzen" style="margin:0">↺</button>
+          <label for="filter-date-from" class="sr-only">Eingegangen ab</label>
+          <input type="date" id="filter-date-from" onchange="renderList()" title="Eingegangen ab" aria-label="Eingegangen ab Datum" style="flex:1">
+          <label for="filter-date-to" class="sr-only">Eingegangen bis</label>
+          <input type="date" id="filter-date-to" onchange="renderList()" title="Eingegangen bis" aria-label="Eingegangen bis Datum" style="flex:1">
+          <button class="edit-btn" onclick="resetDateFilter()" title="Datums-Filter zurücksetzen" aria-label="Datums-Filter zurücksetzen" style="margin:0">↺</button>
         </div>
         <div class="filter-row">
-          <input type="text" id="filter-search" placeholder="Name, E-Mail oder Stadt..." oninput="renderList()">
+          <label for="filter-search" class="sr-only">Bewerbungen durchsuchen</label>
+          <input type="text" id="filter-search" placeholder="Name, E-Mail oder Stadt..." oninput="renderList()" aria-label="Bewerbungen nach Name, E-Mail oder Stadt durchsuchen">
         </div>
         <div class="filter-row">
-          <select id="sort-by" onchange="renderList()">
+          <label for="sort-by" class="sr-only">Sortieren nach</label>
+          <select id="sort-by" onchange="renderList()" aria-label="Liste sortieren nach">
             <option value="date_desc">Neueste zuerst</option>
             <option value="date_asc">Älteste zuerst</option>
             <option value="status">Nach Status</option>
@@ -745,20 +803,20 @@
           </select>
         </div>
       </div>
-      <div class="list-items" id="list-items">
+      <div class="list-items" id="list-items" role="list" aria-label="Bewerbungen">
         <div class="loading">Lade Bewerbungen...</div>
       </div>
-    </div>
+    </aside>
     
-    <div class="detail-panel" id="detail-panel">
+    <main class="detail-panel" id="detail-panel" aria-label="Bewerbungs-Details" tabindex="-1">
       <div class="detail-empty">
         <div>Wähle links eine Bewerbung aus,<br>um Details zu sehen.</div>
       </div>
-    </div>
+    </main>
   </div>
 </div>
 
-<div id="toast" class="toast"></div>
+<div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
 <!-- Vorschau-Modal für Anhänge -->
 <div id="preview-overlay" class="preview-overlay" onclick="if(event.target===this)closePreview()">
@@ -1066,13 +1124,14 @@ function renderList() {
     }
     const stdHtml = stdLabel ? `<span class="list-item-std">${stdLabel}</span>` : '';
     const isSelected = selectedIds.has(b.id);
-    return `<div class="list-item ${b.id === selectedId ? 'active' : ''} ${isSelected ? 'bulk-selected' : ''}" onclick="selectBewerbung('${b.id}')">
-      <input type="checkbox" class="list-item-cb" ${isSelected ? 'checked' : ''} onclick="event.stopPropagation(); toggleSelectBewerbung('${b.id}')">
-      <div class="list-item-content">
+    const itemLabel = `Bewerbung von ${b.vorname || ''} ${b.nachname || ''}, Status ${STATUS_LABELS[status] || status}${rollenLabel ? ', Rolle ' + rollenLabel : ''}${stdLabel ? ', ' + stdLabel : ''}${v ? ', Verein ' + v.name : ''}`;
+    return `<div class="list-item ${b.id === selectedId ? 'active' : ''} ${isSelected ? 'bulk-selected' : ''}" role="listitem">
+      <input type="checkbox" class="list-item-cb" ${isSelected ? 'checked' : ''} onclick="event.stopPropagation(); toggleSelectBewerbung('${b.id}')" aria-label="Auswählen: ${escapeHtml(b.vorname || '')} ${escapeHtml(b.nachname || '')}">
+      <button class="list-item-content" type="button" onclick="selectBewerbung('${b.id}')" aria-label="${escapeHtml(itemLabel)}" aria-current="${b.id === selectedId ? 'true' : 'false'}">
         <div class="list-item-top"><div class="list-item-name">${escapeHtml(b.vorname || '')} ${escapeHtml(b.nachname || '')} ${dupBadge} ${tagsList}</div><div class="list-item-date">${date}</div></div>
         <div class="list-item-meta"><span class="status-badge ${status}">${STATUS_LABELS[status] || status}</span><span class="list-item-rolle">${escapeHtml(rollenLabel || '–')}</span>${stdHtml}</div>
         ${userContext.ist_admin && v ? `<div class="list-item-verein">${escapeHtml(v.name)}</div>` : ''}
-      </div>
+      </button>
     </div>`;
   }).join('');
   
@@ -3432,6 +3491,8 @@ function openEditModal(sectionKey) {
 
   document.getElementById('em-overlay').classList.add('show');
   document.getElementById('em-audit-list')?.remove();
+  // Fokus auf Titel für Screenreader
+  setTimeout(() => document.getElementById('em-title')?.focus(), 50);
 }
 
 function attachEditHandlers(root) {
@@ -3699,10 +3760,10 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 
 <!-- ===== EDIT MODAL ===== -->
-<div id="em-overlay" class="em-overlay" onclick="if(event.target===this)closeEditModal()" role="dialog" aria-modal="true">
+<div id="em-overlay" class="em-overlay" onclick="if(event.target===this)closeEditModal()" role="dialog" aria-modal="true" aria-labelledby="em-title">
   <div class="em-modal">
     <div class="em-head">
-      <h2 id="em-title">Bearbeiten</h2>
+      <h2 id="em-title" tabindex="-1">Bearbeiten</h2>
       <button class="em-close" onclick="closeEditModal()" type="button">✕ Schließen</button>
     </div>
     <div id="em-body" class="em-body"></div>

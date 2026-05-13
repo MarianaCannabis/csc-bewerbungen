@@ -285,6 +285,80 @@
     .bulk-btn-clear { color: var(--tx-dim); }
     .bulk-btn-clear:hover { color: var(--red); border-color: var(--red); }
 
+    /* ===== TAGS ===== */
+    .tag-section {
+      display: flex; align-items: center; gap: 10px;
+      margin: 10px 0; padding: 10px 14px;
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 8px; flex-wrap: wrap;
+    }
+    .tag-section-label {
+      font-size: 11px; color: var(--tx-mute);
+      text-transform: uppercase; letter-spacing: 0.06em;
+      font-weight: 600; flex-shrink: 0;
+    }
+    .tag-list { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; align-items: center; }
+    .tag-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 10px; font-size: 12px; font-weight: 500;
+      background: var(--bg-elev2); color: var(--tx);
+      border: 1px solid var(--border); border-radius: 14px;
+      white-space: nowrap;
+    }
+    .tag-remove {
+      background: transparent; border: none; color: var(--tx-mute);
+      cursor: pointer; padding: 0 0 0 4px; margin-left: 2px;
+      font-size: 11px; line-height: 1;
+    }
+    .tag-remove:hover { color: var(--red); }
+    .tag-add-wrap { position: relative; display: inline-block; }
+    .tag-add-btn {
+      padding: 3px 12px; font-size: 12px; font-weight: 500;
+      background: transparent; color: var(--green);
+      border: 1px dashed var(--green-dim); border-radius: 14px;
+      cursor: pointer;
+    }
+    .tag-add-btn:hover { background: var(--green-glow); border-style: solid; }
+    .tag-picker {
+      position: absolute; top: 100%; left: 0; margin-top: 6px;
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 8px; padding: 10px; min-width: 240px; z-index: 50;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    }
+    .tag-picker-title {
+      font-size: 11px; color: var(--tx-mute);
+      text-transform: uppercase; letter-spacing: 0.06em;
+      margin-bottom: 8px; font-weight: 600;
+    }
+    .tag-picker-list {
+      display: flex; flex-direction: column; gap: 4px;
+      max-height: 200px; overflow-y: auto; margin-bottom: 10px;
+    }
+    .tag-picker-opt {
+      text-align: left; padding: 5px 10px; font-size: 12px;
+      background: var(--bg); color: var(--tx);
+      border: 1px solid var(--border); border-radius: 6px; cursor: pointer;
+    }
+    .tag-picker-opt:hover { background: var(--bg-elev); border-color: var(--green-dim); }
+    .tag-picker-custom { display: flex; gap: 6px; padding-top: 8px; border-top: 1px solid var(--border); }
+    .tag-picker-custom input {
+      flex: 1; padding: 5px 8px; font-size: 12px;
+      background: var(--bg); color: var(--tx);
+      border: 1px solid var(--border); border-radius: 5px;
+    }
+    .tag-picker-close {
+      position: absolute; top: 6px; right: 8px;
+      background: transparent; border: none; color: var(--tx-mute);
+      cursor: pointer; font-size: 13px; padding: 2px 5px;
+    }
+    .tag-picker-close:hover { color: var(--tx); }
+
+    /* Kleine Tag-Emojis in der Listen-Übersicht */
+    .list-tag {
+      display: inline-block; margin-left: 3px; font-size: 12px;
+      vertical-align: middle;
+    }
+
     /* ===== EDIT MODAL ===== */
     .edit-btn {
       background: transparent; border: 1px solid var(--border); color: var(--tx-mute);
@@ -511,6 +585,12 @@
           </select>
           <select id="filter-bundesland" onchange="renderList()" style="display:none">
             <option value="">Alle Bundesländer</option>
+          </select>
+        </div>
+        <div class="filter-row">
+          <select id="filter-tag" onchange="renderList()">
+            <option value="">Alle Tags</option>
+            <option value="__keine__">— Ohne Tags —</option>
           </select>
         </div>
         <div class="filter-row" style="gap:6px">
@@ -749,11 +829,31 @@ function renderList() {
   const vereinFilter = document.getElementById('filter-verein').value;
   const rolleFilter = document.getElementById('filter-rolle').value;
   const bundeslandFilter = document.getElementById('filter-bundesland')?.value || '';
+  const tagFilter = document.getElementById('filter-tag')?.value || '';
   const dateFrom = document.getElementById('filter-date-from').value;
   const dateTo = document.getElementById('filter-date-to').value;
   const searchTerm = document.getElementById('filter-search').value.toLowerCase().trim();
   const sortBy = document.getElementById('sort-by').value;
   activeStatusFilter = statusFilter;
+
+  // Tag-Filter-Dropdown dynamisch befüllen (vordefinierte + alle real verwendeten)
+  const tagSel = document.getElementById('filter-tag');
+  if (tagSel) {
+    const usedTags = new Set();
+    bewerbungen.forEach(b => (Array.isArray(b.tags) ? b.tags : []).forEach(t => usedTags.add(t)));
+    const currentValue = tagSel.value;
+    const allTags = new Set([...PREDEFINED_TAGS.map(t => t.v), ...usedTags]);
+    const sorted = [...allTags].sort((a, b) => {
+      const la = tagInfo(a).l, lb = tagInfo(b).l;
+      return la.localeCompare(lb, 'de');
+    });
+    tagSel.innerHTML = '<option value="">Alle Tags</option><option value="__keine__">— Ohne Tags —</option>' 
+      + sorted.map(t => {
+        const info = tagInfo(t);
+        return `<option value="${escapeHtml(t)}">${info.e} ${escapeHtml(info.l)}</option>`;
+      }).join('');
+    tagSel.value = currentValue;
+  }
 
   // Duplikat-Map: E-Mail (lowercase) → Anzahl der Bewerbungen
   const emailCounts = {};
@@ -767,6 +867,11 @@ function renderList() {
   if (vereinFilter) filtered = filtered.filter(b => b.verein_id === vereinFilter);
   if (rolleFilter) filtered = filtered.filter(b => Array.isArray(b.rollen) && b.rollen.includes(rolleFilter));
   if (bundeslandFilter) filtered = filtered.filter(b => (vereine[b.verein_id]?.bundesland || '') === bundeslandFilter);
+  if (tagFilter === '__keine__') {
+    filtered = filtered.filter(b => !Array.isArray(b.tags) || b.tags.length === 0);
+  } else if (tagFilter) {
+    filtered = filtered.filter(b => Array.isArray(b.tags) && b.tags.includes(tagFilter));
+  }
   if (dateFrom) {
     const from = new Date(dateFrom + 'T00:00:00');
     filtered = filtered.filter(b => b.eingegangen_am && new Date(b.eingegangen_am) >= from);
@@ -808,6 +913,12 @@ function renderList() {
     const emailLow = (b.email || '').trim().toLowerCase();
     const dupCount = emailLow ? emailCounts[emailLow] : 0;
     const dupBadge = dupCount > 1 ? `<span class="dup-badge" title="${dupCount} Bewerbungen mit dieser E-Mail">🔁 ${dupCount}×</span>` : '';
+    // Tag-Indikatoren (kompakt: nur Emojis)
+    const tags = Array.isArray(b.tags) ? b.tags : [];
+    const tagsList = tags.map(t => {
+      const info = tagInfo(t);
+      return `<span class="list-tag" title="${escapeHtml(info.l)}">${info.e}</span>`;
+    }).join('');
     // Wochenstunden-Anzeige
     let stdLabel = '';
     if (b.wunsch_stunden_min != null && b.wunsch_stunden_max != null) {
@@ -824,7 +935,7 @@ function renderList() {
     return `<div class="list-item ${b.id === selectedId ? 'active' : ''} ${isSelected ? 'bulk-selected' : ''}" onclick="selectBewerbung('${b.id}')">
       <input type="checkbox" class="list-item-cb" ${isSelected ? 'checked' : ''} onclick="event.stopPropagation(); toggleSelectBewerbung('${b.id}')">
       <div class="list-item-content">
-        <div class="list-item-top"><div class="list-item-name">${escapeHtml(b.vorname || '')} ${escapeHtml(b.nachname || '')} ${dupBadge}</div><div class="list-item-date">${date}</div></div>
+        <div class="list-item-top"><div class="list-item-name">${escapeHtml(b.vorname || '')} ${escapeHtml(b.nachname || '')} ${dupBadge} ${tagsList}</div><div class="list-item-date">${date}</div></div>
         <div class="list-item-meta"><span class="status-badge ${status}">${STATUS_LABELS[status] || status}</span><span class="list-item-rolle">${escapeHtml(rollenLabel || '–')}</span>${stdHtml}</div>
         ${userContext.ist_admin && v ? `<div class="list-item-verein">${escapeHtml(v.name)}</div>` : ''}
       </div>
@@ -983,6 +1094,17 @@ async function selectBewerbung(id) {
       </div>
     </div>
     ${dupBanner}
+    
+    <div class="tag-section">
+      <div class="tag-section-label">🏷 Tags:</div>
+      <div class="tag-list" id="tag-list-${b.id}">
+        ${(Array.isArray(b.tags) ? b.tags : []).map(t => renderTagBadge(t, true, b.id)).join('')}
+        <div class="tag-add-wrap">
+          <button class="tag-add-btn" onclick="event.stopPropagation(); openTagPicker('${b.id}')" type="button" aria-label="Tag hinzufügen">+ Tag</button>
+          <div id="tag-picker" class="tag-picker" style="display:none" role="dialog" aria-label="Tag-Auswahl"></div>
+        </div>
+      </div>
+    </div>
     
     <div class="notiz-section">
       <div class="notiz-header">
@@ -1505,8 +1627,114 @@ function toast(msg, isError = false) {
 }
 
 // ============================================================================
-// BULK-AKTIONEN (Multi-Select für Status-Wechsel)
+// TAGS / LABELS
 // ============================================================================
+const PREDEFINED_TAGS = [
+  { v: 'heisser_kandidat',    l: 'Heißer Kandidat',    e: '🔥' },
+  { v: 'folgegespraech',      l: 'Folgegespräch nötig', e: '📞' },
+  { v: 'top_profil',          l: 'Top-Profil',          e: '✨' },
+  { v: 'wunschkandidat',      l: 'Wunschkandidat',      e: '🎯' },
+  { v: 'klaerungsbedarf',     l: 'Klärungsbedarf',      e: '⚠️' },
+  { v: 'referenzen_pruefen',  l: 'Referenzen prüfen',   e: '📋' },
+  { v: 'bereits_anderswo',    l: 'Anderswo angestellt', e: '💼' },
+  { v: 'neueinsteiger',       l: 'Neueinsteiger',       e: '🌱' },
+  { v: 'erfahrener_kandidat', l: 'Erfahren',            e: '🏅' },
+  { v: 'absage_geplant',      l: 'Absage geplant',      e: '👋' },
+];
+
+function tagInfo(tagValue) {
+  return PREDEFINED_TAGS.find(t => t.v === tagValue) 
+    || { v: tagValue, l: tagValue, e: '🏷' };
+}
+
+function renderTagBadge(tagValue, removable, bewerbungId) {
+  const t = tagInfo(tagValue);
+  const removeBtn = removable 
+    ? `<button class="tag-remove" onclick="event.stopPropagation(); removeTag('${bewerbungId}', '${tagValue.replace(/'/g, "\\'")}')" title="Entfernen" aria-label="Tag entfernen: ${escapeHtml(t.l)}">✕</button>` 
+    : '';
+  return `<span class="tag-badge" title="${escapeHtml(t.l)}">${t.e} ${escapeHtml(t.l)}${removeBtn}</span>`;
+}
+
+async function addTag(bewerbungId, tagValue) {
+  if (!tagValue || !tagValue.trim()) return;
+  tagValue = tagValue.trim();
+  const b = bewerbungen.find(x => x.id === bewerbungId);
+  if (!b) return;
+  const current = Array.isArray(b.tags) ? b.tags : [];
+  if (current.includes(tagValue)) { toast('Tag schon vorhanden', true); return; }
+  const newTags = [...current, tagValue];
+  try {
+    const { error } = await sb.from('csc_bewerbungen').update({ tags: newTags }).eq('id', bewerbungId);
+    if (error) throw error;
+    b.tags = newTags;
+    toast('✓ Tag hinzugefügt');
+    selectBewerbung(bewerbungId);
+    renderList();
+  } catch (e) {
+    console.error('[Tag] Hinzufügen-Fehler:', e);
+    toast('Fehler: ' + (e.message || e), true);
+  }
+}
+
+async function removeTag(bewerbungId, tagValue) {
+  const b = bewerbungen.find(x => x.id === bewerbungId);
+  if (!b) return;
+  const current = Array.isArray(b.tags) ? b.tags : [];
+  const newTags = current.filter(t => t !== tagValue);
+  try {
+    const { error } = await sb.from('csc_bewerbungen').update({ tags: newTags }).eq('id', bewerbungId);
+    if (error) throw error;
+    b.tags = newTags;
+    toast('Tag entfernt');
+    selectBewerbung(bewerbungId);
+    renderList();
+  } catch (e) {
+    console.error('[Tag] Entfernen-Fehler:', e);
+    toast('Fehler: ' + (e.message || e), true);
+  }
+}
+
+function openTagPicker(bewerbungId) {
+  const b = bewerbungen.find(x => x.id === bewerbungId);
+  if (!b) return;
+  const current = Array.isArray(b.tags) ? b.tags : [];
+  const avail = PREDEFINED_TAGS.filter(t => !current.includes(t.v));
+  const opts = avail.map(t => 
+    `<button class="tag-picker-opt" onclick="addTag('${bewerbungId}', '${t.v}'); closeTagPicker();" type="button">${t.e} ${escapeHtml(t.l)}</button>`
+  ).join('');
+  const picker = document.getElementById('tag-picker');
+  picker.innerHTML = `
+    <div class="tag-picker-title">Tag hinzufügen</div>
+    <div class="tag-picker-list">
+      ${opts || '<div style="color:var(--tx-mute);font-size:11px;padding:4px">Alle vordefinierten Tags vergeben</div>'}
+    </div>
+    <div class="tag-picker-custom">
+      <input type="text" id="tag-custom-input" placeholder="Eigener Tag…" 
+        onkeydown="if(event.key==='Enter'){addTag('${bewerbungId}', this.value); closeTagPicker();}"
+        aria-label="Eigenen Tag eingeben">
+      <button class="bulk-btn" onclick="const v=document.getElementById('tag-custom-input').value; addTag('${bewerbungId}', v); closeTagPicker();" type="button">Hinzufügen</button>
+    </div>
+    <button class="tag-picker-close" onclick="closeTagPicker()" type="button" aria-label="Tag-Auswahl schließen">✕</button>
+  `;
+  picker.style.display = 'block';
+  setTimeout(() => document.getElementById('tag-custom-input')?.focus(), 50);
+}
+
+function closeTagPicker() {
+  const picker = document.getElementById('tag-picker');
+  if (picker) picker.style.display = 'none';
+}
+
+// Schließt Picker beim Klick außerhalb
+document.addEventListener('click', (e) => {
+  const picker = document.getElementById('tag-picker');
+  if (!picker || picker.style.display === 'none') return;
+  if (!picker.contains(e.target) && !e.target.closest('.tag-add-btn')) {
+    closeTagPicker();
+  }
+});
+
+
 let selectedIds = new Set();
 let lastFilteredList = [];
 

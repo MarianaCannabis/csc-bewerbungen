@@ -102,7 +102,7 @@
     .filter-row { display: flex; gap: 6px; margin-bottom: 6px; }
     .filter-row select, .filter-row input { padding: 9px 11px; font-size: 13px; flex: 1; }
     .list-items { flex: 1; overflow-y: auto; }
-    .list-item { padding: 12px 16px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.1s; }
+    .list-item { padding: 12px 16px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.1s; display: flex; align-items: flex-start; gap: 0; }
     .list-item:hover { background: var(--bg-elev); }
     .list-item.active { background: var(--bg-elev); border-left: 3px solid var(--green); padding-left: 13px; }
     .list-item-top { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 4px; }
@@ -241,6 +241,49 @@
     }
     .dup-warning strong { color: var(--gold); }
     .dup-warning a { color: var(--gold); cursor: pointer; text-decoration: underline; }
+
+    /* Wochenstunden-Label in der Liste */
+    .list-item-std {
+      display: inline-block; padding: 1px 7px; font-size: 10px;
+      background: var(--bg-elev2); color: var(--tx-dim);
+      border-radius: 8px; margin-left: auto; white-space: nowrap;
+    }
+
+    /* List-Item mit Bulk-Checkbox */
+    .list-item-cb {
+      flex-shrink: 0; margin-right: 10px; margin-top: 2px;
+      width: 16px; height: 16px; cursor: pointer;
+      accent-color: var(--green);
+    }
+    .list-item-content { flex: 1; min-width: 0; }
+    .list-item.bulk-selected {
+      background: linear-gradient(to right, var(--green-glow) 0%, transparent 30%);
+      border-left: 2px solid var(--green);
+    }
+
+    /* Bulk-Bar */
+    .bulk-bar {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 10px; margin: 0 0 8px 0;
+      background: var(--green-glow); border: 1px solid var(--green-dim);
+      border-radius: 8px; flex-wrap: wrap;
+    }
+    .bulk-bar-info { color: var(--green); font-size: 13px; flex-shrink: 0; }
+    .bulk-bar-actions { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
+    .bulk-bar #bulk-status-select {
+      padding: 4px 8px; font-size: 12px;
+      background: var(--bg); color: var(--green);
+      border: 1px solid var(--green-dim); border-radius: 5px; cursor: pointer;
+    }
+    .bulk-btn {
+      padding: 4px 10px; font-size: 11px; font-weight: 500;
+      background: var(--bg-elev2); color: var(--tx);
+      border: 1px solid var(--border); border-radius: 5px; cursor: pointer;
+    }
+    .bulk-btn:hover:not(:disabled) { background: var(--bg-elev); border-color: var(--green-dim); }
+    .bulk-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .bulk-btn-clear { color: var(--tx-dim); }
+    .bulk-btn-clear:hover { color: var(--red); border-color: var(--red); }
 
     /* ===== EDIT MODAL ===== */
     .edit-btn {
@@ -420,6 +463,25 @@
     <div class="list-panel">
       <div class="list-header">
         <div class="list-title">Bewerbungen <span class="count" id="list-count">–</span></div>
+        <div id="bulk-bar" class="bulk-bar" style="display:none">
+          <div class="bulk-bar-info">
+            <strong><span id="bulk-count">0</span></strong> ausgewählt
+          </div>
+          <div class="bulk-bar-actions">
+            <select id="bulk-status-select" onchange="bulkSetStatus(this.value)">
+              <option value="">Status setzen…</option>
+              <option value="eingegangen">→ Eingegangen</option>
+              <option value="in_pruefung">→ In Prüfung</option>
+              <option value="eingeladen">→ Eingeladen</option>
+              <option value="warteliste">→ Warteliste</option>
+              <option value="angenommen">→ Angenommen</option>
+              <option value="abgelehnt">→ Abgelehnt</option>
+            </select>
+            <button class="bulk-btn" id="bulk-select-all" onclick="selectAllVisible()" title="Alle in der aktuellen Filter-Ansicht auswählen">Alle auswählen</button>
+            <button class="bulk-btn" onclick="invertSelection()" title="Auswahl umkehren">Umkehren</button>
+            <button class="bulk-btn bulk-btn-clear" onclick="deselectAll()" title="Auswahl aufheben">✕ Auswahl aufheben</button>
+          </div>
+        </div>
         <div class="filter-row">
           <select id="filter-status" onchange="renderList()">
             <option value="">Alle Status</option>
@@ -746,8 +808,32 @@ function renderList() {
     const emailLow = (b.email || '').trim().toLowerCase();
     const dupCount = emailLow ? emailCounts[emailLow] : 0;
     const dupBadge = dupCount > 1 ? `<span class="dup-badge" title="${dupCount} Bewerbungen mit dieser E-Mail">🔁 ${dupCount}×</span>` : '';
-    return `<div class="list-item ${b.id === selectedId ? 'active' : ''}" onclick="selectBewerbung('${b.id}')"><div class="list-item-top"><div class="list-item-name">${escapeHtml(b.vorname || '')} ${escapeHtml(b.nachname || '')} ${dupBadge}</div><div class="list-item-date">${date}</div></div><div class="list-item-meta"><span class="status-badge ${status}">${STATUS_LABELS[status] || status}</span><span class="list-item-rolle">${escapeHtml(rollenLabel || '–')}</span></div>${userContext.ist_admin && v ? `<div class="list-item-verein">${escapeHtml(v.name)}</div>` : ''}</div>`;
+    // Wochenstunden-Anzeige
+    let stdLabel = '';
+    if (b.wunsch_stunden_min != null && b.wunsch_stunden_max != null) {
+      stdLabel = b.wunsch_stunden_min === b.wunsch_stunden_max 
+        ? `${b.wunsch_stunden_min}h/W` 
+        : `${b.wunsch_stunden_min}–${b.wunsch_stunden_max}h/W`;
+    } else if (b.wunsch_stunden_min != null) {
+      stdLabel = `ab ${b.wunsch_stunden_min}h/W`;
+    } else if (b.wunsch_stunden_max != null) {
+      stdLabel = `bis ${b.wunsch_stunden_max}h/W`;
+    }
+    const stdHtml = stdLabel ? `<span class="list-item-std">${stdLabel}</span>` : '';
+    const isSelected = selectedIds.has(b.id);
+    return `<div class="list-item ${b.id === selectedId ? 'active' : ''} ${isSelected ? 'bulk-selected' : ''}" onclick="selectBewerbung('${b.id}')">
+      <input type="checkbox" class="list-item-cb" ${isSelected ? 'checked' : ''} onclick="event.stopPropagation(); toggleSelectBewerbung('${b.id}')">
+      <div class="list-item-content">
+        <div class="list-item-top"><div class="list-item-name">${escapeHtml(b.vorname || '')} ${escapeHtml(b.nachname || '')} ${dupBadge}</div><div class="list-item-date">${date}</div></div>
+        <div class="list-item-meta"><span class="status-badge ${status}">${STATUS_LABELS[status] || status}</span><span class="list-item-rolle">${escapeHtml(rollenLabel || '–')}</span>${stdHtml}</div>
+        ${userContext.ist_admin && v ? `<div class="list-item-verein">${escapeHtml(v.name)}</div>` : ''}
+      </div>
+    </div>`;
   }).join('');
+  
+  // Letzte gefilterte Liste merken für "Alle auswählen"
+  lastFilteredList = filtered;
+  renderBulkBar();
 }
 
 async function selectBewerbung(id) {
@@ -1416,6 +1502,72 @@ function toast(msg, isError = false) {
   el.textContent = msg; el.className = 'toast show' + (isError ? ' error' : '');
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+// ============================================================================
+// BULK-AKTIONEN (Multi-Select für Status-Wechsel)
+// ============================================================================
+let selectedIds = new Set();
+let lastFilteredList = [];
+
+function toggleSelectBewerbung(id) {
+  if (selectedIds.has(id)) selectedIds.delete(id);
+  else selectedIds.add(id);
+  renderList();
+}
+
+function selectAllVisible() {
+  lastFilteredList.forEach(b => selectedIds.add(b.id));
+  renderList();
+}
+
+function deselectAll() {
+  selectedIds.clear();
+  renderList();
+}
+
+function invertSelection() {
+  const newSel = new Set();
+  lastFilteredList.forEach(b => { if (!selectedIds.has(b.id)) newSel.add(b.id); });
+  selectedIds = newSel;
+  renderList();
+}
+
+function renderBulkBar() {
+  const bar = document.getElementById('bulk-bar');
+  if (!bar) return;
+  if (selectedIds.size === 0) { bar.style.display = 'none'; return; }
+  bar.style.display = '';
+  document.getElementById('bulk-count').textContent = selectedIds.size;
+  // Wenn alle gefilterten ausgewählt, "Alle auswählen" disablen
+  const allSelected = lastFilteredList.length > 0 && lastFilteredList.every(b => selectedIds.has(b.id));
+  const btn = document.getElementById('bulk-select-all');
+  if (btn) {
+    btn.disabled = allSelected;
+    btn.textContent = allSelected ? `Alle ${lastFilteredList.length} bereits ausgewählt` : `Alle ${lastFilteredList.length} sichtbaren auswählen`;
+  }
+}
+
+async function bulkSetStatus(newStatus) {
+  if (selectedIds.size === 0 || !newStatus) return;
+  const count = selectedIds.size;
+  const statusLabel = STATUS_LABELS[newStatus] || newStatus;
+  if (!confirm(`Status auf "${statusLabel}" setzen für ${count} Bewerbung${count !== 1 ? 'en' : ''}?\n\nDie Bewerber:innen erhalten KEINE automatische Mail.`)) return;
+  const ids = Array.from(selectedIds);
+  try {
+    const { error } = await sb.from('csc_bewerbungen').update({ status: newStatus }).in('id', ids);
+    if (error) throw error;
+    toast(`✓ ${count} Bewerbung${count !== 1 ? 'en' : ''} auf "${statusLabel}" gesetzt`);
+    selectedIds.clear();
+    await loadDashboard();
+  } catch (e) {
+    console.error('[Bulk] Fehler:', e);
+    toast('Fehler: ' + (e.message || e), true);
+  } finally {
+    // Dropdown zurücksetzen
+    const sel = document.getElementById('bulk-status-select');
+    if (sel) sel.value = '';
+  }
 }
 
 // ============================================================================

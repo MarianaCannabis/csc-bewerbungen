@@ -1400,8 +1400,10 @@ const EDIT_SECTIONS = {
         { k:'rollen_standorte', l:'Standorte (für Rollen)', t:'multi_checkbox', options: STANDORTE_OPTIONS },
         { k:'bestaetigt_zwei_standorte', l:'Bestätigt zwei Standorte', t:'boolean_tri' },
         { k:'motivation', l:'Motivation', t:'textarea' },
-        { k:'praevention_sachkunde', l:'Sachkunde Prävention vorhanden', t:'boolean_tri' },
-        { k:'sicherheit_nachweis', l:'Nachweis Sicherheit vorhanden', t:'boolean_tri' },
+        { k:'praevention_sachkunde', l:'Sachkunde Prävention vorhanden', t:'select',
+          options:[['','—'],['ja','Ja'],['nein','Nein'],['teilweise','Teilweise']] },
+        { k:'sicherheit_nachweis', l:'Nachweis Sicherheit vorhanden', t:'select',
+          options:[['','—'],['ja','Ja'],['nein','Nein'],['teilweise','Teilweise']] },
       ]}
     ]
   },
@@ -1440,11 +1442,13 @@ const EDIT_SECTIONS = {
         { k:'bereit_nacht', l:'Nacht möglich', t:'boolean_tri', row:'br' },
       ]},
       { title: 'Anfahrt & Mobilität', fields: [
-        { k:'max_anfahrt', l:'Max. Anfahrt Ausgabe', t:'text', row:'af' },
-        { k:'max_anfahrt_anbau', l:'Max. Anfahrt Anbau', t:'text', row:'af' },
+        { k:'max_anfahrt', l:'Max. Anfahrt Ausgabe (Min)', t:'number', row:'af', min:0, max:300 },
+        { k:'max_anfahrt_anbau', l:'Max. Anfahrt Anbau (Min)', t:'number', row:'af', min:0, max:300 },
         { k:'eigenes_fahrzeug', l:'Eigenes Fahrzeug', t:'boolean_tri', row:'fz' },
-        { k:'jobticket', l:'Jobticket möglich', t:'boolean_tri', row:'fz' },
-        { k:'fuehrerschein', l:'Führerschein (Klasse)', t:'text' },
+        { k:'jobticket', l:'Jobticket möglich', t:'select', row:'fz',
+          options:[['','—'],['ja','Ja'],['nein','Nein'],['teilweise','Teilweise']] },
+        { k:'fuehrerschein', l:'Führerschein-Klassen', t:'multi_checkbox',
+          options:[['A','A'],['A1','A1'],['A2','A2'],['AM','AM'],['B','B'],['BE','BE'],['B96','B96'],['B197','B197'],['C','C'],['CE','CE'],['L','L'],['T','T']] },
       ]},
       { title: 'Verfügbarkeits-Raster', fields: [
         { k:'verfuegbarkeit', l:'', t:'availability_grid' },
@@ -1465,11 +1469,13 @@ const EDIT_SECTIONS = {
         { k:'bereit_nacht', l:'Nacht möglich', t:'boolean_tri', row:'br' },
       ]},
       { title: 'Anfahrt', fields: [
-        { k:'max_anfahrt', l:'Max. Anfahrt Ausgabe', t:'text', row:'af' },
-        { k:'max_anfahrt_anbau', l:'Max. Anfahrt Anbau', t:'text', row:'af' },
+        { k:'max_anfahrt', l:'Max. Anfahrt Ausgabe (Min)', t:'number', row:'af', min:0, max:300 },
+        { k:'max_anfahrt_anbau', l:'Max. Anfahrt Anbau (Min)', t:'number', row:'af', min:0, max:300 },
         { k:'eigenes_fahrzeug', l:'Eigenes Fahrzeug', t:'boolean_tri', row:'fz' },
-        { k:'jobticket', l:'Jobticket möglich', t:'boolean_tri', row:'fz' },
-        { k:'fuehrerschein', l:'Führerschein', t:'text' },
+        { k:'jobticket', l:'Jobticket möglich', t:'select', row:'fz',
+          options:[['','—'],['ja','Ja'],['nein','Nein'],['teilweise','Teilweise']] },
+        { k:'fuehrerschein', l:'Führerschein-Klassen', t:'multi_checkbox',
+          options:[['A','A'],['A1','A1'],['A2','A2'],['AM','AM'],['B','B'],['BE','BE'],['B96','B96'],['B197','B197'],['C','C'],['CE','CE'],['L','L'],['T','T']] },
       ]},
     ]
   },
@@ -1507,7 +1513,7 @@ const EDIT_SECTIONS = {
       { title: 'Schwerbehinderung', fields: [
         { k:'schwerbehinderung', l:'Schwerbehinderung', t:'select',
           options:[['','—'],['ja','Ja'],['nein','Nein'],['keine_angabe','Keine Angabe']] },
-        { k:'schwerbehinderung_gdb', l:'GdB (Grad)', t:'number', min:0, max:100 },
+        { k:'schwerbehinderung_gdb', l:'GdB (Grad der Behinderung)', t:'text', inputmode:'numeric', maxlength:3 },
         { k:'schwerbehinderung_einschr', l:'Einschränkungen', t:'textarea' },
         { k:'schwerbehinderung_anpassungen', l:'Notwendige Anpassungen', t:'textarea' },
       ]},
@@ -1765,8 +1771,26 @@ async function saveEditModal() {
   const update = {};
   const b = currentEditBewerbung;
 
-  // Sammle alle Inputs
+  // Erst alle nested-Roots vorinitialisieren mit existing values aus DB,
+  // damit z.B. adresse.lat / adresse.lon nicht verloren gehen wenn wir
+  // nur adresse.strasse ändern
+  const nestedRoots = new Set();
   const body = document.getElementById('em-body');
+  body.querySelectorAll('[data-k][data-t]').forEach(el => {
+    if (el.dataset.k.includes('.')) {
+      nestedRoots.add(el.dataset.k.split('.')[0]);
+    }
+  });
+  nestedRoots.forEach(root => {
+    const existing = b[root];
+    if (existing && typeof existing === 'object' && !Array.isArray(existing)) {
+      update[root] = { ...existing };
+    } else {
+      update[root] = {};
+    }
+  });
+
+  // Sammle alle Inputs
   body.querySelectorAll('[data-k][data-t]').forEach(el => {
     const k = el.dataset.k;
     const t = el.dataset.t;

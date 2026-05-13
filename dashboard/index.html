@@ -43,7 +43,28 @@
     .brand-mark { display: inline-flex; align-items: center; gap: 10px; margin-bottom: 24px; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--green); font-weight: 600; }
     .brand-mark::before { content: ''; width: 6px; height: 6px; background: var(--green); border-radius: 50%; box-shadow: 0 0 12px var(--green); }
     label { display: block; font-size: 12px; color: var(--tx-dim); margin-bottom: 6px; font-weight: 500; }
-    input[type=email], input[type=text], select, textarea { width: 100%; background: var(--bg-elev); border: 1px solid var(--border); border-radius: 8px; padding: 11px 13px; color: var(--tx); font-family: inherit; font-size: 14px; transition: border-color 0.15s, background 0.15s; }
+    input[type=email], input[type=text], input[type=date], select, textarea { width: 100%; background: var(--bg-elev); border: 1px solid var(--border); border-radius: 8px; padding: 11px 13px; color: var(--tx); font-family: inherit; font-size: 14px; transition: border-color 0.15s, background 0.15s; }
+    
+    /* Date-Inputs ans Dark-Theme anpassen — sonst Browser-Default-Weiß */
+    input[type=date] {
+      color-scheme: dark;  /* dunkler nativer Picker-Popup */
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    /* Wenn leer (placeholder TT.mm.jjjj) ein bisschen gedimmt */
+    input[type=date]:not(:focus):invalid,
+    input[type=date]:placeholder-shown {
+      color: var(--tx-dim);
+    }
+    /* Calendar-Icon auf der rechten Seite hellen */
+    input[type=date]::-webkit-calendar-picker-indicator {
+      filter: invert(0.7) brightness(1.2);
+      cursor: pointer;
+      opacity: 0.7;
+    }
+    input[type=date]::-webkit-calendar-picker-indicator:hover {
+      opacity: 1;
+    }
     input:focus, select:focus, textarea:focus { outline: none; border-color: var(--green); background: #1d2e23; }
     
     /* ===== ACCESSIBILITY: Skip-Link + Tastatur-Fokus ===== */
@@ -544,6 +565,15 @@
     .edit-btn:hover { color: var(--green); border-color: var(--green); background: var(--green-glow); }
     .edit-btn::before { content: '✏ '; }
 
+    /* Filter-Reset-Button (↺) — wie edit-btn, aber ohne ✏-Prefix */
+    .filter-reset-btn {
+      background: var(--bg-elev); border: 1px solid var(--border); color: var(--tx-mute);
+      font-size: 16px; padding: 0 14px; border-radius: 8px; cursor: pointer;
+      transition: all 0.15s; line-height: 1; min-width: 38px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .filter-reset-btn:hover { color: var(--green); border-color: var(--green); background: var(--green-glow); }
+
     .em-overlay {
       position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 200;
       display: none; align-items: flex-start; justify-content: center;
@@ -785,7 +815,7 @@
           <input type="date" id="filter-date-from" onchange="renderList()" title="Eingegangen ab" aria-label="Eingegangen ab Datum" style="flex:1">
           <label for="filter-date-to" class="sr-only">Eingegangen bis</label>
           <input type="date" id="filter-date-to" onchange="renderList()" title="Eingegangen bis" aria-label="Eingegangen bis Datum" style="flex:1">
-          <button class="edit-btn" onclick="resetDateFilter()" title="Datums-Filter zurücksetzen" aria-label="Datums-Filter zurücksetzen" style="margin:0">↺</button>
+          <button class="filter-reset-btn" onclick="resetDateFilter()" title="Datums-Filter zurücksetzen" aria-label="Datums-Filter zurücksetzen">↺</button>
         </div>
         <div class="filter-row">
           <label for="filter-search" class="sr-only">Bewerbungen durchsuchen</label>

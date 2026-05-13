@@ -227,6 +227,21 @@
     .toast.show { transform: translateY(0); opacity: 1; }
     .toast.error { border-color: var(--red); }
 
+    /* Duplikat-Badge in der Liste */
+    .dup-badge {
+      display: inline-block; margin-left: 6px; padding: 1px 7px;
+      font-size: 10px; font-weight: 600; background: var(--gold-bg);
+      border: 1px solid var(--gold); color: var(--gold);
+      border-radius: 10px; vertical-align: middle;
+    }
+    .dup-warning {
+      margin: 10px 0; padding: 10px 14px; background: var(--gold-bg);
+      border-left: 3px solid var(--gold); color: var(--gold); border-radius: 0 6px 6px 0;
+      font-size: 12px; line-height: 1.5;
+    }
+    .dup-warning strong { color: var(--gold); }
+    .dup-warning a { color: var(--gold); cursor: pointer; text-decoration: underline; }
+
     /* ===== EDIT MODAL ===== */
     .edit-btn {
       background: transparent; border: 1px solid var(--border); color: var(--tx-mute);
@@ -420,6 +435,28 @@
           </select>
         </div>
         <div class="filter-row">
+          <select id="filter-rolle" onchange="renderList()">
+            <option value="">Alle Rollen</option>
+            <option value="vorstand">Vorstand</option>
+            <option value="stellv_vorstand">Stellv. Vorstand</option>
+            <option value="grower">Grower</option>
+            <option value="head_grower">Head Grower</option>
+            <option value="ausgabe">Ausgabe</option>
+            <option value="springer">Springer</option>
+            <option value="praevention">Prävention</option>
+            <option value="reinigung">Reinigung</option>
+            <option value="sicherheit">Sicherheit</option>
+          </select>
+          <select id="filter-bundesland" onchange="renderList()" style="display:none">
+            <option value="">Alle Bundesländer</option>
+          </select>
+        </div>
+        <div class="filter-row" style="gap:6px">
+          <input type="date" id="filter-date-from" onchange="renderList()" title="Eingegangen ab" style="flex:1">
+          <input type="date" id="filter-date-to" onchange="renderList()" title="Eingegangen bis" style="flex:1">
+          <button class="edit-btn" onclick="resetDateFilter()" title="Datums-Filter zurücksetzen" style="margin:0">↺</button>
+        </div>
+        <div class="filter-row">
           <input type="text" id="filter-search" placeholder="Name, E-Mail oder Stadt..." oninput="renderList()">
         </div>
         <div class="filter-row">
@@ -560,7 +597,11 @@ async function loadDashboard() {
   
   document.getElementById('user-email').textContent = userContext.email;
   const pill = document.getElementById('role-pill');
-  if (userContext.ist_admin) { pill.textContent = 'Admin · Alle Vereine'; pill.className = 'role-pill admin'; document.getElementById('filter-verein').style.display = ''; }
+  if (userContext.ist_admin) {
+    pill.textContent = 'Admin · Alle Vereine'; pill.className = 'role-pill admin';
+    document.getElementById('filter-verein').style.display = '';
+    document.getElementById('filter-bundesland').style.display = '';
+  }
   else { pill.textContent = 'Vorstand'; pill.className = 'role-pill vorstand'; }
   
   await loadVereine();
@@ -575,6 +616,10 @@ async function loadVereine() {
   if (userContext.ist_admin) {
     const sel = document.getElementById('filter-verein');
     sel.innerHTML = '<option value="">Alle Vereine</option>' + data.sort((a,b) => a.name.localeCompare(b.name, 'de')).map(v => `<option value="${v.id}">${escapeHtml(v.name)}</option>`).join('');
+    // Bundesländer aus Vereinen extrahieren und befüllen
+    const bundeslaender = [...new Set(data.map(v => v.bundesland).filter(Boolean))].sort((a,b) => a.localeCompare(b, 'de'));
+    const blSel = document.getElementById('filter-bundesland');
+    blSel.innerHTML = '<option value="">Alle Bundesländer</option>' + bundeslaender.map(b => `<option value="${escapeHtml(b)}">${escapeHtml(b)}</option>`).join('');
   }
 }
 
@@ -631,17 +676,43 @@ function setStatusFilter(status) {
 }
 
 function filterByVerein(vereinId) { document.getElementById('filter-verein').value = vereinId; renderList(); }
+function resetDateFilter() {
+  document.getElementById('filter-date-from').value = '';
+  document.getElementById('filter-date-to').value = '';
+  renderList();
+}
 
 function renderList() {
   const statusFilter = document.getElementById('filter-status').value;
   const vereinFilter = document.getElementById('filter-verein').value;
+  const rolleFilter = document.getElementById('filter-rolle').value;
+  const bundeslandFilter = document.getElementById('filter-bundesland')?.value || '';
+  const dateFrom = document.getElementById('filter-date-from').value;
+  const dateTo = document.getElementById('filter-date-to').value;
   const searchTerm = document.getElementById('filter-search').value.toLowerCase().trim();
   const sortBy = document.getElementById('sort-by').value;
   activeStatusFilter = statusFilter;
-  
+
+  // Duplikat-Map: E-Mail (lowercase) → Anzahl der Bewerbungen
+  const emailCounts = {};
+  bewerbungen.forEach(b => {
+    const e = (b.email || '').trim().toLowerCase();
+    if (e) emailCounts[e] = (emailCounts[e] || 0) + 1;
+  });
+
   let filtered = bewerbungen;
   if (statusFilter) filtered = filtered.filter(b => (b.status || 'eingegangen') === statusFilter);
   if (vereinFilter) filtered = filtered.filter(b => b.verein_id === vereinFilter);
+  if (rolleFilter) filtered = filtered.filter(b => Array.isArray(b.rollen) && b.rollen.includes(rolleFilter));
+  if (bundeslandFilter) filtered = filtered.filter(b => (vereine[b.verein_id]?.bundesland || '') === bundeslandFilter);
+  if (dateFrom) {
+    const from = new Date(dateFrom + 'T00:00:00');
+    filtered = filtered.filter(b => b.eingegangen_am && new Date(b.eingegangen_am) >= from);
+  }
+  if (dateTo) {
+    const to = new Date(dateTo + 'T23:59:59');
+    filtered = filtered.filter(b => b.eingegangen_am && new Date(b.eingegangen_am) <= to);
+  }
   if (searchTerm) {
     filtered = filtered.filter(b => {
       const hay = [b.vorname, b.nachname, b.email, b.adresse?.ort, b.adresse?.plz, b.adresse?.stadt, vereine[b.verein_id]?.name].filter(Boolean).join(' ').toLowerCase();
@@ -672,7 +743,10 @@ function renderList() {
     const rollen = Array.isArray(b.rollen) ? b.rollen : [];
     const rollenLabel = rollen.slice(0, 2).map(r => ROLE_LABELS[r] || r).join(', ') + (rollen.length > 2 ? ` +${rollen.length - 2}` : '');
     const date = b.eingegangen_am ? new Date(b.eingegangen_am).toLocaleDateString('de-DE', {day:'2-digit',month:'2-digit'}) : '–';
-    return `<div class="list-item ${b.id === selectedId ? 'active' : ''}" onclick="selectBewerbung('${b.id}')"><div class="list-item-top"><div class="list-item-name">${escapeHtml(b.vorname || '')} ${escapeHtml(b.nachname || '')}</div><div class="list-item-date">${date}</div></div><div class="list-item-meta"><span class="status-badge ${status}">${STATUS_LABELS[status] || status}</span><span class="list-item-rolle">${escapeHtml(rollenLabel || '–')}</span></div>${userContext.ist_admin && v ? `<div class="list-item-verein">${escapeHtml(v.name)}</div>` : ''}</div>`;
+    const emailLow = (b.email || '').trim().toLowerCase();
+    const dupCount = emailLow ? emailCounts[emailLow] : 0;
+    const dupBadge = dupCount > 1 ? `<span class="dup-badge" title="${dupCount} Bewerbungen mit dieser E-Mail">🔁 ${dupCount}×</span>` : '';
+    return `<div class="list-item ${b.id === selectedId ? 'active' : ''}" onclick="selectBewerbung('${b.id}')"><div class="list-item-top"><div class="list-item-name">${escapeHtml(b.vorname || '')} ${escapeHtml(b.nachname || '')} ${dupBadge}</div><div class="list-item-date">${date}</div></div><div class="list-item-meta"><span class="status-badge ${status}">${STATUS_LABELS[status] || status}</span><span class="list-item-rolle">${escapeHtml(rollenLabel || '–')}</span></div>${userContext.ist_admin && v ? `<div class="list-item-verein">${escapeHtml(v.name)}</div>` : ''}</div>`;
   }).join('');
 }
 
@@ -788,6 +862,20 @@ async function selectBewerbung(id) {
     }
   }
   
+  // Duplikat-Erkennung: andere Bewerbungen mit selber E-Mail
+  const emailLow = (b.email || '').trim().toLowerCase();
+  const dupBewerbungen = emailLow ? bewerbungen.filter(x => x.id !== b.id && (x.email || '').trim().toLowerCase() === emailLow) : [];
+  const dupBanner = dupBewerbungen.length ? `
+    <div class="dup-warning">
+      <strong>🔁 Mehrfach-Bewerbung erkannt:</strong> Diese Person (${escapeHtml(b.email)}) hat sich ${dupBewerbungen.length + 1}× beworben.
+      <div style="margin-top:6px">Andere Bewerbungen: ${dupBewerbungen.map(d => {
+        const dv = vereine[d.verein_id];
+        const ddate = d.eingegangen_am ? new Date(d.eingegangen_am).toLocaleDateString('de-DE') : '–';
+        const dstatus = STATUS_LABELS[d.status || 'eingegangen'] || d.status;
+        return `<a onclick="selectBewerbung('${d.id}')">${escapeHtml(dv?.name || '?')} (${ddate}, ${dstatus})</a>`;
+      }).join(' · ')}</div>
+    </div>` : '';
+
   const html = `
     <div class="detail-header">
       <div>
@@ -808,6 +896,7 @@ async function selectBewerbung(id) {
         ${userContext.ist_admin ? `<button class="action-btn loeschen" onclick="deleteBewerbung('${b.id}')" title="Bewerbung dauerhaft löschen (DSGVO)">🗑 Löschen</button>` : ''}
       </div>
     </div>
+    ${dupBanner}
     
     <div class="notiz-section">
       <div class="notiz-header">

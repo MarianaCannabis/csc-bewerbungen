@@ -1812,22 +1812,34 @@ function generatePrintHtml(b, v) {
     ? Object.entries(b.soft_skills).filter(([_, val]) => val != null && val !== 0).map(([k, val]) => `${SOFT_LBL[k]||k}: ${val}/5`).join(', ')
     : '';
   
-  // Verfügbarkeit (jsonb: { standort1: { mo: ['frueh','vormittag'], ... }, ... })
+  // Verfügbarkeit: jsonb { standort: { mo: [bool×5], di: [bool×5], ... } }
+  // Array-Index: 0=Früh, 1=Vormittag, 2=Mittag, 3=Nachmittag, 4=Abend
   const STANDORT_LBL = { anbau:'Anbauanlage', ausgabe:'Ausgabestelle', allgemein:'Allgemein' };
-  const TAG_LBL = { mo:'Mo', di:'Di', mi:'Mi', do:'Do', fr:'Fr', sa:'Sa', so:'So' };
-  const SLOT_LBL = { frueh:'Früh', vormittag:'Vormittag', mittag:'Mittag', nachmittag:'Nachmittag', abend:'Abend' };
+  const TAGE = [['mo','Mo'],['di','Di'],['mi','Mi'],['do','Do'],['fr','Fr'],['sa','Sa'],['so','So']];
+  const SLOTS = [['Früh','06–09'],['Vormittag','09–12'],['Mittag','12–15'],['Nachmittag','15–18'],['Abend','18–22']];
   function renderVerf() {
     if (!b.verfuegbarkeit || typeof b.verfuegbarkeit !== 'object') return '<span class="empty">Keine Angaben</span>';
     const standorte = Object.keys(b.verfuegbarkeit);
     if (!standorte.length) return '<span class="empty">Keine Angaben</span>';
     return standorte.map(s => {
       const tage = b.verfuegbarkeit[s] || {};
-      const eintraege = Object.entries(tage).filter(([_, slots]) => Array.isArray(slots) && slots.length).map(([tag, slots]) => 
-        `<strong>${TAG_LBL[tag]||tag}:</strong> ${slots.map(x => SLOT_LBL[x]||x).join(', ')}`
-      ).join(' · ');
-      if (!eintraege) return '';
-      return `<div class="verf-block"><div class="verf-titel">${STANDORT_LBL[s]||s}</div><div>${eintraege}</div></div>`;
-    }).filter(Boolean).join('') || '<span class="empty">Keine Angaben</span>';
+      // Prüfen ob überhaupt eine Stelle true ist
+      const hasAny = TAGE.some(([key]) => Array.isArray(tage[key]) && tage[key].some(v => v === true));
+      if (!hasAny) return '';
+      const headerCells = SLOTS.map(([lbl, zeit]) => `<th><div>${lbl}</div><div class="zeit">${zeit}</div></th>`).join('');
+      const rows = TAGE.map(([key, lbl]) => {
+        const slots = Array.isArray(tage[key]) ? tage[key] : [];
+        const cells = SLOTS.map((_, i) => `<td class="${slots[i] === true ? 'on' : ''}">${slots[i] === true ? '✓' : ''}</td>`).join('');
+        return `<tr><th class="tag">${lbl}</th>${cells}</tr>`;
+      }).join('');
+      return `<div class="verf-block">
+        <div class="verf-titel">${STANDORT_LBL[s]||s}</div>
+        <table class="verf-grid">
+          <thead><tr><th></th>${headerCells}</tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>`;
+    }).filter(Boolean).join('') || '<span class="empty">Keine Markierungen gesetzt</span>';
   }
   
   // Tags
@@ -1865,8 +1877,14 @@ function generatePrintHtml(b, v) {
     background: #e8f4ea; color: #2d5a2d; border: 1px solid #2d5a2d; border-radius: 3px; }
   .notiz-box { background: #fffbe6; border: 1px solid #ffe066; padding: 10px 14px; 
     border-radius: 4px; margin: 8px 0; white-space: pre-wrap; font-size: 9.5pt; }
-  .verf-block { margin: 6px 0; padding: 6px 10px; background: #f8f8f8; border-left: 3px solid #2d5a2d; }
-  .verf-titel { font-weight: 600; color: #2d5a2d; font-size: 9pt; text-transform: uppercase; letter-spacing: 0.03em; }
+  .verf-block { margin: 8px 0; padding: 8px 10px; background: #f8f8f8; border-left: 3px solid #2d5a2d; }
+  .verf-titel { font-weight: 600; color: #2d5a2d; font-size: 9pt; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 6px; }
+  .verf-grid { width: 100%; border-collapse: collapse; font-size: 8.5pt; background: white; }
+  .verf-grid th, .verf-grid td { border: 0.5pt solid #ccc; padding: 3px 5px; text-align: center; }
+  .verf-grid thead th { background: #e8f4ea; color: #2d5a2d; font-weight: 600; font-size: 8pt; }
+  .verf-grid thead th .zeit { font-size: 7pt; font-weight: 400; color: #666; }
+  .verf-grid th.tag { background: #f0f0f0; font-weight: 600; width: 24px; }
+  .verf-grid td.on { background: #d4eed4; color: #2d5a2d; font-weight: 700; font-size: 10pt; }
   .tag-print { display: inline-block; padding: 2px 8px; font-size: 9pt; background: #f0f0f0;
     border-radius: 10px; margin-right: 4px; }
   .dsgvo-footer { margin-top: 30px; padding-top: 12px; border-top: 1px solid #ccc;

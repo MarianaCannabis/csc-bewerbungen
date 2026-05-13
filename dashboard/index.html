@@ -1999,22 +1999,52 @@ function openNewBewerbungModal() {
       <div class="em-group-title">Stammdaten</div>
       <div class="nb-form-row">
         <div>
-          <label class="nb-field-label">Vorname<span class="req">*</span></label>
+          <label class="nb-field-label" for="nb-vorname">Vorname<span class="req">*</span></label>
           <input class="nb-input" id="nb-vorname" type="text" autocomplete="given-name" required>
         </div>
         <div>
-          <label class="nb-field-label">Nachname<span class="req">*</span></label>
+          <label class="nb-field-label" for="nb-nachname">Nachname<span class="req">*</span></label>
           <input class="nb-input" id="nb-nachname" type="text" autocomplete="family-name" required>
         </div>
       </div>
       <div class="nb-form-row">
         <div>
-          <label class="nb-field-label">E-Mail<span class="req">*</span></label>
+          <label class="nb-field-label" for="nb-geburtsdatum">Geburtsdatum<span class="req">*</span></label>
+          <input class="nb-input" id="nb-geburtsdatum" type="text" inputmode="numeric" maxlength="10" placeholder="TT.MM.JJJJ" required>
+        </div>
+        <div>
+          <label class="nb-field-label" for="nb-staat">Staatsangehörigkeit<span class="req">*</span></label>
+          <input class="nb-input" id="nb-staat" type="text" value="deutsch" required>
+        </div>
+      </div>
+      <div class="nb-form-row">
+        <div>
+          <label class="nb-field-label" for="nb-email">E-Mail<span class="req">*</span></label>
           <input class="nb-input" id="nb-email" type="email" autocomplete="email" required>
         </div>
         <div>
-          <label class="nb-field-label">Telefon</label>
-          <input class="nb-input" id="nb-telefon" type="tel" autocomplete="tel">
+          <label class="nb-field-label" for="nb-telefon">Telefon<span class="req">*</span></label>
+          <input class="nb-input" id="nb-telefon" type="tel" autocomplete="tel" required>
+        </div>
+      </div>
+    </div>
+
+    <div class="em-group">
+      <div class="em-group-title">Adresse</div>
+      <div class="nb-form-row full">
+        <div>
+          <label class="nb-field-label" for="nb-strasse">Straße & Hausnummer</label>
+          <input class="nb-input" id="nb-strasse" type="text" autocomplete="street-address">
+        </div>
+      </div>
+      <div class="nb-form-row">
+        <div>
+          <label class="nb-field-label" for="nb-plz">PLZ</label>
+          <input class="nb-input" id="nb-plz" type="text" inputmode="numeric" maxlength="5" autocomplete="postal-code">
+        </div>
+        <div>
+          <label class="nb-field-label" for="nb-ort">Ort</label>
+          <input class="nb-input" id="nb-ort" type="text" autocomplete="address-level2">
         </div>
       </div>
     </div>
@@ -2093,6 +2123,18 @@ function openNewBewerbungModal() {
   document.getElementById('nb-overlay').classList.add('show');
   setTimeout(() => document.getElementById('nb-vorname')?.focus(), 50);
   
+  // Datums-Maske für Geburtsdatum (gleiche Logik wie Edit-Modal)
+  const gebInp = document.getElementById('nb-geburtsdatum');
+  if (gebInp) gebInp.addEventListener('input', () => {
+    const digits = gebInp.value.replace(/\D/g, '').slice(0, 8);
+    let out = '';
+    for (let i = 0; i < digits.length; i++) {
+      if (i === 2 || i === 4) out += '.';
+      out += digits[i];
+    }
+    if (out !== gebInp.value) gebInp.value = out;
+  });
+  
   // Multi-Checkbox toggle behavior (gleich wie Edit-Modal)
   document.querySelectorAll('#nb-body .em-multi input[type="checkbox"]').forEach(cb => {
     const opt = cb.closest('.em-multi-opt');
@@ -2109,8 +2151,13 @@ function closeNewBewerbungModal() {
 async function saveNewBewerbung() {
   const vorname = document.getElementById('nb-vorname').value.trim();
   const nachname = document.getElementById('nb-nachname').value.trim();
+  const geburtsdatumDe = document.getElementById('nb-geburtsdatum').value.trim();
+  const staat = document.getElementById('nb-staat').value.trim() || 'deutsch';
   const email = document.getElementById('nb-email').value.trim();
   const telefon = document.getElementById('nb-telefon').value.trim();
+  const strasse = document.getElementById('nb-strasse').value.trim();
+  const plz = document.getElementById('nb-plz').value.trim();
+  const ort = document.getElementById('nb-ort').value.trim();
   const verein_id = userContext?.ist_admin
     ? document.getElementById('nb-verein').value
     : userContext?.verein_id;
@@ -2125,7 +2172,18 @@ async function saveNewBewerbung() {
   // Validierung
   if (!vorname || !nachname) { toast('Vor- und Nachname sind Pflicht', true); return; }
   if (!email || !email.includes('@')) { toast('Gültige E-Mail ist Pflicht', true); return; }
+  if (!telefon) { toast('Telefon ist Pflicht (DB-Anforderung)', true); return; }
   if (!verein_id) { toast('Bitte einen Verein wählen', true); return; }
+  if (!geburtsdatumDe) { toast('Geburtsdatum ist Pflicht', true); return; }
+  // TT.MM.JJJJ → ISO (gleiche Logik wie Edit-Modal)
+  const dm = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(geburtsdatumDe);
+  const geburtsdatum = dm ? `${dm[3]}-${dm[2]}-${dm[1]}` : null;
+  if (!geburtsdatum) { toast('Geburtsdatum-Format ungültig (TT.MM.JJJJ)', true); return; }
+  // Volljährigkeit prüfen
+  const gebDate = new Date(geburtsdatum + 'T00:00:00');
+  const now = new Date();
+  const age = (now - gebDate) / (1000 * 60 * 60 * 24 * 365.25);
+  if (age < 18) { toast('Bewerber:in muss volljährig sein (laut Geburtsdatum < 18 Jahre)', true); return; }
   if (!confirmed) { toast('Bitte die Bestätigung unten anhaken', true); return; }
 
   const stdMin = stdMinRaw ? parseInt(stdMinRaw, 10) : null;
@@ -2133,26 +2191,44 @@ async function saveNewBewerbung() {
   if (stdMin != null && (isNaN(stdMin) || stdMin < 0 || stdMin > 60)) { toast('Stunden min ungültig', true); return; }
   if (stdMax != null && (isNaN(stdMax) || stdMax < 0 || stdMax > 60)) { toast('Stunden max ungültig', true); return; }
 
-  // bewerber_token generieren
-  const bewerber_token = (crypto?.randomUUID?.() || (Date.now() + '-' + Math.random().toString(36).slice(2,10)));
+  // Heute als ISO für Default-Datums-Felder
+  const today = new Date().toISOString().slice(0, 10);
 
   const payload = {
+    // Basisdaten
     verein_id,
-    bewerber_token,
     status: 'eingegangen',
-    vorname, nachname, email,
-    telefon: telefon || null,
-    rollen: rollen.length ? rollen : null,
-    anstellungsformen: anstellungsformen.length ? anstellungsformen : null,
-    wunsch_stunden_min: stdMin,
-    wunsch_stunden_max: stdMax,
-    ist_mitglied,
-    vorstand_notiz: notiz ? `[manuell angelegt am ${new Date().toLocaleString('de-DE')}]\n${notiz}` : `[manuell angelegt am ${new Date().toLocaleString('de-DE')}]`,
-    // Pflicht-Constraints
-    dsgvo_zustimmung: true,
+    vorname, nachname, geburtsdatum,
+    staatsangehoerigkeit: staat,
+    adresse: { strasse: strasse || '', plz: plz || '', ort: ort || '' },
+    telefon,
+    email,
+    // Pflicht-Bools (durch Bestätigung gesetzt)
     ist_volljaehrig: true,
     wohnsitz_d_6_monate: true,
+    dsgvo_zustimmung: true,
+    // Bewerbungs-Daten
+    ist_mitglied,
+    rollen: rollen.length ? rollen : [],
+    anstellungsformen: anstellungsformen.length ? anstellungsformen : [],
+    wunsch_stunden_min: stdMin,
+    wunsch_stunden_max: stdMax,
+    // Verpflichtende Felder mit sinnvollen Defaults
+    motivation: '(Bewerbung manuell durch Vorstand angelegt — Daten können später ergänzt werden)',
+    bildungsabschluss: '',
+    sprachen: {},
+    verfuegbarkeit: {},
+    bereit_we: false,
+    bereit_feiertag: false,
+    bereit_nacht: false,
+    eintritt_fruehestens: today,
+    fuehrerschein: [],
+    eigenes_fahrzeug: false,
     sprache: 'de',
+    // Vorstand-Notiz mit automatischem Header
+    vorstand_notiz: notiz 
+      ? `[manuell angelegt am ${new Date().toLocaleString('de-DE')}]\n${notiz}` 
+      : `[manuell angelegt am ${new Date().toLocaleString('de-DE')}]`,
   };
 
   console.log('[NeueBW] Payload:', payload);
@@ -2163,7 +2239,6 @@ async function saveNewBewerbung() {
     toast('✓ Bewerbung angelegt');
     closeNewBewerbungModal();
     await loadDashboard();
-    // Neue Bewerbung sofort auswählen
     if (data && data.length) setTimeout(() => selectBewerbung(data[0].id), 200);
   } catch (e) {
     console.error('[NeueBW] Fehler:', e);

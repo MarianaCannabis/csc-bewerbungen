@@ -851,6 +851,7 @@ body::before {
   cursor: pointer;
   text-align: center;
   font-size: 0.8rem;
+  font-family: inherit;
   color: var(--ink-mute);
   transition: all 0.15s ease;
   user-select: none;
@@ -861,6 +862,15 @@ body::before {
   display: flex;
   align-items: center;
   justify-content: center;
+  /* Button-Reset (weil wir jetzt <button> nutzen statt <div>) */
+  width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
+}
+.grid-slot:focus-visible {
+  outline: 2px solid var(--olive-700);
+  outline-offset: 2px;
+  z-index: 1;
 }
 
 .grid-slot:hover {
@@ -1382,14 +1392,23 @@ body::before {
   background: var(--sand-50);
 }
 
-.app-footer a {
+.app-footer a,
+.app-footer .footer-link {
   color: var(--olive-700);
   text-decoration: none;
   border-bottom: 1px solid var(--olive-300);
   transition: border-color 0.15s ease;
+  background: none;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
 }
 
-.app-footer a:hover { border-color: var(--olive-700); }
+.app-footer a:hover,
+.app-footer .footer-link:hover { border-bottom-color: var(--olive-700); }
 
 /* Validation Banner */
 .validation-banner {
@@ -1837,7 +1856,7 @@ button:focus-visible, a:focus-visible {
 </div>
 
 <footer class="app-footer">
-  Mariana Cannabis · <a href="#" onclick="alert('Datenschutz-Link folgt'); return false;">Datenschutz</a> · <a href="#" onclick="alert('Impressum-Link folgt'); return false;">Impressum</a>
+  Mariana Cannabis · <button type="button" class="footer-link" onclick="alert('Datenschutz: noch in Arbeit. Bei Fragen: communityrecruiting@mariana-cannabis.de')">Datenschutz</button> · <button type="button" class="footer-link" onclick="alert('Impressum: noch in Arbeit. Bei Fragen: communityrecruiting@mariana-cannabis.de')">Impressum</button>
 </footer>
 
 <!-- Supabase JS via CDN -->
@@ -2774,8 +2793,8 @@ function renderSection4() {
     <div class="form-group" id="fg-sprachen">
       ${sprachen.map(sp => `
         <div class="sprachen-row">
-          <span class="sprachen-label">${s['sprache_' + sp]}${sp === 'de' ? ' <span class="required">*</span>' : ''}</span>
-          <select class="form-select" data-sprache="${sp}">
+          <label class="sprachen-label" for="sprache-select-${sp}">${s['sprache_' + sp]}${sp === 'de' ? ' <span class="required">*</span>' : ''}</label>
+          <select class="form-select" id="sprache-select-${sp}" data-sprache="${sp}">
             ${niveaus.map(n => `<option value="${n === 'kein' ? '' : n.toUpperCase()}">${s['niveau_' + n]}</option>`).join('')}
           </select>
         </div>
@@ -2795,9 +2814,9 @@ function renderSection4() {
         ['genauigkeit', s.soft_genauigkeit]
       ].map(([k, label]) => `
         <div class="soft-skill-row">
-          <span class="soft-skill-label">${label}</span>
-          <div class="soft-skill-rating" data-soft="${k}">
-            ${[1,2,3,4,5].map(v => `<button type="button" class="rating-btn" data-rating="${v}">${v}</button>`).join('')}
+          <span class="soft-skill-label" id="soft-label-${k}">${label}</span>
+          <div class="soft-skill-rating" data-soft="${k}" role="radiogroup" aria-labelledby="soft-label-${k}">
+            ${[1,2,3,4,5].map(v => `<button type="button" class="rating-btn" data-rating="${v}" role="radio" aria-checked="false" aria-label="${escapeHtml(label)}, ${v} von 5">${v}</button>`).join('')}
           </div>
         </div>
       `).join('')}
@@ -2806,11 +2825,11 @@ function renderSection4() {
     <h3 class="section-subtitle">${s.anhaenge_titel}</h3>
     <p class="form-hint" style="margin-bottom: 1rem;">${s.anhaenge_hint}</p>
 
-    <div class="upload-dropzone" id="upload-dropzone">
-      <div class="upload-dropzone-icon">📎</div>
+    <div class="upload-dropzone" id="upload-dropzone" role="group" aria-label="${s.anhaenge_titel}">
+      <div class="upload-dropzone-icon" aria-hidden="true">📎</div>
       <p class="upload-dropzone-text">${s.anhaenge_drop}</p>
       <label class="upload-button" for="upload-input">${s.anhaenge_browse}</label>
-      <input type="file" id="upload-input" class="upload-input" multiple accept="application/pdf,image/jpeg,image/jpg,image/png,image/heic">
+      <input type="file" id="upload-input" class="upload-input" multiple accept="application/pdf,image/jpeg,image/jpg,image/png,image/heic" aria-label="${s.anhaenge_browse}">
     </div>
 
     <div class="upload-list" id="upload-list"></div>
@@ -2858,8 +2877,13 @@ const SLOTS_BY_STANDORT = {
 function renderSection5() {
   const s = state.i18n.sections['5'];
   const tage = [
-    ['mo', s.tag_mo], ['di', s.tag_di], ['mi', s.tag_mi], ['do', s.tag_do],
-    ['fr', s.tag_fr], ['sa', s.tag_sa], ['so', s.tag_so]
+    ['mo', s.tag_mo, s.tag_mo_lang || 'Montag'],
+    ['di', s.tag_di, s.tag_di_lang || 'Dienstag'],
+    ['mi', s.tag_mi, s.tag_mi_lang || 'Mittwoch'],
+    ['do', s.tag_do, s.tag_do_lang || 'Donnerstag'],
+    ['fr', s.tag_fr, s.tag_fr_lang || 'Freitag'],
+    ['sa', s.tag_sa, s.tag_sa_lang || 'Samstag'],
+    ['so', s.tag_so, s.tag_so_lang || 'Sonntag']
   ];
 
   // Welche Standorte brauchen wir?
@@ -2879,23 +2903,25 @@ function renderSection5() {
     const titel = s[`matrix_titel_${standort}`] || s.matrix_titel;
     const hint = s[`matrix_hint_${standort}`] || s.matrix_hint;
     const slotDefs = SLOTS_BY_STANDORT[standort] || SLOTS_BY_STANDORT.allgemein;
-    // Tag-Stunden für diesen Standort (Index der Tabelle)
+    const groupId = `verfueg-group-${standort}`;
     return `
-      <h3 class="section-subtitle">${titel}</h3>
-      <p class="form-hint" style="margin-bottom: 1rem;">${hint}</p>
+      <h3 class="section-subtitle" id="${groupId}-label">${titel}</h3>
+      <p class="form-hint" style="margin-bottom: 1rem;" id="${groupId}-hint">${hint}</p>
       <div class="form-group" id="fg-verfuegbarkeit-${standort}">
-        <div class="grid-availability">
-          <div class="grid-cell-header"></div>
+        <div class="grid-availability" role="group" aria-labelledby="${groupId}-label" aria-describedby="${groupId}-hint">
+          <div class="grid-cell-header" aria-hidden="true"></div>
           ${slotDefs.map(sl => `
-            <div class="grid-cell-header" title="${sl.label} (${sl.zeit} Uhr, ca. ${sl.stunden}h)">
+            <div class="grid-cell-header" title="${sl.label} (${sl.zeit} Uhr, ca. ${sl.stunden}h)" aria-hidden="true">
               <div style="line-height:1.15;">${sl.label}</div>
               <div style="font-size:0.62rem; opacity:0.7; font-weight:400; margin-top:2px;">${sl.zeit}</div>
             </div>
           `).join('')}
-          ${tage.map(([d, label]) => `
-            <div class="grid-cell-day">${label}</div>
+          ${tage.map(([d, label, langLabel]) => `
+            <div class="grid-cell-day" aria-hidden="true">${label}</div>
             ${slotDefs.map((sl, i) => `
-              <div class="grid-slot" data-standort="${standort}" data-day="${d}" data-slot="${i}" title="${sl.label} (${sl.zeit} Uhr)">·</div>
+              <button type="button" class="grid-slot" data-standort="${standort}" data-day="${d}" data-slot="${i}" 
+                      aria-pressed="false" 
+                      aria-label="${langLabel}, ${sl.label}, ${sl.zeit} Uhr">·</button>
             `).join('')}
           `).join('')}
         </div>
@@ -3781,6 +3807,11 @@ function attachSection3() {
                   if (slot) {
                     slot.classList.add('selected');
                     slot.textContent = '✓';
+                    slot.setAttribute('aria-pressed', 'true');
+                    const baseLabel = slot.getAttribute('aria-label') || '';
+                    if (!baseLabel.includes('ausgewählt')) {
+                      slot.setAttribute('aria-label', baseLabel + ', ausgewählt');
+                    }
                   }
                 }
               });
@@ -3933,7 +3964,10 @@ function attachSection4() {
         const v = parseInt(btn.dataset.rating);
         state.formData.soft_skills[skill] = v;
         group.querySelectorAll('.rating-btn').forEach(b => {
-          b.classList.toggle('active', parseInt(b.dataset.rating) <= v);
+          const bv = parseInt(b.dataset.rating);
+          b.classList.toggle('active', bv <= v);
+          // ARIA: nur der ausgewählte Button hat aria-checked=true (wie bei <input type=radio>)
+          b.setAttribute('aria-checked', bv === v ? 'true' : 'false');
         });
         saveDraft();
       });
@@ -4162,8 +4196,13 @@ function attachSection5() {
       });
       
       state.formData.verfuegbarkeit[standort][day][idx] = !state.formData.verfuegbarkeit[standort][day][idx];
-      slot.classList.toggle('selected', state.formData.verfuegbarkeit[standort][day][idx]);
-      slot.textContent = state.formData.verfuegbarkeit[standort][day][idx] ? '✓' : '·';
+      const isOn = state.formData.verfuegbarkeit[standort][day][idx];
+      slot.classList.toggle('selected', isOn);
+      slot.textContent = isOn ? '✓' : '·';
+      slot.setAttribute('aria-pressed', isOn ? 'true' : 'false');
+      // aria-label auf Status erweitern
+      const baseLabel = slot.getAttribute('aria-label')?.replace(/, (ausgewählt|nicht ausgewählt)$/, '') || '';
+      slot.setAttribute('aria-label', baseLabel + (isOn ? ', ausgewählt' : ', nicht ausgewählt'));
       saveDraft();
     });
   });
@@ -4183,6 +4222,8 @@ function attachSection5() {
   
   // Quick-Buttons für Stundenzahl
   document.querySelectorAll('.btn-quick-stunden').forEach(btn => {
+    // aria-pressed initial setzen
+    btn.setAttribute('aria-pressed', 'false');
     btn.addEventListener('click', () => {
       const min = btn.dataset.stundenMin;
       const max = btn.dataset.stundenMax;
@@ -4191,8 +4232,12 @@ function attachSection5() {
       state.formData.wunsch_stunden_min = min;
       state.formData.wunsch_stunden_max = max;
       // Aktive Markierung
-      document.querySelectorAll('.btn-quick-stunden').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.btn-quick-stunden').forEach(b => {
+        b.classList.remove('active');
+        b.setAttribute('aria-pressed', 'false');
+      });
       btn.classList.add('active');
+      btn.setAttribute('aria-pressed', 'true');
       saveDraft();
     });
   });
@@ -5341,15 +5386,21 @@ async function submitForm() {
           continue;
         }
         
-        // DB-Eintrag in csc_bewerbung_anhaenge
-        await sb.from('csc_bewerbung_anhaenge').insert({
+        // DB-Eintrag in csc_bewerbung_anhaenge — Spaltennamen exakt nach Schema
+        const { error: dbErr } = await sb.from('csc_bewerbung_anhaenge').insert({
           bewerbung_id: bewerbungId,
-          storage_path: path,
-          original_filename: a.filename,
-          mime_type: a.mime,
-          file_size: a.size,
-          kategorie: a.kategorie
+          typ: a.kategorie,             // NOT NULL
+          dateiname: a.filename,        // NOT NULL
+          storage_path: path,           // NOT NULL
+          groesse_bytes: a.size,        // NOT NULL
+          mime_type: a.mime,            // nullable
         });
+        if (dbErr) {
+          console.error('[Upload] DB-Insert-Fehler für', a.filename, ':', dbErr.message, dbErr);
+          uploadFehler++;
+          continue;
+        }
+        console.log('[Upload] OK:', a.filename);
       } catch (e) {
         console.warn('Upload Exception für', a.filename, ':', e);
         uploadFehler++;

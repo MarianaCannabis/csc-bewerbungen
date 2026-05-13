@@ -1178,8 +1178,16 @@ async function selectBewerbung(id) {
   const status = b.status || 'eingegangen';
   
   let anhaenge = [];
-  try { const { data: ah } = await sb.from('csc_bewerbung_anhaenge').select('*').eq('bewerbung_id', id); anhaenge = ah || []; }
-  catch (e) { console.error('Anhänge:', e); }
+  try { 
+    const { data: ah, error } = await sb.from('csc_bewerbung_anhaenge').select('*').eq('bewerbung_id', id); 
+    if (error) {
+      console.error('[Anhänge] Query-Fehler:', error.message, error);
+    } else {
+      anhaenge = ah || [];
+      console.log('[Anhänge]', anhaenge.length, 'gefunden für Bewerbung', id);
+    }
+  }
+  catch (e) { console.error('[Anhänge] Exception:', e); }
   
   const fmt = (val) => val ? escapeHtml(String(val)) : '<span class="empty">–</span>';
   const fmtDate = (val) => val ? new Date(val).toLocaleDateString('de-DE') : '<span class="empty">–</span>';
@@ -1466,7 +1474,7 @@ async function selectBewerbung(id) {
       <div class="field-grid">
         <div class="field"><div class="field-label">Steuer-ID</div><div class="field-value mono">${fmt(b.steuer_id)}</div></div>
         <div class="field"><div class="field-label">Sozialversicherungs-Nr.</div><div class="field-value mono">${fmt(b.sv_nummer)}</div></div>
-        <div class="field"><div class="field-label">Krankenkasse</div><div class="field-value">${fmt(b.krankenkasse)}</div></div>
+        <div class="field"><div class="field-label">Krankenkasse</div><div class="field-value">${b.krankenkasse?.name ? escapeHtml(b.krankenkasse.name) + (b.krankenkasse.mitglied_nr ? ' <span class="mono" style="color:var(--tx-mute)">(Mitgl.-Nr. ' + escapeHtml(b.krankenkasse.mitglied_nr) + ')</span>' : '') : '–'}</div></div>
         <div class="field"><div class="field-label">IBAN</div><div class="field-value mono">${fmt(b.iban)}</div></div>
       </div>
     </div>
@@ -1682,7 +1690,9 @@ function exportCsv() {
       b.sucht_relevant || '', b.sucht_details || '',
       b.schwerbehinderung || '', b.schwerbehinderung_gdb || '',
       b.schwerbehinderung_einschr || '', b.schwerbehinderung_anpassungen || '',
-      b.steuer_id || '', b.sv_nummer || '', b.krankenkasse || '', b.iban || '',
+      b.steuer_id || '', b.sv_nummer || '', 
+      (b.krankenkasse?.name || '') + (b.krankenkasse?.mitglied_nr ? ' (' + b.krankenkasse.mitglied_nr + ')' : ''),
+      b.iban || '',
       b.dsgvo_zustimmung === true ? 'Ja' : '',
       b.dsgvo_zeitstempel ? new Date(b.dsgvo_zeitstempel).toLocaleString('de-DE') : '',
       b.vorstand_notiz || '',

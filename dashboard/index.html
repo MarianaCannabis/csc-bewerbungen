@@ -1376,12 +1376,10 @@ const EDIT_SECTIONS = {
         { k:'adresse.ort', l:'Ort', t:'text', row:'addr' },
       ]},
       { title: 'Status', fields: [
-        { k:'wohnsitz_d_6_monate', l:'Wohnsitz Deutschland (6 Mon.)', t:'boolean_tri' },
-        { k:'ist_volljaehrig', l:'Volljährig', t:'boolean_tri' },
         { k:'ist_nicht_eu', l:'Nicht-EU-Bürger', t:'boolean_tri' },
         { k:'arbeitserlaubnis', l:'Arbeitserlaubnis', t:'boolean_tri' },
         { k:'ist_mitglied', l:'CSC-Mitglied', t:'select',
-          options: [['','—'],['ja','Ja'],['nein','Nein'],['wird_mitglied','Wird Mitglied']]},
+          options: [['ja','Ja'],['wird_mitglied','Wird Mitglied']]},
         { k:'mitgliedsnummer', l:'Mitgliedsnummer', t:'text' },
       ]},
       { title: 'Online-Profile', fields: [
@@ -1400,10 +1398,10 @@ const EDIT_SECTIONS = {
         { k:'rollen_standorte', l:'Standorte (für Rollen)', t:'multi_checkbox', options: STANDORTE_OPTIONS },
         { k:'bestaetigt_zwei_standorte', l:'Bestätigt zwei Standorte', t:'boolean_tri' },
         { k:'motivation', l:'Motivation', t:'textarea' },
-        { k:'praevention_sachkunde', l:'Sachkunde Prävention vorhanden', t:'select',
-          options:[['','—'],['ja','Ja'],['nein','Nein'],['teilweise','Teilweise']] },
-        { k:'sicherheit_nachweis', l:'Nachweis Sicherheit vorhanden', t:'select',
-          options:[['','—'],['ja','Ja'],['nein','Nein'],['teilweise','Teilweise']] },
+        { k:'praevention_sachkunde', l:'Sachkunde Prävention', t:'select',
+          options:[['','—'],['vorhanden','Vorhanden'],['wird_erworben','Wird erworben']] },
+        { k:'sicherheit_nachweis', l:'Nachweis Sicherheit', t:'select',
+          options:[['','—'],['34a_80h','§34a-Sachkunde (80h)'],['unterrichtung_40h','Unterrichtung (40h)'],['wird_erworben','Wird erworben'],['keiner','Keiner']] },
       ]}
     ]
   },
@@ -1446,7 +1444,7 @@ const EDIT_SECTIONS = {
         { k:'max_anfahrt_anbau', l:'Max. Anfahrt Anbau (Min)', t:'number', row:'af', min:0, max:300 },
         { k:'eigenes_fahrzeug', l:'Eigenes Fahrzeug', t:'boolean_tri', row:'fz' },
         { k:'jobticket', l:'Jobticket möglich', t:'select', row:'fz',
-          options:[['','—'],['ja','Ja'],['nein','Nein'],['teilweise','Teilweise']] },
+          options:[['','—'],['ja','Ja'],['nein','Nein'],['unsicher','Unsicher']] },
         { k:'fuehrerschein', l:'Führerschein-Klassen', t:'multi_checkbox',
           options:[['A','A'],['A1','A1'],['A2','A2'],['AM','AM'],['B','B'],['BE','BE'],['B96','B96'],['B197','B197'],['C','C'],['CE','CE'],['L','L'],['T','T']] },
       ]},
@@ -1473,7 +1471,7 @@ const EDIT_SECTIONS = {
         { k:'max_anfahrt_anbau', l:'Max. Anfahrt Anbau (Min)', t:'number', row:'af', min:0, max:300 },
         { k:'eigenes_fahrzeug', l:'Eigenes Fahrzeug', t:'boolean_tri', row:'fz' },
         { k:'jobticket', l:'Jobticket möglich', t:'select', row:'fz',
-          options:[['','—'],['ja','Ja'],['nein','Nein'],['teilweise','Teilweise']] },
+          options:[['','—'],['ja','Ja'],['nein','Nein'],['unsicher','Unsicher']] },
         { k:'fuehrerschein', l:'Führerschein-Klassen', t:'multi_checkbox',
           options:[['A','A'],['A1','A1'],['A2','A2'],['AM','AM'],['B','B'],['BE','BE'],['B96','B96'],['B197','B197'],['C','C'],['CE','CE'],['L','L'],['T','T']] },
       ]},
@@ -1484,7 +1482,8 @@ const EDIT_SECTIONS = {
     groups: [
       { fields: [
         { k:'probearbeit_bereit', l:'Bereit für Probearbeit', t:'boolean_tri' },
-        { k:'probearbeit_dauer', l:'Dauer', t:'text' },
+        { k:'probearbeit_dauer', l:'Dauer', t:'select',
+          options:[['','—'],['1_tag','1 Tag'],['2_3_tage','2-3 Tage'],['1_woche','1 Woche'],['mehr_als_woche','Mehr als 1 Woche'],['flexibel','Flexibel']] },
         { k:'probearbeit_orte', l:'Mögliche Orte', t:'multi_checkbox',
           options:[['eigener_verein','Eigener Verein'],['goettingen','Göttingen'],['andere_standorte','Andere Standorte']]},
         { k:'probearbeit_anmerkung', l:'Anmerkung', t:'textarea' },
@@ -1507,13 +1506,14 @@ const EDIT_SECTIONS = {
       ]},
       { title: 'Sucht', fields: [
         { k:'sucht_relevant', l:'Sucht relevant', t:'select',
-          options:[['','—'],['ja','Ja'],['nein','Nein']] },
+          options:[['','—'],['ja','Ja'],['nein','Nein'],['keine_angabe','Keine Angabe']] },
         { k:'sucht_details', l:'Details Sucht', t:'textarea' },
       ]},
       { title: 'Schwerbehinderung', fields: [
         { k:'schwerbehinderung', l:'Schwerbehinderung', t:'select',
           options:[['','—'],['ja','Ja'],['nein','Nein'],['keine_angabe','Keine Angabe']] },
-        { k:'schwerbehinderung_gdb', l:'GdB (Grad der Behinderung)', t:'text', inputmode:'numeric', maxlength:3 },
+        { k:'schwerbehinderung_gdb', l:'GdB (Grad)', t:'select',
+          options:[['','—'],['30','30'],['40','40'],['50','50'],['60','60'],['70','70'],['80','80'],['90','90'],['100','100'],['keine_angabe','Keine Angabe']] },
         { k:'schwerbehinderung_einschr', l:'Einschränkungen', t:'textarea' },
         { k:'schwerbehinderung_anpassungen', l:'Notwendige Anpassungen', t:'textarea' },
       ]},

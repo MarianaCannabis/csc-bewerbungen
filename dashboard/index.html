@@ -359,6 +359,37 @@
       vertical-align: middle;
     }
 
+    /* "+ Neue Bewerbung"-Button */
+    .new-bw-btn {
+      margin-left: auto; padding: 4px 12px; font-size: 11px; font-weight: 500;
+      background: var(--green-glow); color: var(--green);
+      border: 1px solid var(--green-dim); border-radius: 14px; cursor: pointer;
+      white-space: nowrap;
+    }
+    .new-bw-btn:hover { background: var(--green); color: var(--bg); border-color: var(--green); }
+
+    /* Neue-Bewerbung-Modal-Felder (eigene Layout-Hints) */
+    .nb-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+    .nb-form-row.full { grid-template-columns: 1fr; }
+    .nb-field-label { font-size: 11px; color: var(--tx-mute); text-transform: uppercase;
+      letter-spacing: 0.06em; margin-bottom: 4px; font-weight: 600; display: block; }
+    .nb-field-label .req { color: var(--red); margin-left: 3px; }
+    .nb-input, .nb-select, .nb-textarea {
+      width: 100%; padding: 8px 10px; font-size: 13px;
+      background: var(--bg); color: var(--tx);
+      border: 1px solid var(--border); border-radius: 6px;
+      font-family: inherit;
+    }
+    .nb-textarea { resize: vertical; min-height: 60px; }
+    .nb-confirm {
+      display: flex; gap: 10px; align-items: flex-start;
+      margin-top: 10px; padding: 12px 14px;
+      background: var(--gold-bg); border: 1px solid var(--gold);
+      border-radius: 8px; color: var(--tx);
+    }
+    .nb-confirm input { margin-top: 2px; accent-color: var(--green); width: 18px; height: 18px; flex-shrink: 0; }
+    .nb-confirm label { font-size: 12px; line-height: 1.5; cursor: pointer; }
+
     /* ===== EDIT MODAL ===== */
     .edit-btn {
       background: transparent; border: 1px solid var(--border); color: var(--tx-mute);
@@ -536,7 +567,10 @@
   <div class="main">
     <div class="list-panel">
       <div class="list-header">
-        <div class="list-title">Bewerbungen <span class="count" id="list-count">–</span></div>
+        <div class="list-title">
+          Bewerbungen <span class="count" id="list-count">–</span>
+          <button class="new-bw-btn" onclick="openNewBewerbungModal()" title="Bewerbung manuell anlegen" aria-label="Neue Bewerbung manuell anlegen">+ Neue Bewerbung</button>
+        </div>
         <div id="bulk-bar" class="bulk-bar" style="display:none">
           <div class="bulk-bar-info">
             <strong><span id="bulk-count">0</span></strong> ausgewählt
@@ -1627,8 +1661,206 @@ function toast(msg, isError = false) {
 }
 
 // ============================================================================
-// TAGS / LABELS
+// NEUE BEWERBUNG MANUELL ANLEGEN
 // ============================================================================
+const NB_ROLLEN = [
+  ['vorstand','Vorstand'],['stellv_vorstand','Stellv. Vorstand'],
+  ['grower','Grower'],['head_grower','Head Grower'],
+  ['ausgabe','Ausgabe'],['springer','Springer'],
+  ['praevention','Prävention'],['reinigung','Reinigung'],['sicherheit','Sicherheit'],
+];
+const NB_ANSTELLUNG = [
+  ['ehrenamt','Ehrenamtlich'],['minijob','Minijob'],['teilzeit','Teilzeit'],['vollzeit','Vollzeit'],
+];
+
+function openNewBewerbungModal() {
+  // Verein-Dropdown nur für Admin; für Vorstand: sein eigener fest
+  const isAdmin = userContext?.ist_admin;
+  const userVereinId = userContext?.verein_id;
+  const vereinOptions = isAdmin
+    ? Object.values(vereine).sort((a,b) => a.name.localeCompare(b.name, 'de'))
+        .map(v => `<option value="${v.id}">${escapeHtml(v.name)}</option>`).join('')
+    : '';
+  const eigenerVereinName = (!isAdmin && userVereinId) ? (vereine[userVereinId]?.name || '–') : '';
+
+  document.getElementById('nb-body').innerHTML = `
+    <div class="em-group">
+      <div class="em-group-title">Stammdaten</div>
+      <div class="nb-form-row">
+        <div>
+          <label class="nb-field-label">Vorname<span class="req">*</span></label>
+          <input class="nb-input" id="nb-vorname" type="text" autocomplete="given-name" required>
+        </div>
+        <div>
+          <label class="nb-field-label">Nachname<span class="req">*</span></label>
+          <input class="nb-input" id="nb-nachname" type="text" autocomplete="family-name" required>
+        </div>
+      </div>
+      <div class="nb-form-row">
+        <div>
+          <label class="nb-field-label">E-Mail<span class="req">*</span></label>
+          <input class="nb-input" id="nb-email" type="email" autocomplete="email" required>
+        </div>
+        <div>
+          <label class="nb-field-label">Telefon</label>
+          <input class="nb-input" id="nb-telefon" type="tel" autocomplete="tel">
+        </div>
+      </div>
+    </div>
+
+    <div class="em-group">
+      <div class="em-group-title">Verein</div>
+      ${isAdmin ? `
+        <div>
+          <label class="nb-field-label" for="nb-verein">Verein<span class="req">*</span></label>
+          <select class="nb-select" id="nb-verein" required>
+            <option value="">— Verein wählen —</option>
+            ${vereinOptions}
+          </select>
+        </div>
+      ` : `
+        <div>
+          <label class="nb-field-label">Verein</label>
+          <input class="nb-input" type="text" value="${escapeHtml(eigenerVereinName)}" disabled>
+          <div style="font-size:11px;color:var(--tx-mute);margin-top:4px">Wird automatisch deinem Verein zugeordnet</div>
+        </div>
+      `}
+    </div>
+
+    <div class="em-group">
+      <div class="em-group-title">Bewerbung</div>
+      <div>
+        <label class="nb-field-label">Rolle(n)</label>
+        <div class="em-multi" id="nb-rollen">
+          ${NB_ROLLEN.map(([v,l]) => `<label class="em-multi-opt"><input type="checkbox" value="${v}"> ${escapeHtml(l)}</label>`).join('')}
+        </div>
+      </div>
+      <div style="margin-top:10px">
+        <label class="nb-field-label">Anstellungsform(en)</label>
+        <div class="em-multi" id="nb-anstellung">
+          ${NB_ANSTELLUNG.map(([v,l]) => `<label class="em-multi-opt"><input type="checkbox" value="${v}"> ${escapeHtml(l)}</label>`).join('')}
+        </div>
+      </div>
+      <div class="nb-form-row" style="margin-top:10px">
+        <div>
+          <label class="nb-field-label" for="nb-std-min">Stunden/W min</label>
+          <input class="nb-input" id="nb-std-min" type="number" min="0" max="60" inputmode="numeric">
+        </div>
+        <div>
+          <label class="nb-field-label" for="nb-std-max">Stunden/W max</label>
+          <input class="nb-input" id="nb-std-max" type="number" min="0" max="60" inputmode="numeric">
+        </div>
+      </div>
+      <div style="margin-top:10px">
+        <label class="nb-field-label" for="nb-mitglied">CSC-Mitglied<span class="req">*</span></label>
+        <select class="nb-select" id="nb-mitglied">
+          <option value="wird_mitglied">Wird Mitglied</option>
+          <option value="ja">Ja, bereits Mitglied</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="em-group">
+      <div class="em-group-title">Interne Bemerkung</div>
+      <div>
+        <label class="nb-field-label" for="nb-notiz">Wie kam diese Bewerbung herein? (nur Vorstand-intern)</label>
+        <textarea class="nb-textarea" id="nb-notiz" placeholder="z.B. telefonisch am 13.05., E-Mail-Anfrage, persönlich am Infoabend …"></textarea>
+      </div>
+    </div>
+
+    <div class="nb-confirm">
+      <input type="checkbox" id="nb-confirm-check">
+      <label for="nb-confirm-check">
+        <strong>Bestätigung:</strong> Ich bestätige, dass die Person volljährig ist, ihren Wohnsitz seit mindestens 6 Monaten in Deutschland hat 
+        und ich sie über die Verarbeitung ihrer Daten gemäß DSGVO informiert habe und sie damit einverstanden ist.
+        <br><span style="color:var(--tx-mute);font-size:11px;display:inline-block;margin-top:4px">
+        Diese drei Punkte sind gesetzlich/satzungsmäßig erforderlich. Wenn einer nicht zutrifft, darf die Bewerbung nicht angelegt werden.</span>
+      </label>
+    </div>
+  `;
+
+  document.getElementById('nb-overlay').classList.add('show');
+  setTimeout(() => document.getElementById('nb-vorname')?.focus(), 50);
+  
+  // Multi-Checkbox toggle behavior (gleich wie Edit-Modal)
+  document.querySelectorAll('#nb-body .em-multi input[type="checkbox"]').forEach(cb => {
+    const opt = cb.closest('.em-multi-opt');
+    cb.addEventListener('change', () => {
+      if (opt) opt.classList.toggle('selected', cb.checked);
+    });
+  });
+}
+
+function closeNewBewerbungModal() {
+  document.getElementById('nb-overlay').classList.remove('show');
+}
+
+async function saveNewBewerbung() {
+  const vorname = document.getElementById('nb-vorname').value.trim();
+  const nachname = document.getElementById('nb-nachname').value.trim();
+  const email = document.getElementById('nb-email').value.trim();
+  const telefon = document.getElementById('nb-telefon').value.trim();
+  const verein_id = userContext?.ist_admin
+    ? document.getElementById('nb-verein').value
+    : userContext?.verein_id;
+  const rollen = Array.from(document.querySelectorAll('#nb-rollen input:checked')).map(c => c.value);
+  const anstellungsformen = Array.from(document.querySelectorAll('#nb-anstellung input:checked')).map(c => c.value);
+  const stdMinRaw = document.getElementById('nb-std-min').value.trim();
+  const stdMaxRaw = document.getElementById('nb-std-max').value.trim();
+  const ist_mitglied = document.getElementById('nb-mitglied').value;
+  const notiz = document.getElementById('nb-notiz').value.trim();
+  const confirmed = document.getElementById('nb-confirm-check').checked;
+
+  // Validierung
+  if (!vorname || !nachname) { toast('Vor- und Nachname sind Pflicht', true); return; }
+  if (!email || !email.includes('@')) { toast('Gültige E-Mail ist Pflicht', true); return; }
+  if (!verein_id) { toast('Bitte einen Verein wählen', true); return; }
+  if (!confirmed) { toast('Bitte die Bestätigung unten anhaken', true); return; }
+
+  const stdMin = stdMinRaw ? parseInt(stdMinRaw, 10) : null;
+  const stdMax = stdMaxRaw ? parseInt(stdMaxRaw, 10) : null;
+  if (stdMin != null && (isNaN(stdMin) || stdMin < 0 || stdMin > 60)) { toast('Stunden min ungültig', true); return; }
+  if (stdMax != null && (isNaN(stdMax) || stdMax < 0 || stdMax > 60)) { toast('Stunden max ungültig', true); return; }
+
+  // bewerber_token generieren
+  const bewerber_token = (crypto?.randomUUID?.() || (Date.now() + '-' + Math.random().toString(36).slice(2,10)));
+
+  const payload = {
+    verein_id,
+    bewerber_token,
+    status: 'eingegangen',
+    vorname, nachname, email,
+    telefon: telefon || null,
+    rollen: rollen.length ? rollen : null,
+    anstellungsformen: anstellungsformen.length ? anstellungsformen : null,
+    wunsch_stunden_min: stdMin,
+    wunsch_stunden_max: stdMax,
+    ist_mitglied,
+    vorstand_notiz: notiz ? `[manuell angelegt am ${new Date().toLocaleString('de-DE')}]\n${notiz}` : `[manuell angelegt am ${new Date().toLocaleString('de-DE')}]`,
+    // Pflicht-Constraints
+    dsgvo_zustimmung: true,
+    ist_volljaehrig: true,
+    wohnsitz_d_6_monate: true,
+    sprache: 'de',
+  };
+
+  console.log('[NeueBW] Payload:', payload);
+  
+  try {
+    const { data, error } = await sb.from('csc_bewerbungen').insert(payload).select();
+    if (error) throw error;
+    toast('✓ Bewerbung angelegt');
+    closeNewBewerbungModal();
+    await loadDashboard();
+    // Neue Bewerbung sofort auswählen
+    if (data && data.length) setTimeout(() => selectBewerbung(data[0].id), 200);
+  } catch (e) {
+    console.error('[NeueBW] Fehler:', e);
+    toast('Fehler: ' + (e.message || e), true);
+  }
+}
+
+
 const PREDEFINED_TAGS = [
   { v: 'heisser_kandidat',    l: 'Heißer Kandidat',    e: '🔥' },
   { v: 'folgegespraech',      l: 'Folgegespräch nötig', e: '📞' },
@@ -2404,8 +2636,9 @@ async function toggleAuditList() {
 
 // ESC schließt Edit-Modal
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape' && document.getElementById('em-overlay')?.classList.contains('show')) {
-    closeEditModal();
+  if (e.key === 'Escape') {
+    if (document.getElementById('em-overlay')?.classList.contains('show')) closeEditModal();
+    else if (document.getElementById('nb-overlay')?.classList.contains('show')) closeNewBewerbungModal();
   }
 });
 
@@ -2438,6 +2671,21 @@ document.addEventListener('DOMContentLoaded', () => {
       <span id="em-audit-toggle" class="em-audit-toggle" onclick="toggleAuditList()">📋 Änderungsverlauf anzeigen</span>
       <button id="em-cancel" class="em-btn" type="button" onclick="closeEditModal()">Abbrechen</button>
       <button id="em-save" class="em-btn em-btn-save" type="button" onclick="saveEditModal()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== NEW BEWERBUNG MODAL ===== -->
+<div id="nb-overlay" class="em-overlay" onclick="if(event.target===this)closeNewBewerbungModal()" role="dialog" aria-modal="true" aria-labelledby="nb-title">
+  <div class="em-modal">
+    <div class="em-head">
+      <h2 id="nb-title">+ Neue Bewerbung manuell anlegen</h2>
+      <button class="em-close" onclick="closeNewBewerbungModal()" type="button" aria-label="Schließen">✕ Schließen</button>
+    </div>
+    <div id="nb-body" class="em-body"></div>
+    <div class="em-footer">
+      <button class="em-btn" type="button" onclick="closeNewBewerbungModal()">Abbrechen</button>
+      <button class="em-btn em-btn-save" type="button" onclick="saveNewBewerbung()">Bewerbung anlegen</button>
     </div>
   </div>
 </div>

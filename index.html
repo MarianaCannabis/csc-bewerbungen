@@ -1413,9 +1413,311 @@ body::before {
   .button-row { flex-direction: column-reverse; gap: 0.7rem; }
   .button-row .btn { width: 100%; }
 }
+
+/* ============================================================
+   POLISH-PAKET (Etappen 1-3 combined)
+   ============================================================ */
+
+/* Date-Inputs — gleicher Stil wie .form-input damit's konsistent ist */
+input[type="date"].form-input,
+input.form-input[type="date"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: #fff;
+  color-scheme: light;
+}
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: opacity(0.5) sepia(0.3) hue-rotate(40deg);
+  cursor: pointer;
+  margin-left: 0.4rem;
+}
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  filter: opacity(0.9) sepia(0.4) hue-rotate(40deg);
+}
+
+/* Visuelle Validation-Fehler — rote Border + Shake */
+.form-input.is-invalid,
+.form-select.is-invalid,
+.form-textarea.is-invalid {
+  border-color: var(--error);
+  background: #fffafa;
+  animation: shake 0.35s cubic-bezier(.36,.07,.19,.97);
+}
+.form-input.is-invalid:focus,
+.form-select.is-invalid:focus,
+.form-textarea.is-invalid:focus {
+  box-shadow: 0 0 0 3px rgba(181, 69, 69, 0.18);
+}
+@keyframes shake {
+  10%, 90% { transform: translateX(-1px); }
+  20%, 80% { transform: translateX(2px); }
+  30%, 50%, 70% { transform: translateX(-3px); }
+  40%, 60% { transform: translateX(3px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .form-input.is-invalid,
+  .form-select.is-invalid,
+  .form-textarea.is-invalid { animation: none; }
+}
+
+/* Inline-Fehlertext direkt unter dem Feld */
+.field-error {
+  font-size: 0.85rem;
+  color: var(--error);
+  margin-top: 0.35rem;
+  display: none;
+}
+.field-error.show { display: block; }
+
+/* Skip-Link für Tastatur-Navigation */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 8px;
+  background: var(--olive-700);
+  color: var(--cream);
+  padding: 8px 14px;
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  font-weight: 600;
+  z-index: 9999;
+  transition: top 0.2s;
+}
+.skip-link:focus {
+  top: 8px;
+  outline: 3px solid var(--terracotta);
+  outline-offset: 2px;
+}
+
+/* Bessere :focus-visible für Tastatur-Nutzer */
+*:focus-visible {
+  outline: 2px solid var(--olive-700);
+  outline-offset: 2px;
+}
+button:focus-visible, a:focus-visible {
+  outline-offset: 3px;
+}
+
+/* Submit-Loading-State — Spinner im Button */
+.btn.is-loading {
+  pointer-events: none;
+  opacity: 0.75;
+  position: relative;
+}
+.btn.is-loading::after {
+  content: '';
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  margin-left: 0.6rem;
+  vertical-align: -2px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .btn.is-loading::after { animation: none; opacity: 0.5; }
+}
+
+/* Smoothe Section-Transitions (Crossfade) */
+.section { transition: opacity 0.25s ease; }
+.section.is-leaving { opacity: 0; pointer-events: none; }
+.section.is-entering { opacity: 0; animation: fadeInSlide 0.35s ease forwards; }
+@keyframes fadeInSlide {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .section.is-entering { animation: none; opacity: 1; transform: none; }
+  .section { transition: none; }
+}
+
+/* Draft-Indikator unten in der Seite */
+.draft-indicator {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  background: var(--olive-700);
+  color: var(--cream);
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  box-shadow: var(--shadow-soft);
+  z-index: 100;
+  display: none;
+  align-items: center;
+  gap: 6px;
+  opacity: 0.92;
+  transition: opacity 0.2s;
+}
+.draft-indicator:hover { opacity: 1; }
+.draft-indicator.show { display: inline-flex; }
+.draft-indicator-icon {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--olive-300);
+}
+.draft-indicator.saving .draft-indicator-icon { 
+  background: var(--terracotta); 
+  animation: pulse 1.2s ease-in-out infinite; 
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+@media (max-width: 480px) {
+  .draft-indicator {
+    bottom: 8px;
+    right: 8px;
+    font-size: 0.72rem;
+    padding: 6px 10px;
+  }
+}
+
+/* Datei-Vorschau Thumbnail */
+.upload-item-thumb {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  background: var(--olive-50);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+  border: 1px solid var(--sand-300);
+}
+.upload-item-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.upload-item-thumb-icon {
+  font-size: 1.3rem;
+  color: var(--olive-700);
+}
+
+/* Success-Screen Polish — grüner Check mit Animation */
+.success-checkmark {
+  display: block;
+  margin: 0 auto 1.5rem;
+  width: 90px;
+  height: 90px;
+}
+.success-checkmark .check-bg {
+  fill: none;
+  stroke: var(--success);
+  stroke-width: 4;
+  stroke-dasharray: 270;
+  stroke-dashoffset: 270;
+  animation: drawCircle 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+}
+.success-checkmark .check-mark {
+  fill: none;
+  stroke: var(--success);
+  stroke-width: 5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 50;
+  stroke-dashoffset: 50;
+  animation: drawCheck 0.4s 0.5s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+}
+@keyframes drawCircle {
+  to { stroke-dashoffset: 0; }
+}
+@keyframes drawCheck {
+  to { stroke-dashoffset: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .success-checkmark .check-bg,
+  .success-checkmark .check-mark { animation: none; stroke-dashoffset: 0; }
+}
+
+/* sr-only - nur für Screenreader sichtbar */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Resume-Link-Button (im Header) */
+.resume-link-btn {
+  background: transparent;
+  border: 1px solid var(--olive-300);
+  color: var(--olive-700);
+  padding: 0.4rem 0.9rem;
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-left: 0.6rem;
+}
+.resume-link-btn:hover {
+  background: var(--olive-50);
+  border-color: var(--olive-500);
+}
+@media (max-width: 480px) {
+  .resume-link-btn { 
+    font-size: 0.78rem; 
+    padding: 0.35rem 0.7rem; 
+  }
+}
+
+/* Resume-Mail-Modal */
+.resume-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(44, 51, 32, 0.5);
+  z-index: 1000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  backdrop-filter: blur(4px);
+}
+.resume-modal-overlay.show { display: flex; }
+.resume-modal {
+  background: var(--cream);
+  border-radius: var(--radius-lg);
+  padding: 1.8rem;
+  max-width: 480px;
+  width: 100%;
+  box-shadow: var(--shadow-soft);
+}
+.resume-modal h3 { margin: 0 0 0.6rem 0; color: var(--olive-900); }
+.resume-modal p { margin: 0 0 1rem 0; color: var(--ink-soft); font-size: 0.92rem; }
+.resume-modal .btn-row { display: flex; gap: 0.6rem; justify-content: flex-end; margin-top: 1.2rem; }
+
+/* aria-live Region für Validation-Fehler — visuell sichtbar */
+.validation-summary {
+  background: var(--error-bg);
+  color: var(--error);
+  border: 1px solid var(--error);
+  border-left: 4px solid var(--error);
+  padding: 0.8rem 1rem;
+  border-radius: var(--radius-md);
+  margin-bottom: 1.2rem;
+  font-size: 0.9rem;
+  display: none;
+}
+.validation-summary.show { display: block; }
+.validation-summary strong { display: block; margin-bottom: 0.3rem; }
 </style>
 </head>
 <body>
+
+<a href="#main-content" class="skip-link">Zum Hauptinhalt springen</a>
 
 <header class="app-header">
   <div class="app-header-inner">
@@ -1423,24 +1725,27 @@ body::before {
       <h1 class="brand-name" id="brand-name">Mariana Cannabis</h1>
       <p class="brand-subtitle" id="brand-subtitle">Bewerbung für Mitarbeiter:innen</p>
     </div>
-    <div class="lang-switcher">
+    <div class="lang-switcher" style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap">
+      <button type="button" class="resume-link-btn" id="btn-resume-link" onclick="openResumeModal()" title="Bewerbung pausieren und später per Mail weitermachen" style="display:none">
+        ✉ Pausieren
+      </button>
       <span class="lang-label" id="lang-label">Sprache</span>
       <select class="lang-select" id="lang-select" aria-label="Sprache wählen"></select>
     </div>
   </div>
 </header>
 
-<main class="app-main">
+<main class="app-main" id="main-content" tabindex="-1">
 
   <!-- LOADING -->
-  <div class="loading-screen active" id="screen-loading">
+  <div class="loading-screen active" id="screen-loading" role="status" aria-live="polite">
     <div class="spinner"></div>
     <p class="success-intro">Daten werden geladen…</p>
   </div>
 
   <!-- ERROR Screen -->
-  <div class="error-screen" id="screen-error">
-    <div class="error-icon">
+  <div class="error-screen" id="screen-error" role="alert">
+    <div class="error-icon" aria-hidden="true">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
         <line x1="6" y1="6" x2="18" y2="18"/>
         <line x1="18" y1="6" x2="6" y2="18"/>
@@ -1462,13 +1767,18 @@ body::before {
         <span><strong id="prog-section">Abschnitt 1</strong> <span id="prog-of">von 9</span></span>
         <span id="prog-pct">11%</span>
       </div>
-      <div class="progress-bar">
+      <div class="progress-bar" role="progressbar" id="prog-bar-wrap"
+           aria-valuemin="0" aria-valuemax="100" aria-valuenow="11"
+           aria-label="Bewerbungs-Fortschritt">
         <div class="progress-fill" id="prog-fill" style="width: 11%"></div>
       </div>
     </div>
 
-    <!-- Validation Banner -->
+    <!-- Validation Banner (alt - bleibt für Kompatibilität) -->
     <div class="validation-banner" id="validation-banner"></div>
+
+    <!-- Validation-Summary für Screenreader (aria-live) und visuell -->
+    <div class="validation-summary" id="validation-summary" role="alert" aria-live="assertive"></div>
 
     <!-- Sektionen werden per JS gerendert -->
     <div id="sections-container"></div>
@@ -1482,13 +1792,12 @@ body::before {
   </div>
 
   <!-- SUCCESS -->
-  <div class="success-screen" id="screen-success">
-    <div class="success-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="20 6 9 17 4 12"/>
-      </svg>
-    </div>
-    <h2 class="success-title" data-i18n="success.titel"></h2>
+  <div class="success-screen" id="screen-success" role="status">
+    <svg class="success-checkmark" viewBox="0 0 100 100" aria-hidden="true">
+      <circle class="check-bg" cx="50" cy="50" r="43"/>
+      <polyline class="check-mark" points="28 52 44 68 73 36"/>
+    </svg>
+    <h2 class="success-title" data-i18n="success.titel" tabindex="-1"></h2>
     <p class="success-intro" data-i18n="success.intro"></p>
     <div class="next-steps">
       <h3 data-i18n="success.naechste_schritte_titel"></h3>
@@ -1505,6 +1814,27 @@ body::before {
   </div>
 
 </main>
+
+<!-- Draft-Indikator -->
+<div class="draft-indicator" id="draft-indicator" role="status" aria-live="polite" aria-atomic="true">
+  <span class="draft-indicator-icon" aria-hidden="true"></span>
+  <span id="draft-indicator-text">Entwurf gespeichert</span>
+</div>
+
+<!-- Resume-per-Mail Modal -->
+<div class="resume-modal-overlay" id="resume-modal" role="dialog" aria-modal="true" aria-labelledby="resume-modal-title" onclick="if(event.target===this)closeResumeModal()">
+  <div class="resume-modal">
+    <h3 id="resume-modal-title">Bewerbung pausieren</h3>
+    <p>Schick dir per Mail einen Link, mit dem du später hier weitermachen kannst — auch von einem anderen Gerät.</p>
+    <p style="font-size:0.82rem;color:var(--ink-mute);margin-top:-0.6rem"><strong>Hinweis:</strong> Hochgeladene Dateien werden nicht übertragen — du müsstest sie nach dem Wiederkommen neu hochladen.</p>
+    <label for="resume-email" style="display:block;margin-top:0.8rem;margin-bottom:0.3rem;font-size:0.9rem;font-weight:500">Deine E-Mail-Adresse</label>
+    <input type="email" id="resume-email" class="form-input" placeholder="name@beispiel.de" autocomplete="email" required>
+    <div class="btn-row">
+      <button type="button" class="btn btn-secondary" onclick="closeResumeModal()">Abbrechen</button>
+      <button type="button" class="btn btn-primary" id="btn-resume-send" onclick="sendResumeLink()">Link senden</button>
+    </div>
+  </div>
+</div>
 
 <footer class="app-footer">
   Mariana Cannabis · <a href="#" onclick="alert('Datenschutz-Link folgt'); return false;">Datenschutz</a> · <a href="#" onclick="alert('Impressum-Link folgt'); return false;">Impressum</a>
@@ -1601,6 +1931,7 @@ const state = {
   vereine: [],
   currentSection: 1,
   totalSections: 9,
+  lastDraftSaveAt: null,  // für Draft-Indikator
   formData: {
     verein_id: null,
     ist_volljaehrig: false,
@@ -1931,13 +2262,46 @@ async function loadVereine() {
 // ============================================================================
 function saveDraft() {
   try {
+    showDraftIndicator('saving');
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
       lang: state.lang,
       currentSection: state.currentSection,
       formData: state.formData,
       savedAt: new Date().toISOString()
     }));
+    state.lastDraftSaveAt = Date.now();
+    // Indikator: nach 350ms auf "gespeichert" wechseln
+    setTimeout(() => updateDraftIndicator(), 350);
   } catch (e) {}
+}
+
+// ----------- Draft-Indikator (zeigt "vor X Min gespeichert") -----------
+function showDraftIndicator(mode) {
+  const el = document.getElementById('draft-indicator');
+  if (!el) return;
+  el.classList.add('show');
+  if (mode === 'saving') {
+    el.classList.add('saving');
+    document.getElementById('draft-indicator-text').textContent = 'Speichere…';
+  }
+}
+function updateDraftIndicator() {
+  const el = document.getElementById('draft-indicator');
+  const txt = document.getElementById('draft-indicator-text');
+  if (!el || !txt) return;
+  if (!state.lastDraftSaveAt) {
+    el.classList.remove('show');
+    return;
+  }
+  el.classList.remove('saving');
+  el.classList.add('show');
+  const ageSec = Math.floor((Date.now() - state.lastDraftSaveAt) / 1000);
+  let label;
+  if (ageSec < 5) label = 'Gespeichert';
+  else if (ageSec < 60) label = `Gespeichert vor ${ageSec} Sek.`;
+  else if (ageSec < 3600) label = `Gespeichert vor ${Math.floor(ageSec/60)} Min.`;
+  else label = `Gespeichert vor ${Math.floor(ageSec/3600)} Std.`;
+  txt.textContent = label;
 }
 
 function loadDraft() {
@@ -3686,24 +4050,40 @@ function renderUploadList() {
     return;
   }
   
-  ul.innerHTML = state.formData.anhaenge.map((a, i) => `
+  ul.innerHTML = state.formData.anhaenge.map((a, i) => {
+    const isImage = (a.mime || '').startsWith('image/');
+    const thumbHtml = isImage 
+      ? `<div class="upload-item-thumb"><img id="thumb-img-${i}" alt="" loading="lazy"></div>`
+      : `<div class="upload-item-thumb"><span class="upload-item-thumb-icon" aria-hidden="true">${getFileIcon(a.mime)}</span></div>`;
+    return `
     <div class="upload-item" data-idx="${i}">
-      <div class="upload-item-icon">${getFileIcon(a.mime)}</div>
+      ${thumbHtml}
       <div class="upload-item-info">
         <div class="upload-item-name">${escapeHtml(a.filename)}</div>
         <div class="upload-item-meta">${formatFileSize(a.size)}</div>
       </div>
       <div class="upload-item-kategorie">
-        <select data-anhang-kategorie="${i}">
+        <select data-anhang-kategorie="${i}" aria-label="Kategorie für ${escapeHtml(a.filename)}">
           <option value="lebenslauf"${a.kategorie === 'lebenslauf' ? ' selected' : ''}>${s.anhaenge_kat_lebenslauf}</option>
           <option value="zeugnis"${a.kategorie === 'zeugnis' ? ' selected' : ''}>${s.anhaenge_kat_zeugnis}</option>
           <option value="sachkunde"${a.kategorie === 'sachkunde' ? ' selected' : ''}>${s.anhaenge_kat_sachkunde}</option>
           <option value="sonstiges"${a.kategorie === 'sonstiges' ? ' selected' : ''}>${s.anhaenge_kat_sonstiges}</option>
         </select>
       </div>
-      <button type="button" class="upload-item-remove" data-anhang-remove="${i}" title="${s.anhaenge_loeschen}">×</button>
+      <button type="button" class="upload-item-remove" data-anhang-remove="${i}" title="${s.anhaenge_loeschen}" aria-label="${s.anhaenge_loeschen}: ${escapeHtml(a.filename)}">×</button>
     </div>
-  `).join('');
+  `; }).join('');
+  
+  // Bild-Thumbnails laden via FileReader
+  state.formData.anhaenge.forEach((a, i) => {
+    if (!(a.mime || '').startsWith('image/')) return;
+    const img = document.getElementById(`thumb-img-${i}`);
+    if (!img || !a.file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => { img.src = e.target.result; };
+    reader.onerror = () => { /* ignore */ };
+    reader.readAsDataURL(a.file);
+  });
   
   // Handler für Kategorie-Wechsel
   ul.querySelectorAll('[data-anhang-kategorie]').forEach(sel => {
@@ -4650,16 +5030,18 @@ function isValidIBANFormat(iban) {
 }
 
 function showErrors() {
-  // Alle previous errors wegnehmen
+  // Alle previous errors wegnehmen — auf form-group UND inputs
   document.querySelectorAll('.form-group').forEach(fg => fg.classList.remove('has-error'));
+  document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+  document.querySelectorAll('[aria-invalid="true"]').forEach(el => el.removeAttribute('aria-invalid'));
+
+  let firstErrorEl = null;
 
   // Aktuelle Fehler markieren
   Object.keys(state.errors).forEach(k => {
-    // Mapping spezifischer Error-Keys auf die FG-IDs
     let fgKey = k;
     if (k === 'geburtsdatum_age_under' || k === 'geburtsdatum_age_over') {
       fgKey = 'geburtsdatum';
-      // Spezielle Fehlermeldung in error-message ändern
       const fg = document.getElementById('fg-geburtsdatum');
       if (fg) {
         const em = fg.querySelector('.error-message');
@@ -4670,16 +5052,45 @@ function showErrors() {
         }
       }
     }
-    const el = document.getElementById('fg-' + fgKey);
-    if (el) el.classList.add('has-error');
+    const fg = document.getElementById('fg-' + fgKey);
+    if (fg) {
+      fg.classList.add('has-error');
+      // Erstes input/select/textarea im form-group: is-invalid + aria-invalid + Shake
+      const input = fg.querySelector('input, select, textarea');
+      if (input) {
+        input.classList.add('is-invalid');
+        input.setAttribute('aria-invalid', 'true');
+        if (!firstErrorEl) firstErrorEl = input;
+      } else if (!firstErrorEl) {
+        firstErrorEl = fg;
+      }
+    }
   });
 
   const banner = document.getElementById('validation-banner');
-  if (Object.keys(state.errors).length > 0) {
+  const summary = document.getElementById('validation-summary');
+  const errorCount = Object.keys(state.errors).length;
+  
+  if (errorCount > 0) {
     banner.textContent = t('validation.fix_errors');
     banner.classList.add('active');
+    // Validation-Summary für Screenreader + visuell
+    if (summary) {
+      const msg = t('validation.fix_errors') || 'Bitte korrigiere die rot markierten Felder.';
+      const count = errorCount === 1 ? '1 Feld benötigt deine Aufmerksamkeit' : `${errorCount} Felder benötigen deine Aufmerksamkeit`;
+      summary.innerHTML = `<strong>${msg}</strong>${count}`;
+      summary.classList.add('show');
+    }
+    // Fokus auf erstes Fehlerfeld + sanft scrollen
+    if (firstErrorEl) {
+      setTimeout(() => {
+        firstErrorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        if (typeof firstErrorEl.focus === 'function') firstErrorEl.focus({ preventScroll: true });
+      }, 100);
+    }
   } else {
     banner.classList.remove('active');
+    if (summary) summary.classList.remove('show');
   }
 }
 
@@ -4687,17 +5098,40 @@ function showErrors() {
 // NAVIGATION
 // ============================================================================
 function showSection(n) {
-  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-  const sec = document.getElementById(`section-${n}`);
-  if (sec) sec.classList.add('active');
-  state.currentSection = n;
+  const allSecs = document.querySelectorAll('.section');
+  const prevActive = document.querySelector('.section.active');
+  const newSec = document.getElementById(`section-${n}`);
+  
+  // Fade-Transition: erst die alte ausblenden, dann neue einblenden
+  const doShow = () => {
+    allSecs.forEach(s => { s.classList.remove('active','is-leaving','is-entering'); });
+    if (newSec) {
+      newSec.classList.add('active','is-entering');
+      // entering-Klasse nach Animation entfernen (cleanup)
+      setTimeout(() => newSec.classList.remove('is-entering'), 400);
+    }
+    state.currentSection = n;
+    afterSectionShown(n);
+  };
+  
+  if (prevActive && prevActive !== newSec) {
+    prevActive.classList.add('is-leaving');
+    setTimeout(doShow, 200);
+  } else {
+    doShow();
+  }
+}
 
+function afterSectionShown(n) {
   // Progress
   document.getElementById('prog-section').textContent = `${t('progress.section')} ${n}`;
   document.getElementById('prog-of').textContent = `${t('progress.of')} ${state.totalSections}`;
   const pct = Math.round((n / state.totalSections) * 100);
   document.getElementById('prog-fill').style.width = pct + '%';
   document.getElementById('prog-pct').textContent = pct + '%';
+  // ARIA: Progressbar aktualisieren
+  const progBar = document.getElementById('prog-bar-wrap');
+  if (progBar) progBar.setAttribute('aria-valuenow', pct);
 
   // Buttons
   document.getElementById('btn-back').disabled = n === 1;
@@ -4708,11 +5142,27 @@ function showSection(n) {
     nextBtn.innerHTML = `${t('progress.next')} →`;
   }
 
-  // Banner zurücksetzen
+  // Banner + Summary zurücksetzen
   document.getElementById('validation-banner').classList.remove('active');
+  const vs = document.getElementById('validation-summary');
+  if (vs) { vs.classList.remove('show'); vs.innerHTML = ''; }
+  
+  // Resume-Pause-Button nur ab Sektion 2 zeigen (damit Bewerber:innen erstmal anfangen)
+  const resumeBtn = document.getElementById('btn-resume-link');
+  if (resumeBtn) resumeBtn.style.display = (n >= 2 && n < state.totalSections) ? '' : 'none';
 
   // Scroll zum Anfang
   window.scrollTo({ top: 0, behavior: 'smooth' });
+  
+  // Focus-Management: nach Animations-Start auf Section-Titel
+  setTimeout(() => {
+    const sec = document.getElementById(`section-${n}`);
+    const title = sec?.querySelector('.section-title');
+    if (title) {
+      if (!title.hasAttribute('tabindex')) title.setAttribute('tabindex','-1');
+      title.focus({ preventScroll: true });
+    }
+  }, 280);
   
   // hCaptcha rendern wenn Sektion 9 aktiv wird (Widget kann zwischendurch verloren gehen)
   if (n === 9 && typeof renderHCaptcha === 'function') {
@@ -4758,7 +5208,8 @@ function goBack() {
 async function submitForm() {
   const btn = document.getElementById('btn-next');
   btn.disabled = true;
-  btn.innerHTML = '⏳ …';
+  btn.classList.add('is-loading');
+  // Originalen Button-Text erhalten, nur Loading-Class macht den Spinner
 
   const d = state.formData;
 
@@ -4912,6 +5363,18 @@ async function submitForm() {
     document.getElementById('success-id').textContent = clientSideToken.substring(0, 8).toUpperCase();
     applyTranslations();
     
+    // Draft-Indikator und Resume-Btn ausblenden
+    document.getElementById('draft-indicator')?.classList.remove('show');
+    const resumeBtn = document.getElementById('btn-resume-link');
+    if (resumeBtn) resumeBtn.style.display = 'none';
+    
+    // Fokus auf Success-Titel für Screenreader
+    setTimeout(() => {
+      const successTitle = document.querySelector('#screen-success .success-title');
+      if (successTitle) successTitle.focus();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 100);
+    
     if (uploadFehler > 0) {
       console.warn(`${uploadFehler} Datei(en) konnten nicht hochgeladen werden`);
     }
@@ -4920,6 +5383,7 @@ async function submitForm() {
     console.error('Submit-Fehler:', e);
     alert(t('errors.submit_failed') + '\n\n' + (e.message || ''));
     btn.disabled = false;
+    btn.classList.remove('is-loading');
     btn.innerHTML = t('progress.submit');
   }
 }
@@ -4946,14 +5410,22 @@ async function init() {
   let lang = params.get('lang') || (navigator.language || 'de').substring(0, 2);
   if (!['de', 'en'].includes(lang)) lang = 'de';
 
-  // Draft laden — überschreibt Lang aus Param/Browser
-  loadDraft();
+  // Resume-URL prüfen — überschreibt sowohl Draft als auch URL-Lang
+  const resumeLoaded = tryLoadResumeFromUrl();
+  
+  // Draft laden (nur wenn nicht durch Resume schon befüllt)
+  if (!resumeLoaded) {
+    loadDraft();
+  }
 
   // Sprache laden
   if (!await loadLang(state.lang)) {
     showError('Sprach-Datei konnte nicht geladen werden.');
     return;
   }
+  
+  // Draft-Indikator alle 30 Sek aktualisieren ("vor X Min")
+  setInterval(updateDraftIndicator, 30000);
 
   // Positionsbeschreibungen laden (optional — fehlt sie, deaktivieren sich nur die ℹ-Buttons)
   await loadPositionen();
@@ -4994,13 +5466,173 @@ function showError(msg) {
   document.getElementById('error-text').textContent = msg;
 }
 
+// ============================================================================
+// RESUME-PER-MAIL: Bewerbung pausieren, Link per Mail
+// ============================================================================
+// Pragmatischer Ansatz: State wird als komprimierter Base64-String in der URL 
+// codiert. Bewerber bekommt Mail mit Link, klickt → State wird beim Laden 
+// automatisch wiederhergestellt. Funktioniert ohne neue DB-Tabelle.
+// 
+// Wichtige Einschränkung: Hochgeladene Dateien (File-Objekte) werden NICHT 
+// übertragen — Bewerber muss sie ggf. neu hochladen.
+
+function openResumeModal() {
+  const modal = document.getElementById('resume-modal');
+  if (!modal) return;
+  modal.classList.add('show');
+  setTimeout(() => document.getElementById('resume-email')?.focus(), 50);
+}
+
+function closeResumeModal() {
+  document.getElementById('resume-modal')?.classList.remove('show');
+}
+
+function buildResumeUrl() {
+  // State serialisieren OHNE File-Objekte (die kann man nicht in URLs packen)
+  const slim = {
+    lang: state.lang,
+    currentSection: state.currentSection,
+    formData: { ...state.formData },
+  };
+  // Anhänge-Files entfernen (nur Metadaten würden bleiben — die sind aber auch obsolet beim Resume)
+  slim.formData.anhaenge = [];
+  try {
+    const json = JSON.stringify(slim);
+    // UTF-8 -> Base64
+    const b64 = btoa(unescape(encodeURIComponent(json)));
+    // URL-safe Base64 (für saubere Mail-Links)
+    const safe = b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    const baseUrl = window.location.origin + window.location.pathname;
+    return `${baseUrl}?resume=${safe}`;
+  } catch (e) {
+    console.error('Resume-URL bauen fehlgeschlagen:', e);
+    return null;
+  }
+}
+
+async function sendResumeLink() {
+  const emailInput = document.getElementById('resume-email');
+  const email = (emailInput?.value || '').trim();
+  const btn = document.getElementById('btn-resume-send');
+  
+  if (!email || !email.includes('@')) {
+    emailInput?.focus();
+    emailInput?.classList.add('is-invalid');
+    setTimeout(() => emailInput?.classList.remove('is-invalid'), 1500);
+    return;
+  }
+  
+  const url = buildResumeUrl();
+  if (!url) {
+    alert('Konnte den Link nicht erstellen. Versuch es bitte später nochmal.');
+    return;
+  }
+  
+  btn.disabled = true;
+  btn.classList.add('is-loading');
+  
+  try {
+    // Pragmatisch: bestehende send-manual-mail Function nutzen
+    // (existiert schon und ist robust mit nodemailer)
+    const subject = 'Mach hier weiter mit deiner Bewerbung – Mariana Cannabis';
+    const bodyText = `Hi,
+
+du hast deine Bewerbung pausiert — hier ist der Link, mit dem du da weitermachst, wo du aufgehört hast:
+
+${url}
+
+Klick einfach drauf — auch von einem anderen Gerät — und du landest wieder im richtigen Abschnitt.
+
+Falls du Dateien hochgeladen hattest, müsstest du die nach dem Wiederkommen neu hochladen — alles andere ist gespeichert.
+
+Bei Fragen einfach auf diese Mail antworten.
+
+Grüne Grüße
+Dein Mariana-Cannabis-Team`;
+
+    const bodyHtml = `<!DOCTYPE html>
+<html><body style="font-family:-apple-system,sans-serif;max-width:600px;margin:0 auto;padding:24px;color:#222;background:#fafafa">
+<div style="background:white;padding:32px;border-radius:12px;border:1px solid #e0e0e0">
+<h2 style="color:#4a5a32;margin:0 0 16px 0">Mach hier weiter</h2>
+<p>Hi,</p>
+<p>du hast deine Bewerbung pausiert &mdash; hier ist der Link, mit dem du da weitermachst, wo du aufgeh&ouml;rt hast:</p>
+<p style="margin:24px 0"><a href="${url}" style="background:#4caf6a;color:white;padding:12px 24px;border-radius:6px;text-decoration:none;display:inline-block;font-weight:600">Bewerbung fortsetzen</a></p>
+<p style="font-size:13px;color:#666;word-break:break-all">Falls der Button nicht funktioniert: <br>${url}</p>
+<p style="background:#fff4e0;padding:12px;border-radius:6px;border-left:3px solid #ffb74d;font-size:13px;color:#7a5a1a">
+<strong>Hinweis:</strong> Falls du Dateien hochgeladen hattest, m&uuml;sstest du die nach dem Wiederkommen neu hochladen &mdash; alles andere ist gespeichert.
+</p>
+<p style="margin-top:24px">Bei Fragen einfach auf diese Mail antworten.</p>
+<p style="font-size:13px;color:#888">Gr&uuml;ne Gr&uuml;&szlig;e<br>Dein Mariana-Cannabis-Team</p>
+</div></body></html>`;
+
+    const { data, error } = await sb.functions.invoke('send-manual-mail', {
+      body: {
+        to: email,
+        subject,
+        body_text: bodyText,
+        body_html: bodyHtml,
+        format: 'html',
+        vorlage: 'resume-link',
+        sender_name: 'Bewerbungsbogen (anonym)',
+      },
+    });
+    
+    if (error || data?.error) {
+      throw new Error(error?.message || data?.error || 'Versand fehlgeschlagen');
+    }
+    
+    // Erfolg
+    btn.classList.remove('is-loading');
+    btn.innerHTML = '✓ Gesendet';
+    setTimeout(() => {
+      closeResumeModal();
+      btn.disabled = false;
+      btn.innerHTML = 'Link senden';
+    }, 1500);
+  } catch (e) {
+    console.error('Resume-Mail Fehler:', e);
+    btn.disabled = false;
+    btn.classList.remove('is-loading');
+    btn.innerHTML = 'Link senden';
+    alert('Mail konnte nicht gesendet werden:\n\n' + (e.message || e));
+  }
+}
+
+function tryLoadResumeFromUrl() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const resume = params.get('resume');
+    if (!resume) return false;
+    // URL-safe Base64 → normales Base64
+    let b64 = resume.replace(/-/g, '+').replace(/_/g, '/');
+    while (b64.length % 4) b64 += '=';
+    const json = decodeURIComponent(escape(atob(b64)));
+    const data = JSON.parse(json);
+    if (data.lang) state.lang = data.lang;
+    if (data.currentSection) state.currentSection = data.currentSection;
+    if (data.formData) {
+      Object.assign(state.formData, data.formData);
+      // Anhänge zurücksetzen (Files können nicht übertragen werden)
+      state.formData.anhaenge = [];
+    }
+    // URL säubern damit Reload nicht denselben Resume nochmal lädt
+    window.history.replaceState({}, '', window.location.pathname);
+    return true;
+  } catch (e) {
+    console.warn('Resume-URL ungültig:', e);
+    return false;
+  }
+}
+
 document.addEventListener('DOMContentLoaded', init);
 
-// ESC-Taste schließt Position-Info-Modal
+// ESC-Taste schließt Modals
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
-    const m = document.getElementById('pos-info-modal');
-    if (m && m.classList.contains('show')) closePositionInfo();
+    const posModal = document.getElementById('pos-info-modal');
+    if (posModal && posModal.classList.contains('show')) closePositionInfo();
+    const resumeModal = document.getElementById('resume-modal');
+    if (resumeModal && resumeModal.classList.contains('show')) closeResumeModal();
   }
 });
 </script>

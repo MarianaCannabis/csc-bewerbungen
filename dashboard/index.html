@@ -143,6 +143,10 @@
     .action-btn.loeschen:hover { background: #b85959; color: #fff; }
     .action-btn.pdf-btn { border-color: var(--tx-dim); color: var(--tx); margin-left: auto; }
     .action-btn.pdf-btn:hover { background: var(--bg-elev); border-color: var(--green-dim); color: var(--green); }
+    .action-btn.mail-btn { border-color: var(--green-dim); color: var(--green); margin-left: auto; }
+    .action-btn.mail-btn:hover { background: var(--green); color: var(--bg); border-color: var(--green); }
+    .action-btn.pdf-btn { margin-left: 0; }
+    .action-btn.loeschen { margin-left: 0; }
     .action-btn.angenommen { background: var(--green); color: var(--bg); border-color: var(--green); }
     .action-btn.angenommen:hover { background: #5fbe7d; }
     .action-btn.pruefen { border-color: #b88c4d; color: var(--orange); }
@@ -1220,6 +1224,7 @@ async function selectBewerbung(id) {
         <button class="action-btn warteliste" onclick="setStatus('${b.id}', 'warteliste')">Warteliste</button>
         <button class="action-btn angenommen" onclick="setStatus('${b.id}', 'angenommen')">Annehmen</button>
         <button class="action-btn abgelehnt" onclick="setStatus('${b.id}', 'abgelehnt')">Ablehnen</button>
+        <button class="action-btn mail-btn" onclick="openMailModal('${b.id}')" title="E-Mail an Bewerber:in senden" aria-label="E-Mail senden">✉️ E-Mail</button>
         <button class="action-btn pdf-btn" onclick="printBewerbung('${b.id}')" title="Bewerbung als PDF speichern oder ausdrucken (DSGVO-Akte)" aria-label="PDF erzeugen oder drucken">📄 PDF / Drucken</button>
         ${userContext.ist_admin ? `<button class="action-btn loeschen" onclick="deleteBewerbung('${b.id}')" title="Bewerbung dauerhaft löschen (DSGVO)">🗑 Löschen</button>` : ''}
       </div>
@@ -1758,8 +1763,381 @@ function toast(msg, isError = false) {
 }
 
 // ============================================================================
-// PDF-EXPORT / DRUCKEN einer Bewerbung
+// E-MAIL AN BEWERBER:IN (Vorlagen + Modal + Send via Edge Function)
 // ============================================================================
+const MAIL_TEMPLATES = [
+  {
+    id: 'frei',
+    label: '✍️ Freie Mitteilung (leeres Template)',
+    auto: false,
+    subject: '',
+    plain: `Hallo {vorname},
+
+[Hier deine Nachricht schreiben]
+
+Grüne Grüße
+{verein_name}`,
+  },
+  {
+    id: 'anhang_nachreichen',
+    label: '📎 Anhang nachreichen',
+    auto: false,
+    subject: 'Bitte noch Unterlagen nachreichen – {verein_name}',
+    plain: `Hallo {vorname},
+
+deine Bewerbung haben wir, vielen Dank! Für die weitere Bearbeitung brauchen wir noch:
+
+- [BITTE EINFÜGEN, z.B. Sachkundenachweis §34a]
+- [BITTE EINFÜGEN, z.B. Führungszeugnis]
+
+Du kannst die Unterlagen einfach als Antwort auf diese Mail anhängen.
+
+Danke dir!
+
+Grüne Grüße
+{verein_name}`,
+  },
+  {
+    id: 'vervollstaendigen',
+    label: '✏️ Bitte vervollständigen',
+    auto: false,
+    subject: 'Bitte deine Bewerbung vervollständigen – {verein_name}',
+    plain: `Hallo {vorname},
+
+deine Bewerbung haben wir, vielen Dank! Wir konnten allerdings noch nicht alle Angaben finden, die wir brauchen:
+
+- [BITTE EINFÜGEN, z.B. Geburtsdatum]
+- [BITTE EINFÜGEN, z.B. Adresse]
+- [BITTE EINFÜGEN, z.B. IBAN für Anstellung]
+
+Du kannst die Angaben einfach in einer Antwort auf diese Mail ergänzen.
+
+Danke!
+
+Grüne Grüße
+{verein_name}`,
+  },
+  {
+    id: 'termin_vorschlag',
+    label: '📅 Termin-Vorschlag (konkrete Daten)',
+    auto: false,
+    subject: 'Termin-Vorschlag für unser Gespräch – {verein_name}',
+    plain: `Hallo {vorname},
+
+wie besprochen melde ich mich mit konkreten Terminen für unser Gespräch:
+
+Vorschlag 1: [WOCHENTAG, TT.MM.JJJJ] um [UHRZEIT]
+Vorschlag 2: [WOCHENTAG, TT.MM.JJJJ] um [UHRZEIT]
+
+Ort: [ORT EINFÜGEN]
+Dauer: ca. 30 Minuten
+
+Sag mir gerne Bescheid, welcher Termin dir besser passt – oder schlag eine Alternative vor.
+
+Bis bald!
+
+Grüne Grüße
+{verein_name}`,
+  },
+  {
+    id: 'rueckfrage',
+    label: '❓ Rückfrage stellen',
+    auto: false,
+    subject: 'Eine Rückfrage zu deiner Bewerbung – {verein_name}',
+    plain: `Hallo {vorname},
+
+ich habe noch eine kurze Rückfrage zu deiner Bewerbung:
+
+[FRAGE HIER EINFÜGEN]
+
+Antworte einfach auf diese E-Mail. Danke!
+
+Grüne Grüße
+{verein_name}`,
+  },
+  {
+    id: 'eingegangen',
+    label: 'ℹ️ Bewerbung eingegangen (läuft automatisch)',
+    auto: true,
+    subject: 'Wir haben deine Bewerbung erhalten – {verein_name}',
+    plain: `Hallo {vorname},
+
+vielen Dank für deine Bewerbung bei {verein_name}!
+Wir haben deine Unterlagen erhalten und melden uns innerhalb der nächsten Tage zurück.
+
+Grüne Grüße
+{verein_name}`,
+  },
+  {
+    id: 'in_pruefung',
+    label: 'ℹ️ In Prüfung (läuft auto bei Status-Wechsel)',
+    auto: true,
+    subject: 'Deine Bewerbung wird gerade geprüft – {verein_name}',
+    plain: `Hallo {vorname},
+
+wir sind aktuell dabei, deine Bewerbung zu prüfen. Wir melden uns bald.
+
+Grüne Grüße
+{verein_name}`,
+  },
+  {
+    id: 'eingeladen',
+    label: 'ℹ️ Eingeladen (läuft auto bei Status-Wechsel)',
+    auto: true,
+    subject: 'Einladung zum Gespräch – {verein_name}',
+    plain: `Hallo {vorname},
+
+wir möchten dich gerne persönlich kennenlernen!
+Der Vorstand meldet sich in den nächsten Tagen mit Terminvorschlägen.
+
+Grüne Grüße
+{verein_name}`,
+  },
+  {
+    id: 'warteliste',
+    label: 'ℹ️ Warteliste (läuft auto bei Status-Wechsel)',
+    auto: true,
+    subject: 'Aktuell keine freie Stelle – Warteliste',
+    plain: `Hallo {vorname},
+
+aktuell haben wir leider keine passende Stelle frei.
+Wir setzen dich auf unsere Warteliste und melden uns, sobald etwas Passendes frei wird.
+
+Grüne Grüße
+{verein_name}`,
+  },
+  {
+    id: 'angenommen',
+    label: 'ℹ️ Angenommen (läuft auto bei Status-Wechsel)',
+    auto: true,
+    subject: 'Willkommen im Team – {verein_name}',
+    plain: `Hallo {vorname},
+
+herzlich willkommen bei {verein_name}!
+Die nächsten Schritte besprechen wir in Kürze.
+
+Grüne Grüße
+{verein_name}`,
+  },
+  {
+    id: 'abgelehnt',
+    label: 'ℹ️ Absage (läuft auto bei Status-Wechsel)',
+    auto: true,
+    subject: 'Rückmeldung zu deiner Bewerbung',
+    plain: `Hallo {vorname},
+
+vielen Dank für deine Bewerbung und das Interesse an unserer Arbeit.
+Nach Prüfung müssen wir dir leider absagen.
+
+Wir wünschen dir alles Gute!
+
+Grüne Grüße
+{verein_name}`,
+  },
+];
+
+function mailTemplate(id) {
+  return MAIL_TEMPLATES.find(t => t.id === id) || MAIL_TEMPLATES[MAIL_TEMPLATES.length - 1];
+}
+
+function applyMailPlaceholders(text, b, v) {
+  if (!text) return '';
+  const vorname = (b.vorname || 'dort').trim();
+  const nachname = (b.nachname || '').trim();
+  const vereinName = v?.name || 'Mariana Cannabis';
+  const rolleArr = Array.isArray(b.rollen) ? b.rollen : [];
+  const rolle = rolleArr.length ? (ROLE_LABELS[rolleArr[0]] || rolleArr[0]) : 'Mitarbeiter:in';
+  const datum = new Date().toLocaleDateString('de-DE');
+  return text
+    .replaceAll('{vorname}', vorname)
+    .replaceAll('{nachname}', nachname)
+    .replaceAll('{verein_name}', vereinName)
+    .replaceAll('{rolle}', rolle)
+    .replaceAll('{datum}', datum);
+}
+
+function plainToHtml(text, b, v) {
+  // wandelt Plain-Text in einfaches branded HTML
+  const escaped = String(text).replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
+  const paragraphs = escaped.split(/\n\n+/).map(p => `<p style="margin:0 0 12px 0;line-height:1.6">${p.replace(/\n/g, '<br>')}</p>`).join('');
+  const vereinName = v?.name || 'Mariana Cannabis';
+  return `<!DOCTYPE html>
+<html lang="de"><head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#f6f7f5;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f6f7f5;padding:24px">
+  <tr><td align="center">
+    <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;border:1px solid #e6e8e3">
+      <tr><td style="background:#08100b;padding:22px 30px;color:#ffffff">
+        <div style="font-size:18px;font-weight:600;color:#4caf6a;letter-spacing:-0.01em">🌿 ${escapeHtml(vereinName)}</div>
+        <div style="font-size:12px;color:#9aa6a0;margin-top:4px">Cannabis Social Club · Mariana Cannabis</div>
+      </td></tr>
+      <tr><td style="padding:30px;color:#1a1a1a;font-size:14px">${paragraphs}</td></tr>
+      <tr><td style="background:#f3f5f1;padding:16px 30px;font-size:11px;color:#6e7670;border-top:1px solid #e6e8e3">
+        Diese E-Mail wurde im Rahmen deiner Bewerbung bei <strong>${escapeHtml(vereinName)}</strong> versendet.
+        Bei Fragen einfach auf diese Mail antworten.
+      </td></tr>
+    </table>
+  </td></tr>
+</table></body></html>`;
+}
+
+let currentMailBewerbung = null;
+
+function openMailModal(id) {
+  const b = bewerbungen.find(x => x.id === id);
+  if (!b) { toast('Bewerbung nicht gefunden', true); return; }
+  if (!b.email) { toast('Keine E-Mail-Adresse vorhanden', true); return; }
+  currentMailBewerbung = b;
+  const v = vereine[b.verein_id];
+  const body = document.getElementById('mail-body');
+  if (!body) return;
+
+  body.innerHTML = `
+    <div class="em-group">
+      <div class="em-group-title">Empfänger</div>
+      <div style="display:flex;gap:10px;align-items:center;padding:8px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:6px">
+        <strong>${escapeHtml(b.vorname || '')} ${escapeHtml(b.nachname || '')}</strong>
+        <span style="color:var(--tx-mute)">·</span>
+        <span style="color:var(--green)">${escapeHtml(b.email)}</span>
+      </div>
+    </div>
+
+    <div class="em-group">
+      <div class="em-group-title">Vorlage</div>
+      <select class="nb-select" id="mail-template" onchange="applyMailTemplate()" aria-label="Vorlage auswählen">
+        ${MAIL_TEMPLATES.map(t => `<option value="${t.id}">${escapeHtml(t.label)}</option>`).join('')}
+      </select>
+      <div id="mail-auto-warn" style="display:none;margin-top:8px;padding:8px 10px;background:var(--gold-bg);border:1px solid var(--gold);border-radius:6px;font-size:11px;color:var(--gold)">
+        ⚠️ <strong>Achtung:</strong> Diese Mail läuft bereits automatisch beim Status-Wechsel. 
+        Wenn du sie hier zusätzlich manuell sendest, bekommt der Bewerber sie eventuell zweimal.
+        Empfehlung: für Status-Wechsel die Status-Buttons oben nutzen — die senden die Auto-Mail.
+      </div>
+      <div style="display:flex;gap:14px;margin-top:10px;font-size:12px">
+        <label style="cursor:pointer"><input type="radio" name="mail-format" value="plain" checked onchange="renderMailPreview()"> Plain-Text</label>
+        <label style="cursor:pointer"><input type="radio" name="mail-format" value="html" onchange="renderMailPreview()"> Branded HTML</label>
+      </div>
+    </div>
+
+    <div class="em-group">
+      <div class="em-group-title">Betreff</div>
+      <input class="nb-input" id="mail-subject" type="text" oninput="renderMailPreview()" aria-label="Betreff">
+    </div>
+
+    <div class="em-group">
+      <div class="em-group-title">Nachricht (bearbeitbar)</div>
+      <textarea class="nb-textarea" id="mail-body-text" style="min-height:240px;font-family:'Courier New',monospace;font-size:12.5px" oninput="renderMailPreview()" aria-label="Nachrichtentext"></textarea>
+      <div style="font-size:11px;color:var(--tx-mute);margin-top:4px">
+        Platzhalter werden automatisch ersetzt: {vorname}, {nachname}, {verein_name}, {rolle}, {datum}
+      </div>
+    </div>
+
+    <div class="em-group">
+      <div class="em-group-title">Vorschau</div>
+      <div id="mail-preview" style="background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:14px;font-size:13px;max-height:300px;overflow-y:auto"></div>
+    </div>
+
+    <div class="em-group">
+      <div style="font-size:11px;color:var(--tx-mute)">
+        Statt deiner E-Mail-Adresse erscheint <strong>Mariana Cannabis &lt;areiche@cscsdeutschland.de&gt;</strong> als Absender.
+        Antworten landen direkt dort.
+      </div>
+    </div>
+  `;
+
+  applyMailTemplate(); // initiale Vorlage rendern
+  document.getElementById('mail-overlay').classList.add('show');
+}
+
+function applyMailTemplate() {
+  if (!currentMailBewerbung) return;
+  const tplId = document.getElementById('mail-template').value;
+  const tpl = mailTemplate(tplId);
+  const b = currentMailBewerbung;
+  const v = vereine[b.verein_id];
+  document.getElementById('mail-subject').value = applyMailPlaceholders(tpl.subject, b, v);
+  document.getElementById('mail-body-text').value = applyMailPlaceholders(tpl.plain, b, v);
+  // Auto-Warnung ein/ausblenden
+  const warn = document.getElementById('mail-auto-warn');
+  if (warn) warn.style.display = tpl.auto ? '' : 'none';
+  renderMailPreview();
+}
+
+function renderMailPreview() {
+  if (!currentMailBewerbung) return;
+  const b = currentMailBewerbung;
+  const v = vereine[b.verein_id];
+  const subject = document.getElementById('mail-subject').value;
+  const bodyText = document.getElementById('mail-body-text').value;
+  const format = document.querySelector('input[name="mail-format"]:checked')?.value || 'plain';
+  const preview = document.getElementById('mail-preview');
+  const subjectHtml = `<div style="font-weight:600;border-bottom:1px solid var(--border);padding-bottom:8px;margin-bottom:10px">📧 ${escapeHtml(subject || '(kein Betreff)')}</div>`;
+  if (format === 'html') {
+    preview.innerHTML = subjectHtml + `<iframe style="width:100%;border:none;min-height:280px;background:#fff" srcdoc='${plainToHtml(bodyText, b, v).replace(/'/g, "&apos;")}'></iframe>`;
+  } else {
+    preview.innerHTML = subjectHtml + `<pre style="white-space:pre-wrap;font-family:inherit;margin:0;color:var(--tx)">${escapeHtml(bodyText)}</pre>`;
+  }
+}
+
+function closeMailModal() {
+  document.getElementById('mail-overlay')?.classList.remove('show');
+  currentMailBewerbung = null;
+}
+
+async function sendMail() {
+  if (!currentMailBewerbung) return;
+  const b = currentMailBewerbung;
+  const v = vereine[b.verein_id];
+  const tplId = document.getElementById('mail-template').value;
+  const tpl = mailTemplate(tplId);
+  const subject = document.getElementById('mail-subject').value.trim();
+  const bodyText = document.getElementById('mail-body-text').value.trim();
+  const format = document.querySelector('input[name="mail-format"]:checked')?.value || 'plain';
+
+  if (!subject) { toast('Betreff fehlt', true); return; }
+  if (!bodyText) { toast('Nachricht fehlt', true); return; }
+  
+  let confirmMsg = `E-Mail an "${b.email}" senden?\n\nBetreff: ${subject}\nFormat: ${format === 'html' ? 'Branded HTML' : 'Plain-Text'}`;
+  if (tpl.auto) {
+    confirmMsg += `\n\n⚠️ ACHTUNG: Diese Vorlage entspricht einer Auto-Mail beim Status-Wechsel. Bewerber bekommt sie ggf. doppelt!`;
+  }
+  if (!confirm(confirmMsg)) return;
+
+  const bodyHtml = format === 'html' ? plainToHtml(bodyText, b, v) : null;
+
+  const sendBtn = document.getElementById('mail-send');
+  sendBtn.disabled = true;
+  sendBtn.textContent = 'Sende …';
+
+  try {
+    const { data, error } = await sb.functions.invoke('send-manual-mail', {
+      body: {
+        bewerbung_id: b.id,
+        to: b.email,
+        subject,
+        body_text: bodyText,
+        body_html: bodyHtml,
+        format,
+        vorlage: tplId,
+        sender_name: userContext?.email || '',
+      },
+    });
+    if (error) throw error;
+    if (data?.error) throw new Error(data.error);
+
+    toast('✓ E-Mail versendet');
+    closeMailModal();
+    await loadDashboard();
+    setTimeout(() => selectBewerbung(b.id), 200);
+  } catch (e) {
+    console.error('[Mail] Fehler:', e);
+    toast('Mail-Fehler: ' + (e?.message || e), true);
+  } finally {
+    sendBtn.disabled = false;
+    sendBtn.textContent = 'E-Mail senden';
+  }
+}
+
+
 function printBewerbung(id) {
   const b = bewerbungen.find(x => x.id === id);
   if (!b) { toast('Bewerbung nicht gefunden', true); return; }
@@ -3299,6 +3677,7 @@ document.addEventListener('keydown', e => {
     if (document.getElementById('em-overlay')?.classList.contains('show')) closeEditModal();
     else if (document.getElementById('nb-overlay')?.classList.contains('show')) closeNewBewerbungModal();
     else if (document.getElementById('st-overlay')?.classList.contains('show')) closeStatsModal();
+    else if (document.getElementById('mail-overlay')?.classList.contains('show')) closeMailModal();
   }
 });
 
@@ -3358,6 +3737,21 @@ document.addEventListener('DOMContentLoaded', () => {
       <button class="em-close" onclick="closeStatsModal()" type="button" aria-label="Schließen">✕ Schließen</button>
     </div>
     <div id="st-body" class="em-body"></div>
+  </div>
+</div>
+
+<!-- ===== MAIL MODAL ===== -->
+<div id="mail-overlay" class="em-overlay" onclick="if(event.target===this)closeMailModal()" role="dialog" aria-modal="true" aria-labelledby="mail-title">
+  <div class="em-modal" style="max-width:720px">
+    <div class="em-head">
+      <h2 id="mail-title">✉️ E-Mail an Bewerber:in</h2>
+      <button class="em-close" onclick="closeMailModal()" type="button" aria-label="Schließen">✕ Schließen</button>
+    </div>
+    <div id="mail-body" class="em-body"></div>
+    <div class="em-footer">
+      <button class="em-btn" type="button" onclick="closeMailModal()">Abbrechen</button>
+      <button class="em-btn em-btn-save" id="mail-send" type="button" onclick="sendMail()">E-Mail senden</button>
+    </div>
   </div>
 </div>
 

@@ -226,6 +226,150 @@
     .toast { position: fixed; bottom: 24px; right: 24px; background: var(--bg-card); border: 1px solid var(--green-dim); color: var(--tx); padding: 14px 20px; border-radius: 10px; font-size: 13px; z-index: 100; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5); transform: translateY(100px); opacity: 0; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
     .toast.show { transform: translateY(0); opacity: 1; }
     .toast.error { border-color: var(--red); }
+
+    /* ===== EDIT MODAL ===== */
+    .edit-btn {
+      background: transparent; border: 1px solid var(--border); color: var(--tx-mute);
+      font-size: 11px; padding: 3px 10px; border-radius: 12px; cursor: pointer;
+      transition: all 0.15s; margin-left: 8px; font-weight: 500;
+    }
+    .edit-btn:hover { color: var(--green); border-color: var(--green); background: var(--green-glow); }
+    .edit-btn::before { content: '✏ '; }
+
+    .em-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 200;
+      display: none; align-items: flex-start; justify-content: center;
+      padding: 5vh 16px; overflow-y: auto; backdrop-filter: blur(4px);
+    }
+    .em-overlay.show { display: flex; }
+    .em-modal {
+      background: var(--bg-card); color: var(--tx); border: 1px solid var(--border);
+      border-radius: 12px; max-width: 720px; width: 100%; max-height: 88vh;
+      display: flex; flex-direction: column; box-shadow: 0 24px 60px rgba(0,0,0,0.6);
+      overflow: hidden;
+    }
+    .em-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 18px; border-bottom: 1px solid var(--border);
+      background: var(--bg-elev); flex-shrink: 0;
+    }
+    .em-head h2 { margin: 0; font-size: 14px; font-weight: 600; color: var(--tx); }
+    .em-close {
+      background: transparent; border: 1px solid var(--border); color: var(--tx);
+      padding: 5px 11px; border-radius: 6px; cursor: pointer; font-size: 12px;
+    }
+    .em-close:hover { background: var(--bg-elev2); }
+    .em-body { padding: 18px; overflow-y: auto; flex: 1; -webkit-overflow-scrolling: touch; }
+    .em-footer {
+      display: flex; justify-content: flex-end; gap: 8px; padding: 12px 18px;
+      border-top: 1px solid var(--border); background: var(--bg-elev); flex-shrink: 0;
+    }
+    .em-btn {
+      padding: 8px 18px; border-radius: 6px; font-size: 13px; font-weight: 500;
+      cursor: pointer; border: 1px solid var(--border); background: var(--bg-elev2);
+      color: var(--tx); transition: all 0.15s; min-height: 36px;
+    }
+    .em-btn:hover { background: var(--bg-elev); }
+    .em-btn-save { background: var(--green); border-color: var(--green); color: #0a120d; font-weight: 600; }
+    .em-btn-save:hover { background: var(--green-dim); }
+    .em-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .em-field { margin-bottom: 14px; }
+    .em-field-label { display: block; font-size: 11px; color: var(--tx-mute);
+      text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 5px; font-weight: 500; }
+    .em-input, .em-textarea, .em-select {
+      width: 100%; padding: 8px 11px; font-size: 14px; line-height: 1.4;
+      background: var(--bg); color: var(--tx); border: 1px solid var(--border);
+      border-radius: 6px; font-family: inherit; -webkit-appearance: none; appearance: none;
+      min-height: 38px; box-sizing: border-box;
+    }
+    .em-input:focus, .em-textarea:focus, .em-select:focus {
+      outline: none; border-color: var(--green); background: var(--bg-elev);
+    }
+    .em-textarea { min-height: 80px; resize: vertical; }
+    .em-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .em-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+    @media (max-width: 540px) { .em-row, .em-row-3 { grid-template-columns: 1fr; } }
+    .em-hint { font-size: 11px; color: var(--tx-mute); margin-top: 3px; }
+    .em-section-title { font-size: 11px; text-transform: uppercase; color: var(--tx-mute);
+      letter-spacing: 0.08em; margin: 18px 0 10px 0; padding-bottom: 6px;
+      border-bottom: 1px solid var(--border); }
+    .em-section-title:first-child { margin-top: 0; }
+
+    /* Multi-Checkbox / Tag-Select */
+    .em-multi { display: flex; flex-wrap: wrap; gap: 6px; }
+    .em-multi-opt {
+      padding: 6px 12px; font-size: 12px; border: 1px solid var(--border);
+      border-radius: 18px; cursor: pointer; transition: all 0.15s; user-select: none;
+      background: var(--bg); color: var(--tx-dim);
+    }
+    .em-multi-opt:hover { border-color: var(--green-dim); color: var(--tx); }
+    .em-multi-opt.selected { background: var(--green-glow); border-color: var(--green); color: var(--green); font-weight: 500; }
+    .em-multi-opt input { display: none; }
+
+    /* Boolean Tri-State (Ja / Nein / leer) */
+    .em-tri { display: inline-flex; gap: 0; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+    .em-tri-opt {
+      padding: 6px 14px; font-size: 12px; cursor: pointer; background: var(--bg);
+      color: var(--tx-dim); border-right: 1px solid var(--border); user-select: none;
+    }
+    .em-tri-opt:last-child { border-right: none; }
+    .em-tri-opt:hover { background: var(--bg-elev); color: var(--tx); }
+    .em-tri-opt.selected { background: var(--green-glow); color: var(--green); font-weight: 600; }
+    .em-tri-opt input { display: none; }
+
+    /* Rating 0–5 */
+    .em-rating { display: inline-flex; gap: 4px; }
+    .em-rating-star {
+      width: 28px; height: 28px; border: 1px solid var(--border); border-radius: 5px;
+      background: var(--bg); color: var(--tx-mute); cursor: pointer; font-size: 13px;
+      display: inline-flex; align-items: center; justify-content: center; font-weight: 600;
+    }
+    .em-rating-star:hover { border-color: var(--green-dim); }
+    .em-rating-star.active { background: var(--green-glow); border-color: var(--green); color: var(--green); }
+
+    /* Verfügbarkeits-Grid (editierbar) */
+    .em-verf { margin-bottom: 14px; }
+    .em-verf-standort { margin-bottom: 12px; padding: 10px; background: var(--bg);
+      border: 1px solid var(--border); border-radius: 8px; }
+    .em-verf-title { font-size: 11px; color: var(--green); text-transform: uppercase;
+      letter-spacing: 0.06em; margin-bottom: 8px; font-weight: 600; }
+    .em-verf-grid { display: grid; grid-template-columns: 28px repeat(5, 1fr); gap: 2px;
+      font-size: 10px; text-align: center; }
+    .em-verf-h, .em-verf-d { color: var(--tx-mute); padding: 4px 2px; font-weight: 500; }
+    .em-verf-h { line-height: 1.15; }
+    .em-verf-h small { display: block; font-size: 9px; opacity: 0.7; font-weight: 400; }
+    .em-verf-cell {
+      background: var(--bg-elev); color: var(--tx-mute); padding: 8px 2px; border-radius: 4px;
+      cursor: pointer; user-select: none; font-size: 12px; min-height: 30px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .em-verf-cell:hover { background: var(--bg-elev2); }
+    .em-verf-cell.on { background: var(--green); color: #0a120d; font-weight: 600; }
+
+    /* Sprachen-Level-Grid */
+    .em-lang-row { display: grid; grid-template-columns: 90px 1fr; gap: 10px; align-items: center;
+      padding: 6px 0; border-bottom: 1px solid var(--border); }
+    .em-lang-row:last-child { border-bottom: none; }
+    .em-lang-name { font-size: 13px; color: var(--tx); }
+    .em-lang-levels { display: flex; gap: 4px; flex-wrap: wrap; }
+    .em-lang-level {
+      padding: 3px 9px; font-size: 11px; border: 1px solid var(--border); border-radius: 12px;
+      cursor: pointer; background: var(--bg); color: var(--tx-mute); user-select: none;
+    }
+    .em-lang-level:hover { color: var(--tx); }
+    .em-lang-level.selected { background: var(--green-glow); border-color: var(--green); color: var(--green); font-weight: 600; }
+
+    /* Audit-Log-Liste im Modal-Footer */
+    .em-audit-toggle { font-size: 11px; color: var(--tx-mute); margin-right: auto; cursor: pointer; }
+    .em-audit-toggle:hover { color: var(--tx); text-decoration: underline; }
+    .em-audit-list { font-size: 11px; max-height: 140px; overflow-y: auto;
+      background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+      padding: 8px 10px; margin-top: 8px; display: none; }
+    .em-audit-list.show { display: block; }
+    .em-audit-entry { padding: 4px 0; border-bottom: 1px dashed var(--border); color: var(--tx-dim); }
+    .em-audit-entry:last-child { border-bottom: none; }
+    .em-audit-meta { color: var(--tx-mute); font-size: 10px; margin-top: 2px; }
   </style>
 </head>
 <body>
@@ -677,7 +821,7 @@ async function selectBewerbung(id) {
     </div>
     
     <div class="section">
-      <div class="section-title">Kontakt &amp; Person</div>
+      <div class="section-title">Kontakt &amp; Person<button class="edit-btn" onclick="openEditModal('kontakt')">Bearbeiten</button></div>
       <div class="field-grid">
         <div class="field"><div class="field-label">E-Mail</div><div class="field-value"><a href="mailto:${escapeHtml(b.email || '')}" style="color:var(--blue);text-decoration:none">${fmt(b.email)}</a></div></div>
         <div class="field"><div class="field-label">Telefon</div><div class="field-value"><a href="tel:${escapeHtml(b.telefon || '')}" style="color:var(--blue);text-decoration:none">${fmt(b.telefon)}</a></div></div>
@@ -717,7 +861,7 @@ async function selectBewerbung(id) {
     </div>
     
     <div class="section">
-      <div class="section-title">Bewerbung &amp; Rolle</div>
+      <div class="section-title">Bewerbung &amp; Rolle<button class="edit-btn" onclick="openEditModal('bewerbung')">Bearbeiten</button></div>
       <div class="field"><div class="field-label">Rolle(n)</div><div class="tag-list">${fmtRoles(b.rollen)}</div></div>
       <div class="field" style="margin-top:12px"><div class="field-label">Anstellungsform(en)</div><div class="tag-list">${fmtList(b.anstellungsformen)}</div></div>
       ${Array.isArray(b.rollen_standorte) && b.rollen_standorte.length ? `<div class="field" style="margin-top:12px"><div class="field-label">Rollen-Standorte</div><div class="tag-list">${b.rollen_standorte.map(s => `<span class="tag">${escapeHtml(s)}</span>`).join('')}</div></div>` : ''}
@@ -726,7 +870,7 @@ async function selectBewerbung(id) {
     </div>
     
     <div class="section">
-      <div class="section-title">Verfügbarkeit</div>
+      <div class="section-title">Verfügbarkeit<button class="edit-btn" onclick="openEditModal('verfuegbarkeit')">Bearbeiten</button></div>
       <div class="field-grid" style="margin-bottom:14px">
         <div class="field"><div class="field-label">Wunsch-Stunden / Woche</div><div class="field-value">${b.wunsch_stunden_min || '?'}–${b.wunsch_stunden_max || '?'} Std.</div></div>
         <div class="field"><div class="field-label">Frühester Einstieg</div><div class="field-value">${fmtDate(b.eintritt_fruehestens)}</div></div>
@@ -746,7 +890,7 @@ async function selectBewerbung(id) {
     </div>
     
     <div class="section">
-      <div class="section-title">Probearbeit</div>
+      <div class="section-title">Probearbeit<button class="edit-btn" onclick="openEditModal('probearbeit')">Bearbeiten</button></div>
       <div class="field-grid">
         <div class="field"><div class="field-label">Bereit für Probearbeit</div><div class="field-value">${fmtBool(b.probearbeit_bereit)}</div></div>
         ${b.probearbeit_dauer ? `<div class="field"><div class="field-label">Dauer</div><div class="field-value">${fmt(b.probearbeit_dauer)}</div></div>` : ''}
@@ -757,13 +901,13 @@ async function selectBewerbung(id) {
     
     ${b.mitteilung ? `
     <div class="section">
-      <div class="section-title">📝 Mitteilung der Bewerber:in</div>
+      <div class="section-title">📝 Mitteilung der Bewerber:in<button class="edit-btn" onclick="openEditModal('mitteilung')">Bearbeiten</button></div>
       <div class="field-value" style="white-space:pre-wrap;background:var(--bg-card);padding:14px;border-radius:6px;border:1px solid var(--green-dim, var(--border));border-left:3px solid var(--green);margin-top:4px;line-height:1.55">${escapeHtml(b.mitteilung)}</div>
     </div>
     ` : ''}
     
     <div class="section">
-      <div class="section-title">Qualifikationen &amp; Erfahrung</div>
+      <div class="section-title">Qualifikationen &amp; Erfahrung<button class="edit-btn" onclick="openEditModal('qualifikationen')">Bearbeiten</button></div>
       <div class="field-grid" style="margin-bottom:14px">
         <div class="field"><div class="field-label">Bildungsabschluss</div><div class="field-value">${fmt(b.bildungsabschluss)}</div></div>
         <div class="field"><div class="field-label">Letzte Tätigkeit</div><div class="field-value">${fmt(b.letzte_taetigkeit)}</div></div>
@@ -774,7 +918,7 @@ async function selectBewerbung(id) {
     </div>
     
     <div class="section">
-      <div class="section-title">Nachweise &amp; Sachkunde</div>
+      <div class="section-title">Nachweise &amp; Sachkunde<button class="edit-btn" onclick="openEditModal('bewerbung')">Bearbeiten</button></div>
       <div class="field-grid">
         <div class="field"><div class="field-label">Präventions-Sachkunde</div><div class="field-value">${fmt(b.praevention_sachkunde)}</div></div>
         <div class="field"><div class="field-label">Sicherheits-Nachweis</div><div class="field-value">${b.sicherheit_nachweis === null || b.sicherheit_nachweis === undefined ? '<span class="empty">–</span>' : fmtBool(b.sicherheit_nachweis)}</div></div>
@@ -785,7 +929,7 @@ async function selectBewerbung(id) {
     
     ${b.schwerbehinderung && b.schwerbehinderung !== 'nein' ? `
     <div class="section">
-      <div class="section-title">Schwerbehinderung</div>
+      <div class="section-title">Schwerbehinderung<button class="edit-btn" onclick="openEditModal('sensibel')">Bearbeiten</button></div>
       <div class="field-grid">
         <div class="field"><div class="field-label">Status</div><div class="field-value">${fmt(b.schwerbehinderung)}</div></div>
         <div class="field"><div class="field-label">GdB</div><div class="field-value">${b.schwerbehinderung_gdb ? escapeHtml(String(b.schwerbehinderung_gdb)) : '<span class="empty">–</span>'}</div></div>
@@ -796,7 +940,7 @@ async function selectBewerbung(id) {
     ` : ''}
     
     <div class="section">
-      <div class="section-title">Personalien für Anstellung</div>
+      <div class="section-title">Personalien für Anstellung<button class="edit-btn" onclick="openEditModal('personalien')">Bearbeiten</button></div>
       <div class="field-grid">
         <div class="field"><div class="field-label">Steuer-ID</div><div class="field-value mono">${fmt(b.steuer_id)}</div></div>
         <div class="field"><div class="field-label">Sozialversicherungs-Nr.</div><div class="field-value mono">${fmt(b.sv_nummer)}</div></div>
@@ -1185,6 +1329,578 @@ function toast(msg, isError = false) {
   toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
 }
 
+// ============================================================================
+// EDIT-ENGINE: editierbare Sektionen mit Modal
+// ============================================================================
+const ROLLEN_OPTIONS = [
+  ['vorstand','Vorstand'], ['stellv_vorstand','Stellv. Vorstand'],
+  ['grower','Grower'], ['head_grower','Head Grower'],
+  ['ausgabe','Ausgabe'], ['springer','Springer'],
+  ['praevention','Prävention'], ['reinigung','Reinigung'], ['sicherheit','Sicherheit']
+];
+const ANSTELLUNGS_OPTIONS = [
+  ['ehrenamtlich','Ehrenamtlich'], ['minijob','Minijob'],
+  ['teilzeit','Teilzeit'], ['vollzeit','Vollzeit']
+];
+const STANDORTE_OPTIONS = [
+  ['anbau','Anbauanlage'], ['ausgabe','Ausgabestelle'], ['allgemein','Allgemein']
+];
+const SPRACHEN_LIST = [
+  ['de','Deutsch'],['en','Englisch'],['tr','Türkisch'],['ru','Russisch'],
+  ['ar','Arabisch'],['pl','Polnisch'],['fr','Französisch'],['es','Spanisch']
+];
+const SPRACH_LEVELS = ['','A1','A2','B1','B2','C1','C2','muttersprache'];
+const SOFT_SKILL_FIELDS = [
+  ['stress','Stressresistenz'],['kunde','Kundenfreundlichkeit'],
+  ['verschwiegenheit','Verschwiegenheit'],['team','Teamfähigkeit'],
+  ['genauigkeit','Genauigkeit']
+];
+
+// Sektion-Definitionen — pro Sektion eine Liste von Feldern
+const EDIT_SECTIONS = {
+  kontakt: {
+    title: 'Kontakt & Person',
+    groups: [
+      { title: 'Stammdaten', fields: [
+        { k:'vorname', l:'Vorname', t:'text', row:'a' },
+        { k:'nachname', l:'Nachname', t:'text', row:'a' },
+        { k:'email', l:'E-Mail', t:'email' },
+        { k:'telefon', l:'Telefon', t:'tel' },
+        { k:'geburtsdatum', l:'Geburtsdatum', t:'date_de', row:'b' },
+        { k:'geburtsort', l:'Geburtsort', t:'text', row:'b' },
+        { k:'staatsangehoerigkeit', l:'Staatsangehörigkeit', t:'text' },
+      ]},
+      { title: 'Adresse', fields: [
+        { k:'adresse.strasse', l:'Straße und Hausnummer', t:'text' },
+        { k:'adresse.plz', l:'PLZ', t:'text', row:'addr', maxlength:5, inputmode:'numeric' },
+        { k:'adresse.ort', l:'Ort', t:'text', row:'addr' },
+      ]},
+      { title: 'Status', fields: [
+        { k:'wohnsitz_d_6_monate', l:'Wohnsitz Deutschland (6 Mon.)', t:'boolean_tri' },
+        { k:'ist_volljaehrig', l:'Volljährig', t:'boolean_tri' },
+        { k:'ist_nicht_eu', l:'Nicht-EU-Bürger', t:'boolean_tri' },
+        { k:'arbeitserlaubnis', l:'Arbeitserlaubnis', t:'boolean_tri' },
+        { k:'ist_mitglied', l:'CSC-Mitglied', t:'select',
+          options: [['','—'],['ja','Ja'],['nein','Nein'],['wird_mitglied','Wird Mitglied']]},
+        { k:'mitgliedsnummer', l:'Mitgliedsnummer', t:'text' },
+      ]},
+      { title: 'Online-Profile', fields: [
+        { k:'profil_linkedin', l:'LinkedIn', t:'url', placeholder:'https://www.linkedin.com/in/...' },
+        { k:'profil_xing', l:'Xing', t:'url', placeholder:'https://www.xing.com/profile/...' },
+        { k:'profil_weitere', l:'Weitere (kommasepariert)', t:'text' },
+      ]},
+    ]
+  },
+  bewerbung: {
+    title: 'Bewerbung & Rolle',
+    groups: [
+      { fields: [
+        { k:'rollen', l:'Rollen', t:'multi_checkbox', options: ROLLEN_OPTIONS },
+        { k:'anstellungsformen', l:'Anstellungsformen', t:'multi_checkbox', options: ANSTELLUNGS_OPTIONS },
+        { k:'rollen_standorte', l:'Standorte (für Rollen)', t:'multi_checkbox', options: STANDORTE_OPTIONS },
+        { k:'bestaetigt_zwei_standorte', l:'Bestätigt zwei Standorte', t:'boolean_tri' },
+        { k:'motivation', l:'Motivation', t:'textarea' },
+        { k:'praevention_sachkunde', l:'Sachkunde Prävention vorhanden', t:'boolean_tri' },
+        { k:'sicherheit_nachweis', l:'Nachweis Sicherheit vorhanden', t:'boolean_tri' },
+      ]}
+    ]
+  },
+  qualifikationen: {
+    title: 'Qualifikationen & Erfahrung',
+    groups: [
+      { fields: [
+        { k:'bildungsabschluss', l:'Bildungsabschluss', t:'text' },
+        { k:'letzte_taetigkeit', l:'Letzte Tätigkeit', t:'text' },
+        { k:'vorerfahrung', l:'Vorerfahrung', t:'textarea' },
+      ]},
+      { title: 'Sprachen (Level pro Sprache)', fields: [
+        { k:'sprachen', l:'', t:'language_levels' },
+      ]},
+      { title: 'Soft Skills (0–5)', fields: [
+        { k:'soft_skills', l:'', t:'soft_skills_rating' },
+      ]},
+    ]
+  },
+  verfuegbarkeit: {
+    title: 'Verfügbarkeit, Anstellung & Anfahrt',
+    groups: [
+      { title: 'Wunsch-Stunden & Zeiten', fields: [
+        { k:'wunsch_stunden_min', l:'Min. Stunden/Woche', t:'number', row:'std', min:0, max:60 },
+        { k:'wunsch_stunden_max', l:'Max. Stunden/Woche', t:'number', row:'std', min:0, max:60 },
+        { k:'wunsch_zeiten', l:'Wunschzeiten (Notiz)', t:'textarea' },
+        { k:'sperrzeiten', l:'Sperrzeiten / nicht verfügbar', t:'textarea' },
+      ]},
+      { title: 'Anstellung', fields: [
+        { k:'eintritt_fruehestens', l:'Frühester Einstieg', t:'date_de' },
+        { k:'kuendigungsfrist', l:'Kündigungsfrist', t:'text' },
+      ]},
+      { title: 'Bereitschaft', fields: [
+        { k:'bereit_we', l:'Wochenende möglich', t:'boolean_tri', row:'br' },
+        { k:'bereit_feiertag', l:'Feiertag möglich', t:'boolean_tri', row:'br' },
+        { k:'bereit_nacht', l:'Nacht möglich', t:'boolean_tri', row:'br' },
+      ]},
+      { title: 'Anfahrt & Mobilität', fields: [
+        { k:'max_anfahrt', l:'Max. Anfahrt Ausgabe', t:'text', row:'af' },
+        { k:'max_anfahrt_anbau', l:'Max. Anfahrt Anbau', t:'text', row:'af' },
+        { k:'eigenes_fahrzeug', l:'Eigenes Fahrzeug', t:'boolean_tri', row:'fz' },
+        { k:'jobticket', l:'Jobticket möglich', t:'boolean_tri', row:'fz' },
+        { k:'fuehrerschein', l:'Führerschein (Klasse)', t:'text' },
+      ]},
+      { title: 'Verfügbarkeits-Raster', fields: [
+        { k:'verfuegbarkeit', l:'', t:'availability_grid' },
+      ]},
+    ]
+  },
+  anstellung: {
+    title: 'Anstellung & Anfahrt',
+    groups: [
+      { title: 'Anstellung', fields: [
+        { k:'eintritt_fruehestens', l:'Eintritt frühestens', t:'date_de' },
+        { k:'kuendigungsfrist', l:'Kündigungsfrist', t:'text' },
+        { k:'sperrzeiten', l:'Sperrzeiten / nicht verfügbar', t:'textarea' },
+      ]},
+      { title: 'Bereitschaft', fields: [
+        { k:'bereit_we', l:'Wochenende möglich', t:'boolean_tri', row:'br' },
+        { k:'bereit_feiertag', l:'Feiertag möglich', t:'boolean_tri', row:'br' },
+        { k:'bereit_nacht', l:'Nacht möglich', t:'boolean_tri', row:'br' },
+      ]},
+      { title: 'Anfahrt', fields: [
+        { k:'max_anfahrt', l:'Max. Anfahrt Ausgabe', t:'text', row:'af' },
+        { k:'max_anfahrt_anbau', l:'Max. Anfahrt Anbau', t:'text', row:'af' },
+        { k:'eigenes_fahrzeug', l:'Eigenes Fahrzeug', t:'boolean_tri', row:'fz' },
+        { k:'jobticket', l:'Jobticket möglich', t:'boolean_tri', row:'fz' },
+        { k:'fuehrerschein', l:'Führerschein', t:'text' },
+      ]},
+    ]
+  },
+  probearbeit: {
+    title: 'Probearbeit',
+    groups: [
+      { fields: [
+        { k:'probearbeit_bereit', l:'Bereit für Probearbeit', t:'boolean_tri' },
+        { k:'probearbeit_dauer', l:'Dauer', t:'text' },
+        { k:'probearbeit_orte', l:'Mögliche Orte', t:'multi_checkbox',
+          options:[['eigener_verein','Eigener Verein'],['goettingen','Göttingen'],['andere_standorte','Andere Standorte']]},
+        { k:'probearbeit_anmerkung', l:'Anmerkung', t:'textarea' },
+      ]}
+    ]
+  },
+  mitteilung: {
+    title: 'Mitteilung',
+    groups: [
+      { fields: [
+        { k:'mitteilung', l:'Mitteilung der Bewerber:in', t:'textarea' }
+      ]}
+    ]
+  },
+  sensibel: {
+    title: 'Sensible Angaben (DSGVO – nur mit Einwilligung)',
+    groups: [
+      { fields: [
+        { k:'sensible_einwilligung', l:'Bewerber hat Verarbeitung sensibler Daten zugestimmt', t:'boolean_tri' },
+      ]},
+      { title: 'Sucht', fields: [
+        { k:'sucht_relevant', l:'Sucht relevant', t:'select',
+          options:[['','—'],['ja','Ja'],['nein','Nein']] },
+        { k:'sucht_details', l:'Details Sucht', t:'textarea' },
+      ]},
+      { title: 'Schwerbehinderung', fields: [
+        { k:'schwerbehinderung', l:'Schwerbehinderung', t:'select',
+          options:[['','—'],['ja','Ja'],['nein','Nein'],['keine_angabe','Keine Angabe']] },
+        { k:'schwerbehinderung_gdb', l:'GdB (Grad)', t:'number', min:0, max:100 },
+        { k:'schwerbehinderung_einschr', l:'Einschränkungen', t:'textarea' },
+        { k:'schwerbehinderung_anpassungen', l:'Notwendige Anpassungen', t:'textarea' },
+      ]},
+    ]
+  },
+  personalien: {
+    title: 'Personalien für Anstellung',
+    groups: [
+      { fields: [
+        { k:'steuer_id', l:'Steuer-Identifikationsnummer', t:'text', inputmode:'numeric', maxlength:11 },
+        { k:'sv_nummer', l:'Sozialversicherungs-Nr.', t:'text', maxlength:12 },
+        { k:'iban', l:'IBAN', t:'text' },
+        { k:'krankenkasse.name', l:'Krankenkasse', t:'text', row:'kk' },
+        { k:'krankenkasse.mitglied_nr', l:'Mitgliedsnummer KK', t:'text', row:'kk' },
+      ]}
+    ]
+  }
+};
+
+let currentEditSectionKey = null;
+let currentEditBewerbung = null;
+
+// ----- Helpers für nested keys (z.B. "adresse.strasse") -----
+function getNested(obj, path) {
+  if (!path.includes('.')) return obj?.[path];
+  return path.split('.').reduce((o, k) => o?.[k], obj);
+}
+function setNested(obj, path, value) {
+  if (!path.includes('.')) { obj[path] = value; return; }
+  const parts = path.split('.');
+  let cur = obj;
+  for (let i = 0; i < parts.length - 1; i++) {
+    if (!cur[parts[i]] || typeof cur[parts[i]] !== 'object') cur[parts[i]] = {};
+    cur = cur[parts[i]];
+  }
+  cur[parts[parts.length - 1]] = value;
+}
+
+// ----- Field-Renderer -----
+function renderEditField(f, value) {
+  const id = 'ef-' + f.k.replace(/\./g, '__');
+  const ph = f.placeholder || '';
+  const im = f.inputmode ? ` inputmode="${f.inputmode}"` : '';
+  const ml = f.maxlength ? ` maxlength="${f.maxlength}"` : '';
+  const lbl = f.l ? `<label class="em-field-label" for="${id}">${escapeHtml(f.l)}</label>` : '';
+
+  switch (f.t) {
+    case 'text': case 'email': case 'tel': case 'url': {
+      const type = f.t === 'text' ? 'text' : f.t;
+      const v = value == null ? '' : String(value);
+      return `<div class="em-field" data-row="${f.row||''}">${lbl}<input id="${id}" class="em-input" type="${type}" data-k="${f.k}" data-t="${f.t}" value="${escapeHtml(v)}" placeholder="${escapeHtml(ph)}"${im}${ml}></div>`;
+    }
+    case 'number': {
+      const v = value == null ? '' : String(value);
+      const mn = f.min != null ? ` min="${f.min}"` : '';
+      const mx = f.max != null ? ` max="${f.max}"` : '';
+      return `<div class="em-field" data-row="${f.row||''}">${lbl}<input id="${id}" class="em-input" type="number" data-k="${f.k}" data-t="number" value="${escapeHtml(v)}"${mn}${mx} inputmode="numeric"></div>`;
+    }
+    case 'textarea': {
+      const v = value == null ? '' : String(value);
+      return `<div class="em-field">${lbl}<textarea id="${id}" class="em-textarea" data-k="${f.k}" data-t="textarea">${escapeHtml(v)}</textarea></div>`;
+    }
+    case 'date_de': {
+      const display = value ? toDeDate(value) : '';
+      return `<div class="em-field" data-row="${f.row||''}">${lbl}<input id="${id}" class="em-input" type="text" data-k="${f.k}" data-t="date_de" value="${escapeHtml(display)}" placeholder="TT.MM.JJJJ" inputmode="numeric" maxlength="10"></div>`;
+    }
+    case 'boolean_tri': {
+      const sel = (v) => value === v ? 'selected' : '';
+      return `<div class="em-field" data-row="${f.row||''}">${lbl}<div class="em-tri" data-k="${f.k}" data-t="boolean_tri">
+        <span class="em-tri-opt ${sel(true)}" data-v="true">Ja</span>
+        <span class="em-tri-opt ${sel(false)}" data-v="false">Nein</span>
+        <span class="em-tri-opt ${value==null?'selected':''}" data-v="">—</span>
+      </div></div>`;
+    }
+    case 'select': {
+      const opts = f.options.map(([v, lab]) => `<option value="${escapeHtml(v)}" ${String(value)===String(v)?'selected':''}>${escapeHtml(lab)}</option>`).join('');
+      return `<div class="em-field" data-row="${f.row||''}">${lbl}<select id="${id}" class="em-select" data-k="${f.k}" data-t="select">${opts}</select></div>`;
+    }
+    case 'multi_checkbox': {
+      const arr = Array.isArray(value) ? value : [];
+      const opts = f.options.map(([v, lab]) => {
+        const isOn = arr.includes(v);
+        return `<label class="em-multi-opt ${isOn?'selected':''}"><input type="checkbox" value="${escapeHtml(v)}" ${isOn?'checked':''}>${escapeHtml(lab)}</label>`;
+      }).join('');
+      return `<div class="em-field">${lbl}<div class="em-multi" data-k="${f.k}" data-t="multi_checkbox">${opts}</div></div>`;
+    }
+    case 'soft_skills_rating': {
+      const obj = (value && typeof value === 'object') ? value : {};
+      const rows = SOFT_SKILL_FIELDS.map(([k, lab]) => {
+        const v = parseInt(obj[k]) || 0;
+        const stars = [0,1,2,3,4,5].map(n => `<span class="em-rating-star ${n===v?'active':''}" data-v="${n}">${n}</span>`).join('');
+        return `<div class="em-field" style="margin-bottom:8px"><div class="em-field-label">${lab}</div><div class="em-rating" data-k="soft_skills.${k}" data-t="rating">${stars}</div></div>`;
+      }).join('');
+      return rows;
+    }
+    case 'language_levels': {
+      const obj = (value && typeof value === 'object') ? value : {};
+      return SPRACHEN_LIST.map(([code, name]) => {
+        const lvl = obj[code] || '';
+        const opts = SPRACH_LEVELS.map(L => `<span class="em-lang-level ${L===lvl?'selected':''}" data-v="${L}">${L||'—'}</span>`).join('');
+        return `<div class="em-lang-row"><div class="em-lang-name">${name}</div><div class="em-lang-levels" data-k="sprachen.${code}" data-t="lang_level">${opts}</div></div>`;
+      }).join('');
+    }
+    case 'availability_grid': {
+      const verf = (value && typeof value === 'object') ? value : {};
+      const tage = [['mo','Mo'],['di','Di'],['mi','Mi'],['do','Do'],['fr','Fr'],['sa','Sa'],['so','So']];
+      return ['anbau','ausgabe','allgemein'].map(standort => {
+        const slots = slotsFor(standort);
+        const sv = verf[standort] || {};
+        const headers = `<div class="em-verf-h"></div>` + slots.map(s =>
+          `<div class="em-verf-h">${s.label}<small>${s.zeit}</small></div>`).join('');
+        const rows = tage.map(([dk,dl]) => {
+          const days = sv[dk] || [false,false,false,false,false];
+          const cells = slots.map((s,i) =>
+            `<div class="em-verf-cell ${days[i]?'on':''}" data-st="${standort}" data-day="${dk}" data-slot="${i}">${days[i]?'✓':'·'}</div>`
+          ).join('');
+          return `<div class="em-verf-d">${dl}</div>${cells}`;
+        }).join('');
+        return `<div class="em-verf-standort">
+          <div class="em-verf-title">${standort.toUpperCase()}</div>
+          <div class="em-verf-grid" data-k="verfuegbarkeit.${standort}" data-t="verf_grid">${headers}${rows}</div>
+        </div>`;
+      }).join('');
+    }
+    default: return '';
+  }
+}
+
+// ----- Modal öffnen -----
+function openEditModal(sectionKey) {
+  if (!selectedId) return;
+  const b = bewerbungen.find(x => x.id === selectedId);
+  if (!b) return;
+  const sec = EDIT_SECTIONS[sectionKey];
+  if (!sec) return;
+
+  currentEditSectionKey = sectionKey;
+  currentEditBewerbung = b;
+
+  document.getElementById('em-title').textContent = '✏ ' + sec.title;
+  const body = document.getElementById('em-body');
+
+  body.innerHTML = sec.groups.map(g => {
+    const gt = g.title ? `<div class="em-section-title">${g.title}</div>` : '';
+    // Felder, die in eine Row gehören, gruppieren
+    let html = '';
+    let lastRow = null;
+    let rowBuffer = [];
+    const flushRow = () => {
+      if (!rowBuffer.length) return;
+      if (rowBuffer.length === 1) html += rowBuffer[0];
+      else html += `<div class="em-row${rowBuffer.length===3?'-3':''}">${rowBuffer.join('')}</div>`;
+      rowBuffer = [];
+    };
+    g.fields.forEach(f => {
+      const v = getNested(b, f.k);
+      const rendered = renderEditField(f, v);
+      if (f.row) {
+        if (f.row === lastRow) {
+          rowBuffer.push(rendered);
+        } else {
+          flushRow();
+          rowBuffer = [rendered];
+          lastRow = f.row;
+        }
+      } else {
+        flushRow();
+        lastRow = null;
+        html += rendered;
+      }
+    });
+    flushRow();
+    return gt + html;
+  }).join('');
+
+  // Event-Handler nachträglich für Tri-State, Multi, Rating, Lang-Level, Verf-Grid
+  attachEditHandlers(body);
+
+  document.getElementById('em-overlay').classList.add('show');
+  document.getElementById('em-audit-list')?.remove();
+}
+
+function attachEditHandlers(root) {
+  // Tri-State Boolean
+  root.querySelectorAll('.em-tri').forEach(tri => {
+    tri.querySelectorAll('.em-tri-opt').forEach(opt => {
+      opt.onclick = () => {
+        tri.querySelectorAll('.em-tri-opt').forEach(o => o.classList.remove('selected'));
+        opt.classList.add('selected');
+      };
+    });
+  });
+  // Multi-Checkbox
+  root.querySelectorAll('.em-multi').forEach(m => {
+    m.querySelectorAll('.em-multi-opt').forEach(opt => {
+      const cb = opt.querySelector('input[type="checkbox"]');
+      opt.onclick = (e) => {
+        if (e.target !== cb) cb.checked = !cb.checked;
+        opt.classList.toggle('selected', cb.checked);
+      };
+    });
+  });
+  // Rating
+  root.querySelectorAll('.em-rating').forEach(r => {
+    r.querySelectorAll('.em-rating-star').forEach(s => {
+      s.onclick = () => {
+        r.querySelectorAll('.em-rating-star').forEach(o => o.classList.remove('active'));
+        s.classList.add('active');
+      };
+    });
+  });
+  // Language Levels
+  root.querySelectorAll('.em-lang-levels').forEach(l => {
+    l.querySelectorAll('.em-lang-level').forEach(s => {
+      s.onclick = () => {
+        l.querySelectorAll('.em-lang-level').forEach(o => o.classList.remove('selected'));
+        s.classList.add('selected');
+      };
+    });
+  });
+  // Verfügbarkeitsraster
+  root.querySelectorAll('.em-verf-cell').forEach(c => {
+    c.onclick = () => {
+      c.classList.toggle('on');
+      c.textContent = c.classList.contains('on') ? '✓' : '·';
+    };
+  });
+  // Datum-Maske
+  root.querySelectorAll('input[data-t="date_de"]').forEach(inp => {
+    inp.addEventListener('input', () => {
+      const digits = inp.value.replace(/\D/g, '').slice(0, 8);
+      let out = '';
+      for (let i = 0; i < digits.length; i++) {
+        if (i === 2 || i === 4) out += '.';
+        out += digits[i];
+      }
+      if (out !== inp.value) inp.value = out;
+    });
+  });
+}
+
+function closeEditModal() {
+  document.getElementById('em-overlay').classList.remove('show');
+  currentEditSectionKey = null;
+  currentEditBewerbung = null;
+}
+
+// ----- Save -----
+async function saveEditModal() {
+  if (!currentEditSectionKey || !currentEditBewerbung) return;
+  const saveBtn = document.getElementById('em-save');
+  saveBtn.disabled = true;
+  saveBtn.textContent = 'Speichere…';
+
+  const update = {};
+  const b = currentEditBewerbung;
+
+  // Sammle alle Inputs
+  const body = document.getElementById('em-body');
+  body.querySelectorAll('[data-k][data-t]').forEach(el => {
+    const k = el.dataset.k;
+    const t = el.dataset.t;
+    let v;
+    if (t === 'text' || t === 'email' || t === 'tel' || t === 'url') {
+      v = el.value.trim() || null;
+    } else if (t === 'number') {
+      v = el.value.trim() === '' ? null : Number(el.value);
+    } else if (t === 'textarea') {
+      v = el.value.trim() || null;
+    } else if (t === 'date_de') {
+      const m = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(el.value.trim());
+      v = m ? `${m[3]}-${m[2]}-${m[1]}` : null;
+    } else if (t === 'select') {
+      v = el.value === '' ? null : el.value;
+    } else if (t === 'boolean_tri') {
+      const sel = el.querySelector('.em-tri-opt.selected');
+      const raw = sel ? sel.dataset.v : '';
+      v = raw === 'true' ? true : raw === 'false' ? false : null;
+    } else if (t === 'multi_checkbox') {
+      v = Array.from(el.querySelectorAll('input[type="checkbox"]:checked')).map(c => c.value);
+    } else if (t === 'rating') {
+      const sel = el.querySelector('.em-rating-star.active');
+      v = sel ? Number(sel.dataset.v) : 0;
+    } else if (t === 'lang_level') {
+      const sel = el.querySelector('.em-lang-level.selected');
+      v = sel ? sel.dataset.v : '';
+    } else if (t === 'verf_grid') {
+      return; // wird unten gesondert behandelt
+    } else {
+      return;
+    }
+    setNested(update, k, v);
+  });
+
+  // Verfügbarkeitsraster gesondert: sammle alle Cells pro Standort
+  const verfGrids = body.querySelectorAll('.em-verf-grid');
+  if (verfGrids.length) {
+    update.verfuegbarkeit = { ...(b.verfuegbarkeit || {}) };
+    verfGrids.forEach(grid => {
+      const standort = grid.dataset.k.split('.')[1];
+      const days = { mo:[false,false,false,false,false], di:[false,false,false,false,false],
+                     mi:[false,false,false,false,false], do:[false,false,false,false,false],
+                     fr:[false,false,false,false,false], sa:[false,false,false,false,false],
+                     so:[false,false,false,false,false] };
+      grid.querySelectorAll('.em-verf-cell.on').forEach(c => {
+        const d = c.dataset.day, s = parseInt(c.dataset.slot);
+        if (days[d]) days[d][s] = true;
+      });
+      update.verfuegbarkeit[standort] = days;
+    });
+  }
+
+  // Wenn nichts geändert: Modal schließen
+  if (Object.keys(update).length === 0) {
+    closeEditModal();
+    return;
+  }
+
+  try {
+    const { error } = await sb
+      .from('csc_bewerbungen')
+      .update(update)
+      .eq('id', b.id);
+    if (error) throw error;
+    toast('✓ Änderungen gespeichert');
+    closeEditModal();
+    await loadDashboard();
+    // Re-select to refresh detail view
+    if (selectedId) selectBewerbung(selectedId);
+  } catch (e) {
+    toast('Fehler beim Speichern: ' + (e.message || e), true);
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'Speichern';
+  }
+}
+
+// ----- Helper für Datums-Konvertierung -----
+function toDeDate(iso) {
+  if (!iso) return '';
+  if (/^\d{2}\.\d{2}\.\d{4}$/.test(iso)) return iso;
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
+  return m ? `${m[3]}.${m[2]}.${m[1]}` : '';
+}
+
+// ----- Audit-Log anzeigen -----
+async function toggleAuditList() {
+  if (!currentEditBewerbung) return;
+  let list = document.getElementById('em-audit-list');
+  if (list) { list.classList.toggle('show'); return; }
+
+  // Lade Logs
+  const { data, error } = await sb
+    .from('csc_bewerbung_changes')
+    .select('*')
+    .eq('bewerbung_id', currentEditBewerbung.id)
+    .order('changed_at', { ascending: false })
+    .limit(50);
+
+  list = document.createElement('div');
+  list.id = 'em-audit-list';
+  list.className = 'em-audit-list show';
+
+  if (error) {
+    list.innerHTML = `<div style="color:var(--red)">Fehler: ${escapeHtml(error.message)}</div>`;
+  } else if (!data || !data.length) {
+    list.innerHTML = `<div style="color:var(--tx-mute)">Noch keine Änderungen erfasst.</div>`;
+  } else {
+    list.innerHTML = data.map(e => {
+      const d = new Date(e.changed_at).toLocaleString('de-DE');
+      const ov = e.old_value ?? '∅';
+      const nv = e.new_value ?? '∅';
+      const ovT = String(ov).slice(0, 80);
+      const nvT = String(nv).slice(0, 80);
+      return `<div class="em-audit-entry">
+        <strong>${escapeHtml(e.field_name)}</strong>:
+        <span style="color:var(--tx-mute)">${escapeHtml(ovT)}</span> →
+        <span style="color:var(--green)">${escapeHtml(nvT)}</span>
+        <div class="em-audit-meta">${escapeHtml(e.changed_by_name || '—')} · ${d}</div>
+      </div>`;
+    }).join('');
+  }
+  document.getElementById('em-body').appendChild(list);
+}
+
+// ESC schließt Edit-Modal
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && document.getElementById('em-overlay')?.classList.contains('show')) {
+    closeEditModal();
+  }
+});
+
+
 document.addEventListener('DOMContentLoaded', () => {
   if (!SUPABASE_ANON_KEY || SUPABASE_ANON_KEY === 'BITTE_HIER_DEN_ANON_KEY_EINFUEGEN') {
     const msg = document.getElementById('login-msg');
@@ -1200,5 +1916,22 @@ document.addEventListener('DOMContentLoaded', () => {
   init();
 });
 </script>
+
+<!-- ===== EDIT MODAL ===== -->
+<div id="em-overlay" class="em-overlay" onclick="if(event.target===this)closeEditModal()" role="dialog" aria-modal="true">
+  <div class="em-modal">
+    <div class="em-head">
+      <h2 id="em-title">Bearbeiten</h2>
+      <button class="em-close" onclick="closeEditModal()" type="button">✕ Schließen</button>
+    </div>
+    <div id="em-body" class="em-body"></div>
+    <div class="em-footer">
+      <span id="em-audit-toggle" class="em-audit-toggle" onclick="toggleAuditList()">📋 Änderungsverlauf anzeigen</span>
+      <button id="em-cancel" class="em-btn" type="button" onclick="closeEditModal()">Abbrechen</button>
+      <button id="em-save" class="em-btn em-btn-save" type="button" onclick="saveEditModal()">Speichern</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>

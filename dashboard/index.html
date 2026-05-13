@@ -1827,18 +1827,27 @@ async function saveEditModal() {
   }
 
   try {
-    const { error } = await sb
+    console.log('[Edit] Update-Payload:', update);
+    const { data, error } = await sb
       .from('csc_bewerbungen')
       .update(update)
-      .eq('id', b.id);
-    if (error) throw error;
+      .eq('id', b.id)
+      .select();
+    if (error) {
+      console.error('[Edit] Supabase-Fehler:', error);
+      throw error;
+    }
+    console.log('[Edit] Erfolg, neue Daten:', data);
     toast('✓ Änderungen gespeichert');
     closeEditModal();
     await loadDashboard();
     // Re-select to refresh detail view
     if (selectedId) selectBewerbung(selectedId);
   } catch (e) {
-    toast('Fehler beim Speichern: ' + (e.message || e), true);
+    const msg = e?.message || e?.details || e?.hint || String(e);
+    console.error('[Edit] Save fehlgeschlagen:', e);
+    toast('Fehler: ' + msg, true);
+    alert('Fehler beim Speichern:\n\n' + msg + '\n\nDetails: ' + JSON.stringify(e, null, 2));
   } finally {
     saveBtn.disabled = false;
     saveBtn.textContent = 'Speichern';

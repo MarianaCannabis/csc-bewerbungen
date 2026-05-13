@@ -390,6 +390,98 @@
     .nb-confirm input { margin-top: 2px; accent-color: var(--green); width: 18px; height: 18px; flex-shrink: 0; }
     .nb-confirm label { font-size: 12px; line-height: 1.5; cursor: pointer; }
 
+    /* ===== STATISTIK-MODAL ===== */
+    .st-grid-top {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 10px; margin-bottom: 18px;
+    }
+    .st-kpi {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 8px; padding: 14px; text-align: center;
+    }
+    .st-kpi-value { font-size: 26px; font-weight: 700; color: var(--green); line-height: 1.2; }
+    .st-kpi-label { font-size: 11px; color: var(--tx-mute); text-transform: uppercase;
+      letter-spacing: 0.06em; margin-top: 4px; }
+
+    .st-section { margin-bottom: 22px; }
+    .st-section-title {
+      font-size: 12px; color: var(--green); text-transform: uppercase;
+      letter-spacing: 0.08em; margin: 0 0 10px 0; font-weight: 600;
+    }
+    .st-section-2col {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 22px;
+    }
+    @media (max-width: 600px) {
+      .st-section-2col { grid-template-columns: 1fr; }
+    }
+
+    .st-status-row {
+      display: grid; grid-template-columns: 140px 1fr 90px;
+      gap: 10px; align-items: center; padding: 4px 0;
+    }
+    .st-status-label { font-size: 12px; color: var(--tx); }
+    .st-bar-track {
+      height: 14px; background: var(--bg-elev); border-radius: 7px; overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .st-bar-fill { height: 100%; transition: width 0.4s ease; border-radius: 6px; }
+    .st-status-count { font-size: 12px; text-align: right; }
+    .st-status-count strong { color: var(--tx); }
+
+    /* Status-Stack-Bar pro Verein */
+    .st-stack-bar { display: flex; height: 12px; border-radius: 6px; overflow: hidden;
+      border: 1px solid var(--border); background: var(--bg-elev); }
+    .st-stack-seg { display: block; height: 100%; }
+
+    .st-table {
+      width: 100%; border-collapse: collapse; font-size: 12px;
+    }
+    .st-table th {
+      text-align: left; padding: 6px 10px; color: var(--tx-mute);
+      font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em;
+      border-bottom: 1px solid var(--border); font-weight: 600;
+    }
+    .st-table td {
+      padding: 8px 10px; border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    .st-table tbody tr:hover { background: var(--bg-elev); }
+
+    .st-collapsible { margin-top: 14px; }
+    .st-collapsible summary {
+      cursor: pointer; font-size: 11px; color: var(--tx-mute);
+      padding: 6px 0;
+    }
+    .st-collapsible summary:hover { color: var(--green); }
+    .st-no-bw-list { display: flex; flex-wrap: wrap; gap: 4px; padding-top: 8px; }
+    .st-no-bw-chip {
+      padding: 2px 8px; font-size: 10px;
+      background: var(--bg); color: var(--tx-mute);
+      border: 1px solid var(--border); border-radius: 10px;
+    }
+
+    /* Eingangs-Verlauf · 14-Tage-Bar-Chart */
+    .st-day-chart {
+      display: grid; grid-template-columns: repeat(14, 1fr); gap: 3px;
+      height: 130px; align-items: end; padding: 4px;
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;
+    }
+    .st-day-bar {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: flex-end; height: 100%; gap: 2px;
+      position: relative;
+    }
+    .st-day-val {
+      font-size: 9px; color: var(--green); font-weight: 600;
+      min-height: 10px;
+    }
+    .st-day-fill {
+      width: 90%; background: var(--green); border-radius: 3px 3px 0 0;
+      min-height: 2px; transition: height 0.4s ease;
+    }
+    .st-day-label { font-size: 10px; color: var(--tx); font-weight: 600; }
+    .st-day-weekday { font-size: 9px; color: var(--tx-mute); }
+
     /* ===== EDIT MODAL ===== */
     .edit-btn {
       background: transparent; border: 1px solid var(--border); color: var(--tx-mute);
@@ -557,6 +649,7 @@
     </div>
     <div class="header-right">
       <span class="user-email" id="user-email"></span>
+      <button class="btn-ghost stats-btn-header" onclick="openStatsModal()" title="Statistik-Übersicht" style="display:none" aria-label="Statistik öffnen">📊 Statistik</button>
       <button class="btn-ghost" onclick="exportCsv()" title="Aktuell sichtbare Bewerbungen als CSV/Excel exportieren">⬇ Export</button>
       <button class="btn-ghost" onclick="logout()">Abmelden</button>
     </div>
@@ -777,6 +870,7 @@ async function loadDashboard() {
     pill.textContent = 'Admin · Alle Vereine'; pill.className = 'role-pill admin';
     document.getElementById('filter-verein').style.display = '';
     document.getElementById('filter-bundesland').style.display = '';
+    document.querySelector('.stats-btn-header').style.display = '';
   }
   else { pill.textContent = 'Vorstand'; pill.className = 'role-pill vorstand'; }
   
@@ -1661,8 +1755,225 @@ function toast(msg, isError = false) {
 }
 
 // ============================================================================
-// NEUE BEWERBUNG MANUELL ANLEGEN
+// STATISTIK-MODAL (nur für Hauptverein-Admin)
 // ============================================================================
+function openStatsModal() {
+  if (!userContext?.ist_admin) return;
+  const overlay = document.getElementById('st-overlay');
+  const body = document.getElementById('st-body');
+  if (!overlay || !body) return;
+
+  const total = bewerbungen.length;
+  if (total === 0) {
+    body.innerHTML = '<div style="text-align:center;color:var(--tx-mute);padding:40px">Noch keine Bewerbungen vorhanden.</div>';
+    overlay.classList.add('show');
+    return;
+  }
+
+  // --- 1) Status-Verteilung ---
+  const statusCounts = {};
+  Object.keys(STATUS_LABELS).forEach(s => statusCounts[s] = 0);
+  bewerbungen.forEach(b => { const s = b.status || 'eingegangen'; statusCounts[s] = (statusCounts[s] || 0) + 1; });
+
+  // --- 2) Pro Verein ---
+  const vereinStats = {};
+  bewerbungen.forEach(b => {
+    const vid = b.verein_id;
+    if (!vereinStats[vid]) {
+      vereinStats[vid] = { id: vid, name: vereine[vid]?.name || 'Unbekannt', bundesland: vereine[vid]?.bundesland || '–', total: 0, byStatus: {} };
+      Object.keys(STATUS_LABELS).forEach(s => vereinStats[vid].byStatus[s] = 0);
+    }
+    vereinStats[vid].total++;
+    const s = b.status || 'eingegangen';
+    vereinStats[vid].byStatus[s] = (vereinStats[vid].byStatus[s] || 0) + 1;
+  });
+  const vereinList = Object.values(vereinStats).sort((a, b) => b.total - a.total);
+
+  // --- Vereine OHNE Bewerbungen (für Admin spannend) ---
+  const vereineMitBewerbungen = new Set(Object.keys(vereinStats));
+  const vereineOhne = Object.values(vereine).filter(v => !vereineMitBewerbungen.has(v.id));
+
+  // --- 3) Pro Bundesland ---
+  const blStats = {};
+  bewerbungen.forEach(b => {
+    const bl = vereine[b.verein_id]?.bundesland || 'Unbekannt';
+    blStats[bl] = (blStats[bl] || 0) + 1;
+  });
+  const blList = Object.entries(blStats).map(([bl, count]) => ({ bl, count })).sort((a, b) => b.count - a.count);
+
+  // --- 4) Pro Rolle ---
+  const rolleStats = {};
+  bewerbungen.forEach(b => {
+    const rs = Array.isArray(b.rollen) ? b.rollen : [];
+    rs.forEach(r => { rolleStats[r] = (rolleStats[r] || 0) + 1; });
+  });
+  const rolleList = Object.entries(rolleStats).map(([r, count]) => ({ r, label: ROLE_LABELS[r] || r, count })).sort((a, b) => b.count - a.count);
+
+  // --- 5) Eingangs-Verlauf letzte 14 Tage ---
+  const today = new Date(); today.setHours(0,0,0,0);
+  const days = [];
+  for (let i = 13; i >= 0; i--) {
+    const d = new Date(today); d.setDate(d.getDate() - i);
+    const key = d.toISOString().slice(0, 10);
+    days.push({ key, day: d.getDate(), label: d.toLocaleDateString('de-DE', { weekday: 'short' }), count: 0 });
+  }
+  bewerbungen.forEach(b => {
+    if (!b.eingegangen_am) return;
+    const dayKey = b.eingegangen_am.slice(0, 10);
+    const found = days.find(d => d.key === dayKey);
+    if (found) found.count++;
+  });
+  const maxDayCount = Math.max(1, ...days.map(d => d.count));
+
+  // --- HTML rendern ---
+  const statusColors = {
+    eingegangen: 'var(--blue)',
+    in_pruefung: 'var(--gold)',
+    eingeladen: 'var(--purple)',
+    warteliste: 'var(--orange)',
+    angenommen: 'var(--green)',
+    abgelehnt: 'var(--red)',
+  };
+
+  // Status-Verteilung als Bars
+  const statusBars = Object.entries(statusCounts).map(([s, c]) => {
+    const pct = total > 0 ? Math.round((c / total) * 100) : 0;
+    return `
+      <div class="st-status-row">
+        <div class="st-status-label"><span class="status-badge ${s}">${STATUS_LABELS[s]}</span></div>
+        <div class="st-bar-track" aria-label="${STATUS_LABELS[s]}: ${c} (${pct}%)">
+          <div class="st-bar-fill" style="width:${pct}%;background:${statusColors[s]||'var(--green)'}"></div>
+        </div>
+        <div class="st-status-count"><strong>${c}</strong> <span style="color:var(--tx-mute)">${pct}%</span></div>
+      </div>`;
+  }).join('');
+
+  // Pro-Verein-Tabelle mit Status-Stäben
+  const maxVereinCount = vereinList[0]?.total || 1;
+  const vereinRows = vereinList.map(v => {
+    const pct = Math.round((v.total / maxVereinCount) * 100);
+    // Status-Mini-Bar: Anteile als gestapelter Bar
+    const stackedBar = Object.keys(STATUS_LABELS).map(s => {
+      const c = v.byStatus[s] || 0;
+      if (c === 0) return '';
+      const segPct = Math.round((c / v.total) * 100);
+      return `<span class="st-stack-seg" style="width:${segPct}%;background:${statusColors[s]||'var(--green)'}" title="${STATUS_LABELS[s]}: ${c}"></span>`;
+    }).join('');
+    return `
+      <tr onclick="filterByVerein('${v.id}'); closeStatsModal();" style="cursor:pointer">
+        <td>${escapeHtml(v.name)}<div style="font-size:10px;color:var(--tx-mute)">${escapeHtml(v.bundesland)}</div></td>
+        <td><strong>${v.total}</strong></td>
+        <td>
+          <div class="st-stack-bar">${stackedBar}</div>
+        </td>
+      </tr>`;
+  }).join('');
+
+  const ohneVereineHtml = vereineOhne.length ? `
+    <details class="st-collapsible">
+      <summary>${vereineOhne.length} Vereine ohne Bewerbungen anzeigen</summary>
+      <div class="st-no-bw-list">
+        ${vereineOhne.sort((a,b)=>a.name.localeCompare(b.name,'de')).map(v => 
+          `<span class="st-no-bw-chip" title="${escapeHtml(v.bundesland || '')}">${escapeHtml(v.name)}</span>`
+        ).join('')}
+      </div>
+    </details>` : '';
+
+  // Bundesland-Tabelle
+  const maxBl = blList[0]?.count || 1;
+  const blRows = blList.map(({ bl, count }) => {
+    const pct = Math.round((count / maxBl) * 100);
+    return `
+      <div class="st-status-row">
+        <div class="st-status-label">${escapeHtml(bl)}</div>
+        <div class="st-bar-track"><div class="st-bar-fill" style="width:${pct}%;background:var(--green-dim)"></div></div>
+        <div class="st-status-count"><strong>${count}</strong></div>
+      </div>`;
+  }).join('');
+
+  // Rolle-Tabelle
+  const maxRol = rolleList[0]?.count || 1;
+  const rolleRows = rolleList.map(({ r, label, count }) => {
+    const pct = Math.round((count / maxRol) * 100);
+    return `
+      <div class="st-status-row">
+        <div class="st-status-label">${escapeHtml(label)}</div>
+        <div class="st-bar-track"><div class="st-bar-fill" style="width:${pct}%;background:var(--purple)"></div></div>
+        <div class="st-status-count"><strong>${count}</strong></div>
+      </div>`;
+  }).join('');
+
+  // Eingangs-Verlauf
+  const dayBars = days.map(d => {
+    const h = Math.round((d.count / maxDayCount) * 100);
+    return `<div class="st-day-bar" title="${d.key}: ${d.count} Bewerbung${d.count !== 1 ? 'en' : ''}">
+      <div class="st-day-val">${d.count || ''}</div>
+      <div class="st-day-fill" style="height:${h}%"></div>
+      <div class="st-day-label">${d.day}.</div>
+      <div class="st-day-weekday">${d.label}</div>
+    </div>`;
+  }).join('');
+
+  body.innerHTML = `
+    <div class="st-grid-top">
+      <div class="st-kpi">
+        <div class="st-kpi-value">${total}</div>
+        <div class="st-kpi-label">Bewerbungen gesamt</div>
+      </div>
+      <div class="st-kpi">
+        <div class="st-kpi-value">${Object.keys(vereinStats).length} / ${Object.keys(vereine).length}</div>
+        <div class="st-kpi-label">Vereine mit Bewerbungen</div>
+      </div>
+      <div class="st-kpi">
+        <div class="st-kpi-value">${days.slice(-7).reduce((s,d) => s+d.count, 0)}</div>
+        <div class="st-kpi-label">letzte 7 Tage</div>
+      </div>
+      <div class="st-kpi">
+        <div class="st-kpi-value">${statusCounts.angenommen || 0}</div>
+        <div class="st-kpi-label">Angenommen</div>
+      </div>
+    </div>
+
+    <div class="st-section">
+      <h3 class="st-section-title">Status-Verteilung</h3>
+      ${statusBars}
+    </div>
+
+    <div class="st-section">
+      <h3 class="st-section-title">Eingangs-Verlauf · letzte 14 Tage</h3>
+      <div class="st-day-chart">${dayBars}</div>
+    </div>
+
+    <div class="st-section">
+      <h3 class="st-section-title">Pro Verein · ${vereinList.length} aktiv</h3>
+      <table class="st-table">
+        <thead><tr><th>Verein</th><th>Total</th><th>Status-Verteilung</th></tr></thead>
+        <tbody>${vereinRows}</tbody>
+      </table>
+      <div style="font-size:11px;color:var(--tx-mute);margin-top:6px;text-align:right">Klick auf eine Zeile filtert die Bewerbungsliste auf diesen Verein.</div>
+      ${ohneVereineHtml}
+    </div>
+
+    <div class="st-section-2col">
+      <div class="st-section">
+        <h3 class="st-section-title">Pro Bundesland</h3>
+        ${blRows || '<div style="color:var(--tx-mute)">Keine Daten</div>'}
+      </div>
+      <div class="st-section">
+        <h3 class="st-section-title">Beworbene Rollen</h3>
+        ${rolleRows || '<div style="color:var(--tx-mute)">Keine Daten</div>'}
+      </div>
+    </div>
+  `;
+
+  overlay.classList.add('show');
+}
+
+function closeStatsModal() {
+  document.getElementById('st-overlay')?.classList.remove('show');
+}
+
+
 const NB_ROLLEN = [
   ['vorstand','Vorstand'],['stellv_vorstand','Stellv. Vorstand'],
   ['grower','Grower'],['head_grower','Head Grower'],
@@ -2639,6 +2950,7 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
     if (document.getElementById('em-overlay')?.classList.contains('show')) closeEditModal();
     else if (document.getElementById('nb-overlay')?.classList.contains('show')) closeNewBewerbungModal();
+    else if (document.getElementById('st-overlay')?.classList.contains('show')) closeStatsModal();
   }
 });
 
@@ -2687,6 +2999,17 @@ document.addEventListener('DOMContentLoaded', () => {
       <button class="em-btn" type="button" onclick="closeNewBewerbungModal()">Abbrechen</button>
       <button class="em-btn em-btn-save" type="button" onclick="saveNewBewerbung()">Bewerbung anlegen</button>
     </div>
+  </div>
+</div>
+
+<!-- ===== STATISTIK MODAL ===== -->
+<div id="st-overlay" class="em-overlay" onclick="if(event.target===this)closeStatsModal()" role="dialog" aria-modal="true" aria-labelledby="st-title">
+  <div class="em-modal" style="max-width:900px">
+    <div class="em-head">
+      <h2 id="st-title">📊 Statistik · Mariana Bewerbungen</h2>
+      <button class="em-close" onclick="closeStatsModal()" type="button" aria-label="Schließen">✕ Schließen</button>
+    </div>
+    <div id="st-body" class="em-body"></div>
   </div>
 </div>
 

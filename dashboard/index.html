@@ -1706,14 +1706,14 @@ function attachEditHandlers(root) {
       };
     });
   });
-  // Multi-Checkbox
+  // Multi-Checkbox: change-event auf Checkbox direkt (kein onclick-Wrapper,
+  // sonst Doppel-Toggle wegen <label>-implicit-click)
   root.querySelectorAll('.em-multi').forEach(m => {
-    m.querySelectorAll('.em-multi-opt').forEach(opt => {
-      const cb = opt.querySelector('input[type="checkbox"]');
-      opt.onclick = (e) => {
-        if (e.target !== cb) cb.checked = !cb.checked;
-        opt.classList.toggle('selected', cb.checked);
-      };
+    m.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+      const opt = cb.closest('.em-multi-opt');
+      cb.addEventListener('change', () => {
+        if (opt) opt.classList.toggle('selected', cb.checked);
+      });
     });
   });
   // Rating
@@ -1889,10 +1889,21 @@ function toDeDate(iso) {
 // ----- Audit-Log anzeigen -----
 async function toggleAuditList() {
   if (!currentEditBewerbung) return;
-  let list = document.getElementById('em-audit-list');
-  if (list) { list.classList.toggle('show'); return; }
+  const existing = document.getElementById('em-audit-list');
+  // Toggle: wenn schon offen, einfach schließen
+  if (existing && existing.classList.contains('show')) {
+    existing.remove();
+    return;
+  }
+  // Sonst entfernen falls vorhanden, dann frisch laden
+  if (existing) existing.remove();
 
-  // Lade Logs
+  const list = document.createElement('div');
+  list.id = 'em-audit-list';
+  list.className = 'em-audit-list show';
+  list.innerHTML = '<div style="color:var(--tx-mute)">Lade Änderungsverlauf…</div>';
+  document.getElementById('em-body').appendChild(list);
+
   const { data, error } = await sb
     .from('csc_bewerbung_changes')
     .select('*')
@@ -1900,12 +1911,9 @@ async function toggleAuditList() {
     .order('changed_at', { ascending: false })
     .limit(50);
 
-  list = document.createElement('div');
-  list.id = 'em-audit-list';
-  list.className = 'em-audit-list show';
-
   if (error) {
     list.innerHTML = `<div style="color:var(--red)">Fehler: ${escapeHtml(error.message)}</div>`;
+    console.error('[Audit] Fehler beim Laden:', error);
   } else if (!data || !data.length) {
     list.innerHTML = `<div style="color:var(--tx-mute)">Noch keine Änderungen erfasst.</div>`;
   } else {
@@ -1923,7 +1931,6 @@ async function toggleAuditList() {
       </div>`;
     }).join('');
   }
-  document.getElementById('em-body').appendChild(list);
 }
 
 // ESC schließt Edit-Modal

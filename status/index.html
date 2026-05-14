@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Status meiner Bewerbung — Mariana Cannabis</title>
+  <!-- STATUS_PAGE_BUILD: 2026-05-14T0242 -->
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --olive-50: #f5f4ed;
+      --olive-100: #e9e7d8;
+      --olive-300: #b8bb98;
+      --olive-500: #6f7c4a;
+      --olive-700: #4a5a32;
+      --cream: #faf8f1;
+      --ink: #1f2818;
+      --ink-mute: #5a6356;
+      --error: #c0392b;
+      --warn: #d4a843;
+      --success: #4a8a4f;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'DM Sans', system-ui, sans-serif;
+      background: var(--cream);
+      color: var(--ink);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .brand {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--ink);
+      margin: 0;
+    }
+    .subtitle {
+      color: var(--ink-mute);
+      font-size: 0.95rem;
+      margin-top: 0.3rem;
+    }
+    .card {
+      background: white;
+      border: 1px solid var(--olive-200, #e0ddc7);
+      border-radius: 12px;
+      padding: 2rem 1.8rem;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+    }
+    h1 {
+      font-size: 1.4rem;
+      margin: 0 0 0.5rem 0;
+      color: var(--ink);
+    }
+    .greeting {
+      color: var(--ink-mute);
+      font-size: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .status-badge {
+      display: inline-block;
+      padding: 0.5rem 1rem;
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+    .status-eingegangen { background: #e9f0e7; color: #1f5025; }
+    .status-in_pruefung { background: #faecc8; color: #7a5610; }
+    .status-eingeladen { background: #d9eaf7; color: #1f5278; }
+    .status-warteliste { background: #f4e4d2; color: #80471c; }
+    .status-angenommen { background: #c6e6c9; color: #1d5524; font-weight: 700; }
+    .status-abgelehnt { background: #f5d6d1; color: #8b2a1e; }
+    
+    .info-block {
+      margin-top: 1.5rem;
+      padding-top: 1.2rem;
+      border-top: 1px solid var(--olive-100);
+    }
+    .info-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem 1rem;
+      margin-bottom: 0.5rem;
+      font-size: 0.92rem;
+    }
+    .info-label { color: var(--ink-mute); }
+    .info-value { color: var(--ink); font-weight: 500; }
+    
+    .next-steps {
+      margin-top: 1.5rem;
+      padding: 1rem 1.2rem;
+      background: var(--olive-50);
+      border-left: 3px solid var(--olive-500);
+      border-radius: 4px;
+      font-size: 0.92rem;
+    }
+    .next-steps strong { display: block; margin-bottom: 0.3rem; color: var(--olive-700); }
+    
+    .error {
+      background: #fdf2f0;
+      border-left: 3px solid var(--error);
+      padding: 1rem 1.2rem;
+      border-radius: 4px;
+      color: var(--error);
+      font-size: 0.95rem;
+    }
+    
+    .loader {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      padding: 2rem;
+      color: var(--ink-mute);
+    }
+    .spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid var(--olive-100);
+      border-top-color: var(--olive-500);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    
+    footer {
+      text-align: center;
+      margin-top: 2rem;
+      color: var(--ink-mute);
+      font-size: 0.85rem;
+    }
+    footer a { color: var(--olive-700); text-decoration: none; border-bottom: 1px solid var(--olive-300); }
+    
+    @media (max-width: 540px) {
+      .container { padding: 1.2rem 1rem; }
+      .card { padding: 1.4rem 1.2rem; }
+      .info-row { grid-template-columns: 1fr; gap: 0.1rem; }
+      .info-label { font-size: 0.78rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <p class="brand">🌿 Mariana Cannabis</p>
+      <p class="subtitle">Status deiner Bewerbung</p>
+    </header>
+    
+    <div class="card" id="card">
+      <div class="loader" id="loader">
+        <div class="spinner" aria-hidden="true"></div>
+        <div>Lade Status…</div>
+      </div>
+      <div id="content" style="display:none"></div>
+      <div id="error" style="display:none" class="error"></div>
+    </div>
+    
+    <footer>
+      <p>
+        Bei Fragen: <a href="mailto:communityrecruiting@mariana-cannabis.de">communityrecruiting@mariana-cannabis.de</a>
+      </p>
+      <p style="margin-top:0.8rem">
+        <a href="https://cscsdeutschland.de/datenschutzerklarung" target="_blank" rel="noopener noreferrer">Datenschutz</a>
+        ·
+        <a href="https://cscsdeutschland.de/impressum" target="_blank" rel="noopener noreferrer">Impressum</a>
+      </p>
+    </footer>
+  </div>
+  
+  <script>
+    // KONFIG — anpassen an dein Supabase-Projekt
+    const SUPABASE_URL = 'https://gvzayggvtlychyjbnsgv.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd2emF5Z2d2dGx5Y2h5amJuc2d2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3ODEzMTIsImV4cCI6MjA4OTM1NzMxMn0.1L2e98IjFjF8z_-t0Fpm20wwVyrtWfkMdjGG79fJwMg';  // ← bitte mit deinem anon-Key ersetzen
+    
+    const NEXT_STEPS = {
+      eingegangen: 'Deine Bewerbung ist bei uns angekommen. In den nächsten Tagen prüft sie der Vorstand des gewählten Vereins.',
+      in_pruefung: 'Der Vorstand schaut sich deine Bewerbung gerade an. Du hörst spätestens in 1–2 Wochen von uns.',
+      eingeladen: 'Wir möchten dich gerne kennenlernen. Schau in deine E-Mails — dort findest du Details zum Termin.',
+      warteliste: 'Aktuell haben wir keinen freien Platz, aber wir behalten dich im Reserve-Pool. Sobald sich was frei wird, melden wir uns.',
+      angenommen: '🎉 Willkommen im Team! Der Verein meldet sich kurzfristig zum Onboarding.',
+      abgelehnt: 'Leider passt es aktuell nicht. Wir wünschen dir alles Gute auf deinem weiteren Weg.'
+    };
+    
+    function escapeHtml(str) {
+      return String(str || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+    
+    function fmtDate(iso) {
+      if (!iso) return '–';
+      try { return new Date(iso).toLocaleDateString('de-DE', { day: '2-digit', month: 'long', year: 'numeric' }); }
+      catch { return '–'; }
+    }
+    
+    function showError(msg) {
+      document.getElementById('loader').style.display = 'none';
+      document.getElementById('content').style.display = 'none';
+      const err = document.getElementById('error');
+      err.style.display = 'block';
+      err.textContent = msg;
+    }
+    
+    function showContent(data) {
+      document.getElementById('loader').style.display = 'none';
+      document.getElementById('error').style.display = 'none';
+      const content = document.getElementById('content');
+      content.style.display = 'block';
+      
+      const status = data.status || 'eingegangen';
+      const nextStep = NEXT_STEPS[status] || '';
+      
+      content.innerHTML = `
+        <h1>Hallo ${escapeHtml(data.vorname || '')}!</h1>
+        <p class="greeting">Hier ist der aktuelle Stand deiner Bewerbung${data.verein_name ? ' bei <strong>' + escapeHtml(data.verein_name) + '</strong>' : ''}.</p>
+        
+        <div>
+          <span class="status-badge status-${escapeHtml(status)}">${escapeHtml(data.status_label || status)}</span>
+        </div>
+        
+        <div class="info-block">
+          <div class="info-row">
+            <span class="info-label">Eingegangen am</span>
+            <span class="info-value">${escapeHtml(fmtDate(data.eingegangen_am))}</span>
+          </div>
+          ${data.status_geaendert_am ? `
+          <div class="info-row">
+            <span class="info-label">Status zuletzt aktualisiert</span>
+            <span class="info-value">${escapeHtml(fmtDate(data.status_geaendert_am))}</span>
+          </div>` : ''}
+        </div>
+        
+        ${nextStep ? `
+        <div class="next-steps">
+          <strong>Was passiert als nächstes?</strong>
+          ${escapeHtml(nextStep)}
+        </div>` : ''}
+      `;
+    }
+    
+    async function loadStatus() {
+      const params = new URLSearchParams(window.location.search);
+      const token = params.get('token');
+      
+      if (!token) {
+        showError('Kein Token in der URL gefunden. Bitte nutze den Link aus deiner Bestätigungs-Mail.');
+        return;
+      }
+      
+      try {
+        const res = await fetch(`${SUPABASE_URL}/functions/v1/get-bewerbung-status`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'apikey': SUPABASE_ANON_KEY,
+          },
+          body: JSON.stringify({ token })
+        });
+        
+        const data = await res.json();
+        
+        if (!res.ok) {
+          showError(data.error || 'Unbekannter Fehler beim Abrufen des Status.');
+          return;
+        }
+        
+        showContent(data);
+      } catch (e) {
+        console.error(e);
+        showError('Status konnte nicht geladen werden. Bitte später nochmal versuchen.');
+      }
+    }
+    
+    loadStatus();
+  </script>
+</body>
+</html>

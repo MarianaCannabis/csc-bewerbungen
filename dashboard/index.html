@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mariana Cannabis · Bewerbungs-Dashboard v2</title>
-  <!-- DASHBOARD_BUILD: 2026-05-14T0642 (RLS-Detection, Polling-No-Disrupt, Generic Audit-Log) -->
-  <script>window.__DASHBOARD_BUILD = '2026-05-14T0642';</script>
+  <!-- DASHBOARD_BUILD: 2026-05-14T0742 (Audit-Log mit echten Spaltennamen) -->
+  <script>window.__DASHBOARD_BUILD = '2026-05-14T0742';</script>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -2115,52 +2115,64 @@ async function toggleAuditLog(bewerbungId) {
   if (toggleEl) toggleEl.textContent = '▴';
   listEl.innerHTML = '<div class="audit-empty">Lade…</div>';
   try {
-    // Generisch: ALLE Spalten selektieren, ohne fest auf Spaltennamen zu bauen
     const { data, error } = await sb.from('csc_bewerbung_changes')
       .select('*')
       .eq('bewerbung_id', bewerbungId)
+      .order('changed_at', { ascending: false })
       .limit(100);
     if (error) throw error;
     console.log('[Audit-Log] geladen:', data?.length || 0, 'Einträge für', bewerbungId);
     if (!data || data.length === 0) {
-      listEl.innerHTML = `
-        <div class="audit-empty">
-          Keine Änderungs-Einträge vorhanden.<br>
-          <small style="color:var(--tx-mute)">Falls hier nichts erscheint, obwohl du gerade was geändert hast:<br>
-          die Tabelle <code>csc_bewerbung_changes</code> wird vermutlich nicht durch einen Trigger befüllt.</small>
-        </div>`;
+      listEl.innerHTML = '<div class="audit-empty">Noch keine Änderungs-Einträge — sobald jemand etwas an dieser Bewerbung ändert, erscheint hier ein Eintrag.</div>';
       return;
     }
     
-    // Spalten erkennen: was ist Zeit-Spalte, was Wert-Spalten?
-    const sample = data[0];
-    const allCols = Object.keys(sample);
-    // Erkenne Zeit-Spalte heuristisch
-    const timeCol = ['geaendert_am','changed_at','created_at','timestamp','zeit'].find(c => allCols.includes(c)) || allCols.find(c => sample[c] && typeof sample[c] === 'string' && /^\d{4}-\d{2}/.test(sample[c]));
+    // Lesbare Feld-Labels
+    const FIELD_LABELS = {
+      status: 'Status',
+      vorstand_notiz: 'Schnell-Notiz',
+      notiz_geaendert_am: 'Notiz-Zeitstempel',
+      notiz_geaendert_von: 'Notiz-Autor',
+      status_geaendert_am: 'Status-Zeitstempel',
+      status_geaendert_von: 'Status-Autor',
+      tags: 'Tags',
+      verein_id: 'Verein',
+    };
     
-    // Sortiere wenn Zeit-Spalte gefunden
-    if (timeCol) data.sort((a, b) => new Date(b[timeCol]) - new Date(a[timeCol]));
+    // Wert hübsch darstellen (Status-Codes → Labels, lange Texte abkürzen)
+    const fmtVal = (field, val) => {
+      if (val === null || val === undefined || val === '') return '<em style="color:var(--tx-mute)">leer</em>';
+      let s = String(val);
+      if (field === 'status') s = STATUS_LABELS[val] || s;
+      if (s.length > 120) s = s.slice(0, 120) + '…';
+      return escapeHtml(s);
+    };
     
     listEl.innerHTML = data.map(c => {
-      const dat = timeCol && c[timeCol] ? new Date(c[timeCol]).toLocaleString('de-DE') : '—';
-      // Wert-Spalten: alles außer id, bewerbung_id, Zeit-Spalten
-      const valueCols = allCols.filter(k => 
-        k !== 'id' && k !== 'bewerbung_id' && k !== timeCol && c[k] !== null && c[k] !== undefined
-      );
-      const valuesHtml = valueCols.map(k => {
-        const val = typeof c[k] === 'object' ? JSON.stringify(c[k]) : String(c[k]);
-        return `<div><strong style="color:var(--green-dim)">${escapeHtml(k)}:</strong> <span style="color:var(--tx)">${escapeHtml(val)}</span></div>`;
-      }).join('');
+      const dat = c.changed_at 
+        ? new Date(c.changed_at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+        : '—';
+      const fieldLabel = FIELD_LABELS[c.field_name] || c.field_name;
+      const oldHtml = fmtVal(c.field_name, c.old_value);
+      const newHtml = fmtVal(c.field_name, c.new_value);
+      const author = c.changed_by_name || '—';
       return `
         <div class="audit-entry">
-          <div class="audit-entry-meta">${dat}</div>
-          <div class="audit-entry-text" style="display:flex;flex-direction:column;gap:2px">${valuesHtml || '<em style="color:var(--tx-mute)">leer</em>'}</div>
+          <div class="audit-entry-meta">
+            <strong style="color:var(--green-dim)">${escapeHtml(fieldLabel)}</strong> 
+            <span style="color:var(--tx-mute)"> · ${dat} · ${escapeHtml(author)}</span>
+          </div>
+          <div class="audit-entry-text">
+            <span style="color:var(--tx-mute);font-size:11px">vorher</span> ${oldHtml}
+            <span style="color:var(--green);margin:0 6px">→</span>
+            <span style="color:var(--tx-mute);font-size:11px">nachher</span> ${newHtml}
+          </div>
         </div>
       `;
     }).join('');
   } catch (e) {
     console.error('[Audit-Log] Fehler:', e);
-    listEl.innerHTML = `<div class="audit-empty">Fehler beim Laden: <code>${escapeHtml(e.message || String(e))}</code><br><small>Häufige Ursache: Tabelle <code>csc_bewerbung_changes</code> existiert nicht oder du hast keine SELECT-Permission.</small></div>`;
+    listEl.innerHTML = `<div class="audit-empty">Fehler beim Laden: <code>${escapeHtml(e.message || String(e))}</code></div>`;
   }
 }
 

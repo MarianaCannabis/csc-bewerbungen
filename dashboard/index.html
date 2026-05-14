@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mariana Cannabis · Bewerbungs-Dashboard v2</title>
-  <!-- DASHBOARD_BUILD: 2026-05-14T1342 (Score kompakt + Notiz-Vorlagen + Anhang-Thumbnails inline) -->
-  <script>window.__DASHBOARD_BUILD = '2026-05-14T1342';</script>
+  <!-- DASHBOARD_BUILD: 2026-05-14T1442 (Interview-Termine + ICS-Export + Multi-User-Realtime-Presence) -->
+  <script>window.__DASHBOARD_BUILD = '2026-05-14T1442';</script>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -269,7 +269,63 @@
     .section { margin-bottom: 24px; }
     .section-title { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--tx-mute); margin-bottom: 10px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
     
-    /* === Score-System === */
+    /* Multi-User-Presence-Banner */
+    .presence-banner { background: linear-gradient(90deg, rgba(95,168,255,0.12), rgba(95,168,255,0.06)); border: 1px solid rgba(95,168,255,0.35); border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; animation: presence-pulse 0.4s ease; }
+    @keyframes presence-pulse { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+    .presence-content { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--tx); flex-wrap: wrap; }
+    .presence-icon { font-size: 16px; }
+    .presence-tip { color: var(--tx-mute); font-size: 12px; margin-left: auto; }
+    
+    /* Termine-Section */
+    .termine-section { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; margin-bottom: 24px; }
+    .termine-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .termine-title { font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--green); font-weight: 600; }
+    .termine-count { background: var(--bg-elev); color: var(--tx-mute); padding: 1px 8px; border-radius: 10px; font-size: 11px; margin-left: 4px; }
+    .btn-termin-add { background: rgba(76,175,106,0.15); color: var(--green); border: 1px solid var(--green-dim); padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: 600; }
+    .btn-termin-add:hover { background: rgba(76,175,106,0.25); }
+    .termine-list { display: flex; flex-direction: column; gap: 8px; }
+    .termine-empty { color: var(--tx-mute); font-size: 13px; font-style: italic; text-align: center; padding: 14px 0; }
+    .termin-item { display: flex; gap: 10px; padding: 10px 12px; background: var(--bg-elev); border: 1px solid var(--border); border-radius: 6px; align-items: flex-start; }
+    .termin-item.status-soon { border-left: 3px solid var(--yellow); padding-left: 10px; }
+    .termin-item.status-overdue { border-left: 3px solid var(--red); padding-left: 10px; opacity: 0.85; }
+    .termin-item.status-done { opacity: 0.55; }
+    .termin-item.status-cancel { opacity: 0.4; text-decoration: line-through; }
+    .termin-main { flex: 1; min-width: 0; }
+    .termin-titel-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 4px; }
+    .termin-titel { font-size: 14px; font-weight: 600; color: var(--tx); }
+    .termin-badge { font-size: 10px; padding: 2px 7px; border-radius: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+    .termin-badge.soon { background: rgba(249,199,79,0.2); color: var(--yellow); border: 1px solid rgba(249,199,79,0.4); }
+    .termin-badge.overdue { background: rgba(236,100,100,0.2); color: var(--red); border: 1px solid rgba(236,100,100,0.4); }
+    .termin-meta { font-size: 12px; color: var(--tx-mute); display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 4px; }
+    .termin-desc { font-size: 12px; color: var(--tx); margin-top: 4px; white-space: pre-wrap; }
+    .termin-status { font-size: 11px; color: var(--tx-mute); margin-top: 4px; }
+    .termin-actions { display: flex; gap: 4px; flex-shrink: 0; }
+    .termin-btn { background: transparent; border: 1px solid var(--border); color: var(--tx-mute); padding: 4px 8px; border-radius: 5px; cursor: pointer; font-size: 12px; transition: all 0.1s; }
+    .termin-btn:hover { color: var(--tx); border-color: var(--green); }
+    .termin-btn.danger:hover { color: var(--red); border-color: var(--red); }
+    
+    /* Termin-Modal */
+    .termin-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 200; align-items: center; justify-content: center; padding: 20px; }
+    .termin-modal.show { display: flex; }
+    .termin-modal-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; max-width: 540px; width: 100%; max-height: 90vh; overflow-y: auto; }
+    .termin-modal-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border); }
+    .termin-modal-title { font-size: 16px; font-weight: 700; color: var(--tx); }
+    .termin-modal-close { background: transparent; border: none; color: var(--tx-mute); font-size: 18px; cursor: pointer; }
+    .termin-modal-close:hover { color: var(--tx); }
+    .termin-modal-body { padding: 16px 20px; display: flex; flex-direction: column; gap: 12px; }
+    .termin-field { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+    .termin-field label { font-size: 11px; color: var(--tx-mute); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
+    .termin-field input, .termin-field select, .termin-field textarea { background: var(--bg-elev); border: 1px solid var(--border); color: var(--tx); padding: 8px 10px; border-radius: 6px; font-family: inherit; font-size: 13px; }
+    .termin-field input:focus, .termin-field select:focus, .termin-field textarea:focus { outline: none; border-color: var(--green); }
+    .termin-field-row { display: flex; gap: 10px; }
+    .termin-modal-footer { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 20px; border-top: 1px solid var(--border); }
+    .termin-modal-btn-cancel { background: transparent; color: var(--tx-mute); border: 1px solid var(--border); padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+    .termin-modal-btn-save { background: var(--green-dim); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; }
+    .termin-modal-btn-save:hover { background: var(--green); }
+    
+    /* Termin-Indikator in Liste */
+    .li-termin { display: inline-flex; align-items: center; gap: 2px; padding: 1px 6px; border-radius: 8px; font-size: 11px; font-weight: 600; background: rgba(249,199,79,0.18); color: var(--yellow); border: 1px solid rgba(249,199,79,0.4); margin: 0 2px; cursor: help; }
+    .li-termin.overdue { background: rgba(236,100,100,0.18); color: var(--red); border-color: rgba(236,100,100,0.4); }
     .score-section { padding: 12px 14px !important; }
     
     /* Kompakte Top-Anzeige */
@@ -1129,6 +1185,62 @@
   </div>
 </div>
 
+<!-- Termin-Modal -->
+<div id="termin-modal" class="termin-modal" onclick="if(event.target===this)closeTerminModal()">
+  <div class="termin-modal-box">
+    <div class="termin-modal-header">
+      <div class="termin-modal-title" id="termin-modal-title">Neuer Termin</div>
+      <button class="termin-modal-close" onclick="closeTerminModal()">✕</button>
+    </div>
+    <div class="termin-modal-body">
+      <div class="termin-field">
+        <label>Titel</label>
+        <input type="text" id="termin-titel" placeholder="z.B. Vorgespräch" />
+      </div>
+      <div class="termin-field-row">
+        <div class="termin-field">
+          <label>Datum &amp; Uhrzeit</label>
+          <input type="datetime-local" id="termin-datum" />
+        </div>
+        <div class="termin-field">
+          <label>Dauer (min)</label>
+          <input type="number" id="termin-dauer" min="5" step="5" value="60" />
+        </div>
+      </div>
+      <div class="termin-field-row">
+        <div class="termin-field">
+          <label>Typ</label>
+          <select id="termin-typ">
+            <option value="vor_ort">📍 Vor Ort</option>
+            <option value="video">📹 Video-Call</option>
+            <option value="telefon">📞 Telefon</option>
+          </select>
+        </div>
+        <div class="termin-field">
+          <label>Status</label>
+          <select id="termin-status">
+            <option value="geplant">⏳ Geplant</option>
+            <option value="durchgefuehrt">✅ Durchgeführt</option>
+            <option value="abgesagt">❌ Abgesagt</option>
+          </select>
+        </div>
+      </div>
+      <div class="termin-field">
+        <label>Ort / Link</label>
+        <input type="text" id="termin-ort" placeholder="z.B. Vereinsraum Marburg oder Zoom-URL" />
+      </div>
+      <div class="termin-field">
+        <label>Beschreibung / Notizen</label>
+        <textarea id="termin-beschreibung" rows="3" placeholder="Optional"></textarea>
+      </div>
+    </div>
+    <div class="termin-modal-footer">
+      <button class="termin-modal-btn-cancel" onclick="closeTerminModal()">Abbrechen</button>
+      <button class="termin-modal-btn-save" onclick="saveTermin()">Speichern</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const SUPABASE_URL = 'https://gvzayggvtlychyjbnsgv.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd2emF5Z2d2dGx5Y2h5amJuc2d2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3ODEzMTIsImV4cCI6MjA4OTM1NzMxMn0.1L2e98IjFjF8z_-t0Fpm20wwVyrtWfkMdjGG79fJwMg';
@@ -1797,6 +1909,20 @@ function renderList() {
     if (b.notiz_verlauf_count > 0) {
       indicators += `<span class="li-indicator" title="${b.notiz_verlauf_count} Eintrag${b.notiz_verlauf_count !== 1 ? 'e' : ''} im Verlauf" aria-label="Notiz-Verlauf">🗒</span>`;
     }
+    // Termin-Indikator: anstehende oder überfällige Termine
+    if (Array.isArray(b.interview_termine) && b.interview_termine.length > 0) {
+      const now = Date.now();
+      const naechst = b.interview_termine
+        .filter(t => (t.status || 'geplant') === 'geplant' && t.datum)
+        .map(t => new Date(t.datum).getTime())
+        .sort((a, c) => a - c)[0];
+      if (naechst) {
+        const tageBis = Math.floor((naechst - now) / (24*60*60*1000));
+        const isOverdue = naechst < now;
+        const label = isOverdue ? 'überfällig' : tageBis === 0 ? 'heute' : tageBis === 1 ? 'morgen' : `in ${tageBis}T`;
+        indicators += `<span class="li-termin ${isOverdue ? 'overdue' : ''}" title="Nächster Termin: ${new Date(naechst).toLocaleString('de-DE')}">📅 ${label}</span>`;
+      }
+    }
     
     const itemLabel = `Bewerbung von ${b.vorname || ''} ${b.nachname || ''}, Status ${STATUS_LABELS[status] || status}${rollenLabel ? ', Rolle ' + rollenLabel : ''}${stdLabel ? ', ' + stdLabel : ''}${v ? ', Verein ' + v.name : ''}`;
     return `<div class="list-item ${b.id === selectedId ? 'active' : ''} ${isSelected ? 'bulk-selected' : ''}" role="listitem">
@@ -1816,12 +1942,15 @@ function renderList() {
 }
 
 async function selectBewerbung(id) {
+  // Multi-User-Presence: alten Channel verlassen, neuen joinen
+  await leavePresenceChannel();
   selectedId = id; renderList();
   const b = bewerbungen.find(x => x.id === id);
   if (!b) {
     console.error('[selectBewerbung] Bewerbung nicht im Speicher gefunden:', id);
     return;
   }
+  joinPresenceChannel(id);
   const v = vereine[b.verein_id];
   const status = b.status || 'eingegangen';
   
@@ -2030,6 +2159,19 @@ async function selectBewerbung(id) {
           </button>
           <span class="notiz-verlauf-hint">oder <kbd>Strg</kbd>+<kbd>Enter</kbd></span>
         </div>
+      </div>
+    </div>
+    
+    <!-- Interview-Termine -->
+    <div class="termine-section">
+      <div class="termine-header">
+        <div class="termine-title">📅 Interview-Termine 
+          <span class="termine-count">${Array.isArray(b.interview_termine) ? b.interview_termine.length : 0}</span>
+        </div>
+        <button class="btn-termin-add" onclick="openTerminModal('${b.id}')">+ Termin</button>
+      </div>
+      <div class="termine-list" id="termine-list-${b.id}">
+        ${renderTermine(b.interview_termine || [], b.id)}
       </div>
     </div>
     
@@ -2845,6 +2987,358 @@ function toast(msg, isError = false) {
   el.textContent = msg; el.className = 'toast show' + (isError ? ' error' : '');
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+// ============================================================================
+// MULTI-USER-PRESENCE (Supabase Realtime)
+// ============================================================================
+let presenceChannel = null;
+let presenceCurrentBewerbung = null;
+
+function presenceUserName() {
+  const email = session?.user?.email || '';
+  // Versuche Anzeigenamen aus userContext zu holen
+  return userContext?.name || email.split('@')[0] || 'anonym';
+}
+
+async function joinPresenceChannel(bewerbungId) {
+  if (!bewerbungId || !sb || !sb.channel) return;
+  presenceCurrentBewerbung = bewerbungId;
+  try {
+    presenceChannel = sb.channel(`bewerbung:${bewerbungId}`, {
+      config: { presence: { key: session?.user?.id || crypto.randomUUID() } }
+    });
+    presenceChannel
+      .on('presence', { event: 'sync' }, () => {
+        const state = presenceChannel.presenceState();
+        renderPresenceBanner(state);
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          await presenceChannel.track({ 
+            name: presenceUserName(), 
+            email: session?.user?.email || '',
+            ist_admin: !!userContext?.ist_admin,
+            online_seit: new Date().toISOString() 
+          });
+        }
+      });
+  } catch (e) {
+    console.warn('[presence] join fail', e);
+  }
+}
+
+async function leavePresenceChannel() {
+  if (presenceChannel) {
+    try { await presenceChannel.unsubscribe(); } catch {}
+    presenceChannel = null;
+  }
+  presenceCurrentBewerbung = null;
+  const banner = document.getElementById('presence-banner');
+  if (banner) banner.remove();
+}
+
+function renderPresenceBanner(state) {
+  const myId = session?.user?.id;
+  const others = [];
+  for (const [userId, presences] of Object.entries(state || {})) {
+    if (userId === myId) continue;
+    if (presences && presences[0]) others.push(presences[0]);
+  }
+  
+  let banner = document.getElementById('presence-banner');
+  if (others.length === 0) {
+    if (banner) banner.remove();
+    return;
+  }
+  
+  const names = others.map(o => o.name || 'unbekannt').join(', ');
+  const html = `
+    <div class="presence-content">
+      <span class="presence-icon">👥</span>
+      <span>${others.length === 1 ? names + ' betrachtet' : `${others.length} andere Vorstände betrachten`} diese Bewerbung gerade auch.</span>
+      <span class="presence-tip">Änderungen werden live aktualisiert.</span>
+    </div>
+  `;
+  
+  if (banner) {
+    banner.innerHTML = html;
+  } else {
+    banner = document.createElement('div');
+    banner.id = 'presence-banner';
+    banner.className = 'presence-banner';
+    banner.innerHTML = html;
+    const detailPanel = document.getElementById('detail-panel');
+    if (detailPanel && detailPanel.firstChild) {
+      detailPanel.insertBefore(banner, detailPanel.firstChild);
+    }
+  }
+}
+
+// Beim Schließen / Wechseln aufräumen
+window.addEventListener('beforeunload', () => { 
+  if (presenceChannel) presenceChannel.unsubscribe().catch(() => {});
+});
+
+// ============================================================================
+// INTERVIEW-TERMINE
+// ============================================================================
+const TERMIN_TYP_LABELS = { vor_ort: '📍 Vor Ort', video: '📹 Video-Call', telefon: '📞 Telefon' };
+const TERMIN_STATUS_LABELS = { geplant: '⏳ Geplant', durchgefuehrt: '✅ Durchgeführt', abgesagt: '❌ Abgesagt' };
+
+function renderTermine(termine, bewerbungId) {
+  if (!Array.isArray(termine) || termine.length === 0) {
+    return '<div class="termine-empty">Noch keine Termine geplant.</div>';
+  }
+  
+  // Sortieren: anstehende zuerst (nach Datum), dann durchgeführte/abgesagte
+  const sorted = [...termine].sort((a, b) => {
+    const aAct = (a.status || 'geplant') === 'geplant';
+    const bAct = (b.status || 'geplant') === 'geplant';
+    if (aAct !== bAct) return aAct ? -1 : 1;
+    return new Date(a.datum || 0) - new Date(b.datum || 0);
+  });
+  
+  const now = new Date();
+  
+  return sorted.map(t => {
+    const dt = t.datum ? new Date(t.datum) : null;
+    const isPast = dt && dt < now;
+    const isSoon = dt && !isPast && (dt - now) < 24 * 60 * 60 * 1000; // < 24h
+    const status = t.status || 'geplant';
+    const dtStr = dt ? dt.toLocaleString('de-DE', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '—';
+    
+    let cls = 'termin-item';
+    if (status === 'durchgefuehrt') cls += ' status-done';
+    else if (status === 'abgesagt') cls += ' status-cancel';
+    else if (isSoon) cls += ' status-soon';
+    else if (isPast) cls += ' status-overdue';
+    
+    return `
+      <div class="${cls}">
+        <div class="termin-main">
+          <div class="termin-titel-row">
+            <span class="termin-titel">${escapeHtml(t.titel || 'Termin')}</span>
+            ${isSoon ? '<span class="termin-badge soon">in &lt;24h</span>' : ''}
+            ${isPast && status === 'geplant' ? '<span class="termin-badge overdue">überfällig</span>' : ''}
+          </div>
+          <div class="termin-meta">
+            <span>${dtStr}</span>
+            ${t.dauer_min ? `<span>· ${t.dauer_min} min</span>` : ''}
+            ${t.typ ? `<span>· ${TERMIN_TYP_LABELS[t.typ] || t.typ}</span>` : ''}
+            ${t.ort ? `<span>· ${escapeHtml(t.ort)}</span>` : ''}
+          </div>
+          ${t.beschreibung ? `<div class="termin-desc">${escapeHtml(t.beschreibung)}</div>` : ''}
+          <div class="termin-status">${TERMIN_STATUS_LABELS[status] || status}</div>
+        </div>
+        <div class="termin-actions">
+          <button class="termin-btn" onclick="exportTerminIcs('${bewerbungId}','${t.id}')" title="In Kalender (ICS)">📅</button>
+          ${status === 'geplant' ? `<button class="termin-btn" onclick="setTerminStatus('${bewerbungId}','${t.id}','durchgefuehrt')" title="Als durchgeführt markieren">✓</button>` : ''}
+          <button class="termin-btn" onclick="openTerminModal('${bewerbungId}','${t.id}')" title="Bearbeiten">✎</button>
+          <button class="termin-btn danger" onclick="deleteTermin('${bewerbungId}','${t.id}')" title="Löschen">🗑</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+let currentTerminBewerbungId = null;
+let currentTerminId = null;
+
+function openTerminModal(bewerbungId, terminId) {
+  currentTerminBewerbungId = bewerbungId;
+  currentTerminId = terminId || null;
+  
+  const b = bewerbungen.find(x => x.id === bewerbungId);
+  if (!b) { toast('Bewerbung nicht gefunden', true); return; }
+  
+  const termine = Array.isArray(b.interview_termine) ? b.interview_termine : [];
+  const t = terminId ? termine.find(x => x.id === terminId) : null;
+  
+  document.getElementById('termin-modal-title').textContent = t ? 'Termin bearbeiten' : 'Neuer Termin';
+  document.getElementById('termin-titel').value = t?.titel || 'Vorgespräch';
+  document.getElementById('termin-datum').value = t?.datum 
+    ? new Date(t.datum).toISOString().slice(0,16) 
+    : new Date(Date.now() + 24*60*60*1000).toISOString().slice(0,16);
+  document.getElementById('termin-dauer').value = t?.dauer_min || 60;
+  document.getElementById('termin-typ').value = t?.typ || 'vor_ort';
+  document.getElementById('termin-ort').value = t?.ort || '';
+  document.getElementById('termin-beschreibung').value = t?.beschreibung || '';
+  document.getElementById('termin-status').value = t?.status || 'geplant';
+  
+  document.getElementById('termin-modal').classList.add('show');
+  setTimeout(() => document.getElementById('termin-titel').focus(), 50);
+}
+
+function closeTerminModal() {
+  document.getElementById('termin-modal').classList.remove('show');
+  currentTerminBewerbungId = null;
+  currentTerminId = null;
+}
+
+async function saveTermin() {
+  if (!currentTerminBewerbungId) return;
+  const b = bewerbungen.find(x => x.id === currentTerminBewerbungId);
+  if (!b) { toast('Bewerbung nicht gefunden', true); return; }
+  
+  const titel = document.getElementById('termin-titel').value.trim();
+  const datum = document.getElementById('termin-datum').value;
+  const dauer_min = parseInt(document.getElementById('termin-dauer').value) || 60;
+  const typ = document.getElementById('termin-typ').value;
+  const ort = document.getElementById('termin-ort').value.trim();
+  const beschreibung = document.getElementById('termin-beschreibung').value.trim();
+  const status = document.getElementById('termin-status').value;
+  
+  if (!titel || !datum) { toast('Titel + Datum sind Pflicht', true); return; }
+  
+  let termine = Array.isArray(b.interview_termine) ? [...b.interview_termine] : [];
+  
+  if (currentTerminId) {
+    // Update
+    termine = termine.map(t => t.id === currentTerminId 
+      ? { ...t, titel, datum: new Date(datum).toISOString(), dauer_min, typ, ort, beschreibung, status }
+      : t);
+  } else {
+    // Neu
+    termine.push({
+      id: crypto.randomUUID(),
+      titel, datum: new Date(datum).toISOString(), dauer_min, typ, ort, beschreibung, status,
+      erstellt_am: new Date().toISOString(),
+      erstellt_von: session?.user?.email || ''
+    });
+  }
+  
+  try {
+    const { error, data } = await sb.from('csc_bewerbungen')
+      .update({ interview_termine: termine })
+      .eq('id', currentTerminBewerbungId)
+      .select()
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) { toast('⚠️ Speichern fehlgeschlagen (RLS?)', true); return; }
+    
+    const idx = bewerbungen.findIndex(x => x.id === currentTerminBewerbungId);
+    if (idx !== -1) bewerbungen[idx] = data;
+    
+    closeTerminModal();
+    if (selectedId === currentTerminBewerbungId) selectBewerbung(currentTerminBewerbungId);
+    renderList();
+    toast(currentTerminId ? 'Termin aktualisiert' : 'Termin angelegt');
+  } catch (e) {
+    console.error('[saveTermin]', e);
+    toast('Fehler: ' + e.message, true);
+  }
+}
+
+async function deleteTermin(bewerbungId, terminId) {
+  if (!confirm('Diesen Termin wirklich löschen?')) return;
+  const b = bewerbungen.find(x => x.id === bewerbungId);
+  if (!b) return;
+  
+  const termine = (b.interview_termine || []).filter(t => t.id !== terminId);
+  try {
+    const { error, data } = await sb.from('csc_bewerbungen')
+      .update({ interview_termine: termine })
+      .eq('id', bewerbungId).select().maybeSingle();
+    if (error) throw error;
+    if (!data) { toast('⚠️ Löschen fehlgeschlagen (RLS?)', true); return; }
+    const idx = bewerbungen.findIndex(x => x.id === bewerbungId);
+    if (idx !== -1) bewerbungen[idx] = data;
+    if (selectedId === bewerbungId) selectBewerbung(bewerbungId);
+    renderList();
+    toast('Termin gelöscht');
+  } catch (e) { toast('Fehler: ' + e.message, true); }
+}
+
+async function setTerminStatus(bewerbungId, terminId, neuStatus) {
+  const b = bewerbungen.find(x => x.id === bewerbungId);
+  if (!b) return;
+  const termine = (b.interview_termine || []).map(t => 
+    t.id === terminId ? { ...t, status: neuStatus } : t
+  );
+  try {
+    const { error, data } = await sb.from('csc_bewerbungen')
+      .update({ interview_termine: termine })
+      .eq('id', bewerbungId).select().maybeSingle();
+    if (error) throw error;
+    if (!data) { toast('⚠️ Update fehlgeschlagen (RLS?)', true); return; }
+    const idx = bewerbungen.findIndex(x => x.id === bewerbungId);
+    if (idx !== -1) bewerbungen[idx] = data;
+    if (selectedId === bewerbungId) selectBewerbung(bewerbungId);
+    toast('Status: ' + (TERMIN_STATUS_LABELS[neuStatus] || neuStatus));
+  } catch (e) { toast('Fehler: ' + e.message, true); }
+}
+
+// ICS-Export (RFC 5545)
+function exportTerminIcs(bewerbungId, terminId) {
+  const b = bewerbungen.find(x => x.id === bewerbungId);
+  if (!b) return;
+  const t = (b.interview_termine || []).find(x => x.id === terminId);
+  if (!t) return;
+  
+  const dt = new Date(t.datum);
+  const dtEnd = new Date(dt.getTime() + (t.dauer_min || 60) * 60 * 1000);
+  
+  // ICS-Datums-Format: YYYYMMDDTHHMMSSZ (UTC)
+  const fmtIcs = d => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+  const escIcs = s => String(s || '').replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n');
+  
+  const bewerberName = `${b.vorname || ''} ${b.nachname || ''}`.trim();
+  const summary = `${t.titel} – ${bewerberName}`;
+  const desc = [
+    `Bewerber: ${bewerberName}`,
+    `E-Mail: ${b.email || ''}`,
+    t.typ ? `Typ: ${TERMIN_TYP_LABELS[t.typ] || t.typ}` : '',
+    t.beschreibung || '',
+    `\nDashboard: ${window.location.origin}/csc-bewerbungen/dashboard/`
+  ].filter(Boolean).join('\n');
+  
+  const ics = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Mariana Cannabis//Bewerbungs-Dashboard//DE',
+    'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH',
+    'BEGIN:VEVENT',
+    `UID:${t.id}@mariana-cannabis`,
+    `DTSTAMP:${fmtIcs(new Date())}`,
+    `DTSTART:${fmtIcs(dt)}`,
+    `DTEND:${fmtIcs(dtEnd)}`,
+    `SUMMARY:${escIcs(summary)}`,
+    t.ort ? `LOCATION:${escIcs(t.ort)}` : '',
+    `DESCRIPTION:${escIcs(desc)}`,
+    'STATUS:CONFIRMED',
+    'BEGIN:VALARM',
+    'TRIGGER:-PT1H',  // 1h vorher erinnern
+    'ACTION:DISPLAY',
+    `DESCRIPTION:${escIcs(summary)}`,
+    'END:VALARM',
+    'END:VEVENT',
+    'END:VCALENDAR'
+  ].filter(Boolean).join('\r\n');
+  
+  const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `termin_${bewerberName.replace(/\s+/g, '_') || 'bewerbung'}_${dt.toISOString().slice(0,10)}.ics`;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+  toast('Termin als .ics exportiert');
+}
+
+// Reminder-Check: ruft maybeShowAutoReminder ergaenzt
+function getKommendeTerminBewerbungen() {
+  const now = Date.now();
+  const limit = now + 7 * 24 * 60 * 60 * 1000;
+  return bewerbungen.filter(b => {
+    if (!Array.isArray(b.interview_termine)) return false;
+    return b.interview_termine.some(t => {
+      const dt = t.datum ? new Date(t.datum).getTime() : 0;
+      return dt > now && dt < limit && (t.status || 'geplant') === 'geplant';
+    });
+  });
 }
 
 // ============================================================================

@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mariana Cannabis · Bewerbungs-Dashboard v2</title>
-  <!-- DASHBOARD_BUILD: 2026-05-14T0342 (Tranche D: Error-Monitoring) -->
-  <script>window.__DASHBOARD_BUILD = '2026-05-14T0342';</script>
+  <!-- DASHBOARD_BUILD: 2026-05-14T0442 (Auto-Refresh: Polling + Refresh-Button + Smart-UI-Updates) -->
+  <script>window.__DASHBOARD_BUILD = '2026-05-14T0442';</script>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -405,6 +405,12 @@
     @media (max-width: 540px) {
       .reminder-toast { right: 12px; left: 12px; max-width: none; }
     }
+    
+    /* Refresh-Button: rotierende Animation während Aktualisierung */
+    #btn-refresh { padding: 0.4rem 0.7rem; }
+    #btn-refresh .refresh-icon { display: inline-block; transition: transform 0.3s; }
+    #btn-refresh.refreshing .refresh-icon { animation: spin-icon 0.8s linear infinite; }
+    @keyframes spin-icon { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     
     /* Loading & Toast */
     .loading { display: flex; align-items: center; gap: 8px; color: var(--tx-mute); font-size: 13px; padding: 24px; }
@@ -854,6 +860,7 @@
       <span class="user-email" id="user-email"></span>
       <button class="btn-ghost stats-btn-header" onclick="openStatsModal()" title="Statistik-Übersicht" style="display:none" aria-label="Statistik-Übersicht öffnen"><span aria-hidden="true">📊</span> Statistik</button>
       <button class="btn-ghost errorlog-btn-header" onclick="openErrorLogModal()" title="Error-Log (technische Fehler)" style="display:none" aria-label="Error-Log öffnen"><span aria-hidden="true">⚠️</span> Errors</button>
+      <button class="btn-ghost" id="btn-refresh" onclick="manualRefresh()" title="Daten neu laden (passiert auch automatisch alle 25 Sek)" aria-label="Daten neu laden"><span class="refresh-icon" aria-hidden="true">🔄</span></button>
       <button class="btn-ghost" onclick="exportCsv()" title="Aktuell sichtbare Bewerbungen als CSV/Excel exportieren" aria-label="Aktuell sichtbare Bewerbungen als CSV exportieren"><span aria-hidden="true">⬇</span> Export</button>
       <button class="btn-ghost" onclick="logout()" aria-label="Abmelden">Abmelden</button>
     </div>
@@ -1158,6 +1165,9 @@ async function loadDashboard() {
   await loadBewerbungen();
   renderStats();
   
+  // Background-Polling alle 25 Sek starten
+  startBackgroundPolling();
+  
   // Auto-Reminder: prominenter Toast wenn es Bewerbungen gibt die Aktion brauchen
   setTimeout(() => maybeShowAutoReminder(), 1500);
 }
@@ -1194,6 +1204,94 @@ function showReminderToast(count) {
     t.classList.add('fade-out');
     setTimeout(() => t.remove(), 400);
   }, 12000);
+}
+
+// ============================================================================
+// AUTO-REFRESH SYSTEM
+// ----------------------------------------------------------------------------
+// Drei Mechanismen zusammen:
+//  1. Background-Polling alle 25 Sek (silent, nur wenn Tab aktiv)
+//  2. refreshOneBewerbung(id) — lädt eine einzelne Bewerbung neu nach Mutation
+//     (damit DB-Trigger-Updates wie status_geaendert_am sichtbar werden)
+//  3. refreshUI() — re-rendert Stats/Liste/Detail nach lokalen Änderungen
+// ============================================================================
+let pollingTimer = null;
+const POLL_INTERVAL_MS = 25000;
+
+function refreshUI({ stats = false, list = false, tagCloud = false, detailId = null } = {}) {
+  if (stats) renderStats();
+  if (list) renderList();  // renderList ruft intern auch renderTagCloud auf
+  else if (tagCloud) renderTagCloud();
+  if (detailId && selectedId === detailId) selectBewerbung(detailId);
+}
+
+// Eine einzelne Bewerbung aus der DB neu laden + im lokalen State updaten
+async function refreshOneBewerbung(id) {
+  try {
+    const { data, error } = await sb.from('csc_bewerbungen').select('*').eq('id', id).maybeSingle();
+    if (error || !data) return;
+    const idx = bewerbungen.findIndex(b => b.id === id);
+    if (idx === -1) {
+      bewerbungen.unshift(data);
+    } else {
+      bewerbungen[idx] = data;
+    }
+    refreshUI({ stats: true, list: true, detailId: selectedId === id ? id : null });
+  } catch (e) { console.warn('[refreshOneBewerbung]', e); }
+}
+
+// Alle Bewerbungen silent neu laden — ohne UI-Disruption
+async function silentReloadBewerbungen() {
+  if (document.hidden) return;  // Tab nicht aktiv: skip
+  try {
+    let q = sb.from('csc_bewerbungen').select('*').order('eingegangen_am', { ascending: false });
+    if (!userContext?.ist_admin && userContext?.verein_id) {
+      q = q.eq('verein_id', userContext.verein_id);
+    }
+    const { data, error } = await q;
+    if (error || !data) return;
+    
+    // Diff: was hat sich geändert?
+    const prevCount = bewerbungen.length;
+    const prevIds = new Set(bewerbungen.map(b => b.id));
+    const added = data.filter(b => !prevIds.has(b.id));
+    
+    bewerbungen = data;
+    refreshUI({ stats: true, list: true });
+    if (selectedId && data.find(b => b.id === selectedId)) {
+      // Detail nur neu rendern wenn aktuell geöffnet
+      selectBewerbung(selectedId);
+    }
+    
+    // Stille Notification bei neuer Bewerbung
+    if (added.length > 0 && prevCount > 0) {
+      const msg = added.length === 1 
+        ? `Neue Bewerbung: ${added[0].vorname || ''} ${added[0].nachname || ''}`
+        : `${added.length} neue Bewerbungen`;
+      toast('📬 ' + msg);
+    }
+  } catch (e) { console.warn('[silentReload]', e); }
+}
+
+function startBackgroundPolling() {
+  if (pollingTimer) return;
+  pollingTimer = setInterval(silentReloadBewerbungen, POLL_INTERVAL_MS);
+  // Wenn Tab wieder sichtbar wird: sofort pollen
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) silentReloadBewerbungen();
+  });
+}
+
+// Manueller Refresh-Knopf für Notfälle
+async function manualRefresh() {
+  const btn = document.getElementById('btn-refresh');
+  if (btn) { btn.disabled = true; btn.classList.add('refreshing'); }
+  try {
+    await silentReloadBewerbungen();
+    toast('🔄 Aktualisiert');
+  } finally {
+    if (btn) { btn.disabled = false; btn.classList.remove('refreshing'); }
+  }
 }
 
 async function loadVereine() {
@@ -1980,11 +2078,14 @@ async function setStatus(id, newStatus) {
     // status_geaendert_am und status_geaendert_von werden via Trigger automatisch gesetzt
     const { error } = await sb.from('csc_bewerbungen').update({ status: newStatus }).eq('id', id);
     if (error) throw error;
+    // Lokal sofort updaten (für instant UI feedback)
     b.status = newStatus; 
     b.status_geaendert_am = new Date().toISOString();
     b.status_geaendert_von = session.user.email;
     renderList(); selectBewerbung(id); renderStats();
     toast('Status auf "' + STATUS_LABELS[newStatus] + '" gesetzt');
+    // Nach 800ms: einmal aus DB nachladen damit Trigger-Werte sichtbar werden
+    setTimeout(() => refreshOneBewerbung(id), 800);
   } catch (e) { toast('Fehler: ' + e.message, true); }
 }
 
@@ -2023,6 +2124,8 @@ async function saveNotiz(id) {
       hint.textContent = 'Speichert automatisch beim Verlassen des Felds';
       hint.classList.remove('saved');
     }, 2500);
+    // Liste neu rendern damit 💬-Indikator erscheint
+    renderList();
   } catch (e) {
     hint.textContent = 'Fehler: ' + e.message;
     toast('Notiz konnte nicht gespeichert werden: ' + e.message, true);
@@ -3753,6 +3856,7 @@ async function addTag(bewerbungId, tagValue) {
     toast('✓ Tag hinzugefügt');
     selectBewerbung(bewerbungId);
     renderList();
+    renderStats();  // Inbox-Count könnte sich nicht ändern, aber für Konsistenz
   } catch (e) {
     console.error('[Tag] Hinzufügen-Fehler:', e);
     toast('Fehler: ' + (e.message || e), true);
@@ -3771,6 +3875,7 @@ async function removeTag(bewerbungId, tagValue) {
     toast('Tag entfernt');
     selectBewerbung(bewerbungId);
     renderList();
+    renderStats();
   } catch (e) {
     console.error('[Tag] Entfernen-Fehler:', e);
     toast('Fehler: ' + (e.message || e), true);

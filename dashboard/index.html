@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mariana Cannabis · Bewerbungs-Dashboard v2</title>
-  <!-- DASHBOARD_BUILD: 2026-05-14T0742 (Audit-Log mit echten Spaltennamen) -->
-  <script>window.__DASHBOARD_BUILD = '2026-05-14T0742';</script>
+  <!-- DASHBOARD_BUILD: 2026-05-14T0842 (Notiz-Button prominenter + Strg+Enter Shortcut) -->
+  <script>window.__DASHBOARD_BUILD = '2026-05-14T0842';</script>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -354,7 +354,35 @@
     .notiz-verlauf-delete:hover { color: var(--red); opacity: 1; }
     .notiz-verlauf-form { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; }
     .notiz-verlauf-form .notiz-textarea { min-height: 56px; }
-    .notiz-verlauf-form .action-btn { align-self: flex-start; }
+    .notiz-verlauf-form-actions { display: flex; align-items: center; gap: 12px; }
+    .btn-add-notiz-primary {
+      background: var(--green);
+      color: #0a1410;
+      border: none;
+      padding: 8px 18px;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s;
+    }
+    .btn-add-notiz-primary:hover { background: var(--green-dim); transform: translateY(-1px); }
+    .btn-add-notiz-primary:active { transform: translateY(0); }
+    .btn-add-notiz-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .notiz-verlauf-hint { color: var(--tx-mute); font-size: 11px; }
+    .notiz-verlauf-hint kbd {
+      background: var(--bg-elev);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: 1px 5px;
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      color: var(--tx);
+    }
     
     /* Audit-Log */
     .audit-section { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; margin-bottom: 24px; }
@@ -1799,8 +1827,16 @@ async function selectBewerbung(id) {
       </div>
       <div class="notiz-verlauf-list" id="notiz-verlauf-list">Lade…</div>
       <div class="notiz-verlauf-form">
-        <textarea class="notiz-textarea" id="new-notiz-text" placeholder="Neuen Eintrag hinzufügen (chronologischer Verlauf — wird nicht überschrieben)..." rows="2"></textarea>
-        <button class="action-btn" onclick="addNotiz('${b.id}')" id="btn-add-notiz">+ Eintrag hinzufügen</button>
+        <textarea class="notiz-textarea" id="new-notiz-text" 
+          placeholder="Neuen Eintrag hinzufügen (chronologischer Verlauf — wird nicht überschrieben)..." 
+          rows="2"
+          onkeydown="if((event.ctrlKey || event.metaKey) && event.key === 'Enter') { event.preventDefault(); addNotiz('${b.id}'); }"></textarea>
+        <div class="notiz-verlauf-form-actions">
+          <button class="btn-add-notiz-primary" onclick="addNotiz('${b.id}')" id="btn-add-notiz">
+            <span aria-hidden="true">💬</span> Eintrag speichern
+          </button>
+          <span class="notiz-verlauf-hint">oder <kbd>Strg</kbd>+<kbd>Enter</kbd></span>
+        </div>
       </div>
     </div>
     

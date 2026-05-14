@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mariana Cannabis · Bewerbungs-Dashboard v2</title>
-  <!-- DASHBOARD_BUILD: 2026-05-14T1442 (Interview-Termine + ICS-Export + Multi-User-Realtime-Presence) -->
-  <script>window.__DASHBOARD_BUILD = '2026-05-14T1442';</script>
+  <!-- DASHBOARD_BUILD: 2026-05-14T1542 (Verfügbarkeits-Heatmap V2: offen by default, mit Tag-/Slot-Summary, Wochenend-Highlight) -->
+  <script>window.__DASHBOARD_BUILD = '2026-05-14T1542';</script>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -398,6 +398,102 @@
     .faktor-summary { font-size: 11px; color: var(--tx-mute); text-align: center; padding-top: 8px; border-top: 1px solid var(--border); margin-top: 8px; font-style: italic; }
     
     .verfueg-heatmap { background: var(--bg-elev); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+    
+    /* === Verfügbarkeits-Heatmap V2 (aufgewertet) === */
+    .verfueg-heatmap-wrap { background: var(--bg-elev); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; margin-top: 10px; }
+    .verfueg-heatmap-title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
+    .verfueg-heatmap-headline { font-size: 13px; font-weight: 600; color: var(--tx); letter-spacing: 0.02em; }
+    .verfueg-heatmap-legend { font-size: 11px; color: var(--tx-mute); display: flex; align-items: center; gap: 6px; }
+    .vlg-cell { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: middle; margin-left: 8px; margin-right: 3px; border: 1px solid; }
+    .vlg-cell.vlg-on { background: #4caf6a; border-color: #4caf6a; }
+    .vlg-cell.vlg-off { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.1); }
+    
+    .verfueg-card { margin-bottom: 14px; }
+    .verfueg-card:last-child { margin-bottom: 0; }
+    .verfueg-card-head { display: flex; justify-content: space-between; align-items: center; padding: 6px 8px; background: rgba(255,255,255,0.03); border-radius: 6px; margin-bottom: 8px; font-size: 12px; font-weight: 600; color: var(--tx); }
+    .verfueg-card-total { font-variant-numeric: tabular-nums; padding: 2px 8px; border-radius: 10px; font-size: 11px; border: 1px solid; }
+    .verfueg-card-total.hi { background: rgba(76,175,106,0.15); color: #6ed080; border-color: rgba(76,175,106,0.4); }
+    .verfueg-card-total.mid { background: rgba(249,199,79,0.15); color: var(--yellow); border-color: rgba(249,199,79,0.4); }
+    .verfueg-card-total.lo { background: rgba(236,100,100,0.12); color: var(--red); border-color: rgba(236,100,100,0.3); }
+    
+    .verfueg-grid-v2 { 
+      display: grid; 
+      grid-template-columns: 42px repeat(5, 1fr) 50px; 
+      gap: 3px;
+      font-size: 11px;
+    }
+    
+    /* Header-Cells */
+    .vg-corner { background: transparent; }
+    .vg-head { 
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 5px 2px; background: rgba(255,255,255,0.03); border-radius: 5px;
+      gap: 1px; cursor: help;
+    }
+    .vg-head-icon { font-size: 14px; line-height: 1; }
+    .vg-head-text { font-size: 10px; color: var(--tx); font-weight: 600; }
+    .vg-head-zeit { font-size: 9px; color: var(--tx-mute); font-family: 'DM Mono', monospace; }
+    
+    .vg-summary-head { 
+      display: flex; align-items: center; justify-content: center;
+      padding: 5px 2px; background: rgba(255,255,255,0.03); border-radius: 5px;
+      font-size: 10px; color: var(--green); font-weight: 700; cursor: help;
+    }
+    
+    /* Tag-Labels (linke Spalte) */
+    .vg-day { 
+      display: flex; align-items: center; justify-content: center;
+      padding: 0 4px; background: rgba(255,255,255,0.03); border-radius: 5px;
+      font-size: 11px; font-weight: 700; color: var(--tx); cursor: help;
+      min-height: 30px;
+    }
+    .vg-day.weekend { color: var(--yellow); }
+    .vg-day-short { display: inline-block; }
+    
+    /* Daten-Zellen */
+    .vg-cell { 
+      display: flex; align-items: center; justify-content: center;
+      min-height: 30px; border-radius: 5px;
+      font-size: 12px; font-weight: 700; 
+      transition: transform 0.1s, box-shadow 0.1s;
+      cursor: help;
+    }
+    .vg-cell.on { 
+      background: linear-gradient(135deg, #4caf6a, #5fbf7c); 
+      color: white; 
+      box-shadow: 0 1px 3px rgba(76,175,106,0.3), inset 0 1px 0 rgba(255,255,255,0.15);
+    }
+    .vg-cell.on:hover { transform: scale(1.06); box-shadow: 0 2px 6px rgba(76,175,106,0.5); z-index: 1; }
+    .vg-cell.off { 
+      background: rgba(255,255,255,0.03); 
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+    .vg-cell.off.weekend { background: rgba(249,199,79,0.04); }
+    .vg-cell.on.weekend { 
+      background: linear-gradient(135deg, #d4a830, #f9c74f); 
+      box-shadow: 0 1px 3px rgba(249,199,79,0.3), inset 0 1px 0 rgba(255,255,255,0.15);
+    }
+    
+    /* Summary-Zellen (rechte Spalte + unterste Zeile) */
+    .vg-day-summary, .vg-slot-summary { 
+      display: flex; align-items: center; justify-content: center;
+      min-height: 30px; border-radius: 5px;
+      font-size: 12px; font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      cursor: help;
+    }
+    .vg-day-summary.all, .vg-slot-summary.all { background: rgba(76,175,106,0.25); color: #6ed080; }
+    .vg-day-summary.hi,  .vg-slot-summary.hi  { background: rgba(76,175,106,0.15); color: #6ed080; }
+    .vg-day-summary.mid, .vg-slot-summary.mid { background: rgba(249,199,79,0.15); color: var(--yellow); }
+    .vg-day-summary.none, .vg-slot-summary.none { background: rgba(255,255,255,0.02); color: var(--tx-mute); }
+    
+    .vg-slot-summary-label {
+      display: flex; align-items: center; justify-content: center;
+      padding: 0 4px; background: rgba(255,255,255,0.03); border-radius: 5px;
+      font-size: 10px; font-weight: 700; color: var(--green);
+      min-height: 30px; cursor: help;
+    }
+    /* === Ende Heatmap V2 === */
     .verfueg-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--tx-mute); margin-bottom: 8px; font-weight: 600; }
     .verfueg-standort { margin-bottom: 10px; }
     .verfueg-standort:last-child { margin-bottom: 0; }
@@ -2383,12 +2479,16 @@ async function selectBewerbung(id) {
       ` : ''}
       
       ${b.verfuegbarkeit && typeof b.verfuegbarkeit === 'object' ? `
-        <details class="score-details">
-          <summary>📅 Verfügbarkeits-Heatmap</summary>
-          <div class="verfueg-heatmap">
-            ${renderVerfuegbarkeitHeatmap(b.verfuegbarkeit)}
+        <div class="verfueg-heatmap-wrap">
+          <div class="verfueg-heatmap-title-row">
+            <span class="verfueg-heatmap-headline">📅 Wann ist der Bewerber verfügbar?</span>
+            <span class="verfueg-heatmap-legend">
+              <span class="vlg-cell vlg-on"></span> verfügbar
+              <span class="vlg-cell vlg-off"></span> nicht
+            </span>
           </div>
-        </details>
+          ${renderVerfuegbarkeitHeatmap(b.verfuegbarkeit)}
+        </div>
       ` : ''}
     </div>
     ` : ''}
@@ -3470,38 +3570,106 @@ function renderFaktoren(faktoren, b) {
 }
 
 // ============================================================================
-// VERFÜGBARKEITS-HEATMAP (für Score-Section)
+// VERFÜGBARKEITS-HEATMAP (aufgewertete Version mit Per-Tag-Summary)
 // ============================================================================
 function renderVerfuegbarkeitHeatmap(verfueg) {
   if (!verfueg || typeof verfueg !== 'object') return '';
   const TAGE = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
-  const SLOTS = ['Früh', 'Vormit.', 'Nachm.', 'Abend', 'Nacht'];
+  const TAGE_LANG = { Mo: 'Montag', Di: 'Dienstag', Mi: 'Mittwoch', Do: 'Donnerstag', Fr: 'Freitag', Sa: 'Samstag', So: 'Sonntag' };
+  const SLOTS = [
+    { kurz: 'Früh',    lang: 'Früh',      zeit: '6 – 10 Uhr',  icon: '🌅' },
+    { kurz: 'Vormit.', lang: 'Vormittag', zeit: '10 – 13 Uhr', icon: '☀️' },
+    { kurz: 'Nachm.',  lang: 'Nachmittag',zeit: '13 – 17 Uhr', icon: '🌤' },
+    { kurz: 'Abend',   lang: 'Abend',     zeit: '17 – 22 Uhr', icon: '🌆' },
+    { kurz: 'Nacht',   lang: 'Nacht',     zeit: '22 – 6 Uhr',  icon: '🌙' }
+  ];
+  
+  const isSlotOn = (slotData, si) => Array.isArray(slotData) 
+    ? (slotData[si] === true || slotData[si] === 'true' || slotData[si] === 1) 
+    : false;
   
   let html = '';
-  for (const [standort, tagData] of Object.entries(verfueg)) {
+  const standorte = Object.entries(verfueg);
+  
+  for (const [standort, tagData] of standorte) {
     if (!tagData || typeof tagData !== 'object') continue;
     
-    html += `<div class="verfueg-standort">`;
-    if (Object.keys(verfueg).length > 1) {
-      html += `<div class="verfueg-standort-name">📍 ${escapeHtml(standort)}</div>`;
-    }
-    html += `<div class="verfueg-grid">`;
-    html += `<div></div>`;  // Top-left empty
-    SLOTS.forEach(s => html += `<div class="verfueg-grid-head">${s}</div>`);
+    // Statistiken berechnen
+    let totalOn = 0, totalSlots = 0;
+    const perTag = {};
+    const perSlot = SLOTS.map(() => 0);
     
-    TAGE.forEach((tag, ti) => {
-      html += `<div class="verfueg-grid-day">${tag}</div>`;
+    TAGE.forEach(tag => {
       const slotData = tagData[tag] || tagData[tag.toLowerCase()] || [];
+      let dayOn = 0;
       SLOTS.forEach((_, si) => {
-        const isOn = Array.isArray(slotData) ? 
-          (slotData[si] === true || slotData[si] === 'true' || slotData[si] === 1) : false;
-        html += `<div class="verfueg-cell${isOn ? ' on' : ''}"></div>`;
+        totalSlots++;
+        if (isSlotOn(slotData, si)) { totalOn++; dayOn++; perSlot[si]++; }
       });
+      perTag[tag] = dayOn;
     });
-    html += `</div></div>`;
+    
+    const totalPct = totalSlots > 0 ? Math.round((totalOn / totalSlots) * 100) : 0;
+    
+    html += `<div class="verfueg-card">`;
+    if (standorte.length > 1) {
+      html += `<div class="verfueg-card-head"><span>📍 ${escapeHtml(standort)}</span><span class="verfueg-card-total ${totalPct >= 50 ? 'hi' : totalPct >= 25 ? 'mid' : 'lo'}">${totalOn} / ${totalSlots} Slots · ${totalPct}%</span></div>`;
+    } else {
+      html += `<div class="verfueg-card-head"><span>Verfügbarkeit gesamt</span><span class="verfueg-card-total ${totalPct >= 50 ? 'hi' : totalPct >= 25 ? 'mid' : 'lo'}">${totalOn} / ${totalSlots} Slots · ${totalPct}%</span></div>`;
+    }
+    
+    // Grid
+    html += `<div class="verfueg-grid-v2">`;
+    // Header-Zeile mit Slot-Icons
+    html += `<div class="vg-corner"></div>`;
+    SLOTS.forEach(s => {
+      html += `<div class="vg-head" title="${s.lang} (${s.zeit})">
+        <span class="vg-head-icon">${s.icon}</span>
+        <span class="vg-head-text">${s.kurz}</span>
+        <span class="vg-head-zeit">${s.zeit.split(' ')[0]}</span>
+      </div>`;
+    });
+    html += `<div class="vg-summary-head" title="Slots pro Tag">Tag-Σ</div>`;
+    
+    // Tag-Zeilen
+    TAGE.forEach(tag => {
+      const slotData = tagData[tag] || tagData[tag.toLowerCase()] || [];
+      const dayOn = perTag[tag];
+      const dayPct = Math.round((dayOn / SLOTS.length) * 100);
+      const isWeekend = tag === 'Sa' || tag === 'So';
+      
+      html += `<div class="vg-day ${isWeekend ? 'weekend' : ''}" title="${TAGE_LANG[tag]}">
+        <span class="vg-day-short">${tag}</span>
+      </div>`;
+      
+      SLOTS.forEach((s, si) => {
+        const on = isSlotOn(slotData, si);
+        html += `<div class="vg-cell ${on ? 'on' : 'off'} ${isWeekend ? 'weekend' : ''}" title="${TAGE_LANG[tag]} ${s.lang} (${s.zeit}): ${on ? '✓ verfügbar' : '✗ nicht'}">${on ? '✓' : ''}</div>`;
+      });
+      
+      // Tag-Summary-Cell
+      const sumCls = dayOn === SLOTS.length ? 'all' : dayOn >= 3 ? 'hi' : dayOn >= 1 ? 'mid' : 'none';
+      html += `<div class="vg-day-summary ${sumCls}" title="${dayOn} von ${SLOTS.length} Slots">${dayOn > 0 ? dayOn : '–'}</div>`;
+    });
+    
+    // Slot-Summary-Zeile
+    html += `<div class="vg-slot-summary-label" title="Tage pro Slot">Slot-Σ</div>`;
+    perSlot.forEach(count => {
+      const cls = count === TAGE.length ? 'all' : count >= 4 ? 'hi' : count >= 2 ? 'mid' : 'none';
+      html += `<div class="vg-slot-summary ${cls}" title="${count} Tage in diesem Slot verfügbar">${count > 0 ? count : '–'}</div>`;
+    });
+    html += `<div class="vg-corner"></div>`;
+    
+    html += `</div>`;  // verfueg-grid-v2
+    html += `</div>`;  // verfueg-card
   }
-  return html || '<div style="color:var(--tx-mute);font-size:12px">Keine Verfügbarkeits-Daten vorhanden.</div>';
+  
+  return html || '<div style="color:var(--tx-mute);font-size:12px;text-align:center;padding:14px">Keine Verfügbarkeits-Daten vorhanden.</div>';
 }
+
+// ============================================================================
+// VERFÜGBARKEITS-HEATMAP (alte Version — wird nicht mehr genutzt, bleibt für refs)
+// ============================================================================
 
 // ============================================================================
 // E-MAIL AN BEWERBER:IN (Vorlagen + Modal + Send via Edge Function)

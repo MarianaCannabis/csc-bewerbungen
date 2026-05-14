@@ -1923,6 +1923,7 @@ button:focus-visible, a:focus-visible {
   body * { visibility: hidden; }
   #print-view, #print-view * { visibility: visible; }
   #print-view {
+    display: block !important;
     position: absolute;
     left: 0; top: 0;
     width: 100%;
@@ -1941,6 +1942,9 @@ button:focus-visible, a:focus-visible {
   #print-view .print-value { color: black; }
   #print-view .print-footer { margin-top: 8mm; padding-top: 3mm; border-top: 0.5pt solid #ccc; font-size: 8pt; color: #666; }
   .review-overlay { display: none !important; }
+  /* Erzwinge dass nichts anderes druckbar ist */
+  body { background: white !important; }
+  @page { size: A4; margin: 0; }
 }
 #print-view { display: none; }
 </style>
@@ -6159,9 +6163,8 @@ async function submitForm() {
     applyTranslations();
     
     // Status-Link aufbauen — Bewerber kann später per Token den Status sehen
-    const statusUrl = `${location.protocol}//${location.host}${location.pathname.replace(/\/$/, '').replace(/\/index\.html$/, '')}/../status/?token=${encodeURIComponent(clientSideToken)}`
-      .replace(/[^:\/]\/\//g, m => m[0] + '/');  // Doppel-Slashes außer Protocol bereinigen
-    const statusUrlNorm = new URL(statusUrl, location.href).href;
+    // Wichtig: relativ zur aktuellen Seite, damit es egal ist ob mit /index.html oder ohne
+    const statusUrlNorm = new URL('status/?token=' + encodeURIComponent(clientSideToken), location.href).href;
     const statusInput = document.getElementById('status-url');
     const statusLink = document.getElementById('status-url-link');
     const statusBlock = document.getElementById('success-status-link');

@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Mariana Cannabis · Wir suchen Mitarbeitende</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+  <style>
+    @page { size: A4; margin: 0; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'DM Sans', system-ui, sans-serif;
+      background: #f5f4ed;
+      color: #1f2818;
+    }
+    .flyer {
+      width: 210mm;
+      height: 297mm;
+      margin: 0 auto;
+      padding: 18mm 16mm;
+      background: linear-gradient(160deg, #faf8f1 0%, #f5f4ed 50%, #e9e7d8 100%);
+      position: relative;
+      overflow: hidden;
+    }
+    .flyer::before {
+      content: '🌿';
+      position: absolute;
+      top: -60mm;
+      right: -40mm;
+      font-size: 220mm;
+      opacity: 0.05;
+      transform: rotate(-15deg);
+    }
+    .brand {
+      font-size: 14pt;
+      font-weight: 700;
+      color: #4a5a32;
+      letter-spacing: 0.05em;
+      margin-bottom: 14mm;
+    }
+    .brand .leaf { color: #6f7c4a; }
+    h1 {
+      font-size: 38pt;
+      font-weight: 900;
+      line-height: 1.05;
+      color: #1f2818;
+      margin-bottom: 6mm;
+    }
+    h1 .accent { color: #4a5a32; }
+    .subtitle {
+      font-size: 16pt;
+      color: #5a6356;
+      line-height: 1.4;
+      margin-bottom: 16mm;
+      max-width: 130mm;
+    }
+    .roles {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4mm 8mm;
+      margin-bottom: 16mm;
+    }
+    .role-item {
+      font-size: 13pt;
+      color: #1f2818;
+      padding-left: 10mm;
+      position: relative;
+    }
+    .role-item::before {
+      content: '✓';
+      position: absolute;
+      left: 0;
+      color: #6f7c4a;
+      font-weight: 700;
+      font-size: 14pt;
+    }
+    .role-item small {
+      display: block;
+      font-size: 9.5pt;
+      color: #5a6356;
+      margin-top: 0.5mm;
+    }
+    
+    .qr-section {
+      position: absolute;
+      bottom: 24mm;
+      left: 16mm;
+      right: 16mm;
+      display: flex;
+      align-items: center;
+      gap: 12mm;
+      padding: 12mm;
+      background: white;
+      border: 1.5pt solid #d3d2bd;
+      border-radius: 6mm;
+      box-shadow: 0 2mm 8mm rgba(0,0,0,0.08);
+    }
+    .qr-code {
+      width: 48mm;
+      height: 48mm;
+      flex-shrink: 0;
+      background: white;
+      padding: 2mm;
+      border-radius: 2mm;
+    }
+    .qr-code img { width: 100%; height: 100%; }
+    .qr-text {
+      flex: 1;
+    }
+    .qr-headline {
+      font-size: 16pt;
+      font-weight: 700;
+      color: #1f2818;
+      margin-bottom: 3mm;
+      line-height: 1.1;
+    }
+    .qr-url {
+      font-size: 10pt;
+      color: #4a5a32;
+      font-family: 'Courier New', monospace;
+      word-break: break-all;
+      margin-bottom: 3mm;
+    }
+    .qr-instructions {
+      font-size: 10pt;
+      color: #5a6356;
+      line-height: 1.5;
+    }
+    
+    .footer-info {
+      position: absolute;
+      bottom: 6mm;
+      left: 16mm;
+      right: 16mm;
+      text-align: center;
+      font-size: 8.5pt;
+      color: #5a6356;
+    }
+    .footer-info strong { color: #4a5a32; }
+    
+    /* Druck-spezifisch: keine Animationen, ggf. Margin reset */
+    @media print {
+      body { background: white; }
+      .flyer { 
+        box-shadow: none; 
+        page-break-after: always;
+      }
+    }
+    
+    /* Bildschirm-Ansicht: A4 in der Mitte zeigen */
+    @media screen {
+      body { padding: 20px; background: #333; }
+      .flyer { 
+        box-shadow: 0 8px 40px rgba(0,0,0,0.3);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="flyer">
+    <div class="brand"><span class="leaf">🌿</span> MARIANA CANNABIS</div>
+    
+    <h1>Werde Teil unseres <span class="accent">Teams</span>.</h1>
+    
+    <p class="subtitle">
+      Wir suchen Mitarbeiter:innen für unsere Cannabis Social Clubs in ganz Deutschland — du wählst Verein, Rolle und Stunden.
+    </p>
+    
+    <div class="roles">
+      <div class="role-item">
+        Grower<small>im Anbau-Standort</small>
+      </div>
+      <div class="role-item">
+        Ausgabe<small>direkter Kundenkontakt</small>
+      </div>
+      <div class="role-item">
+        Präventionsbeauftragte:r<small>mit Sachkundenachweis</small>
+      </div>
+      <div class="role-item">
+        Vorstand &amp; Stellvertretung<small>Vereinsführung</small>
+      </div>
+      <div class="role-item">
+        Sicherheit &amp; Reinigung<small>Standort-Betrieb</small>
+      </div>
+      <div class="role-item">
+        Springer<small>flexible Einsätze</small>
+      </div>
+    </div>
+    
+    <div class="qr-section">
+      <div class="qr-code">
+        <img src="data:image/png;base64,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" alt="QR-Code zum Bewerbungsformular">
+      </div>
+      <div class="qr-text">
+        <div class="qr-headline">Scan &amp; bewirb dich</div>
+        <div class="qr-url">marianacannabis.github.io/csc-bewerbungen</div>
+        <div class="qr-instructions">
+          QR-Code mit dem Handy scannen — oder die URL in den Browser tippen.<br>
+          Bewerbung dauert ca. <strong>10 Minuten</strong>.
+        </div>
+      </div>
+    </div>
+    
+    <div class="footer-info">
+      Mariana Cannabis Social Clubs Deutschland e.V. · Fragen? <strong>communityrecruiting@mariana-cannabis.de</strong>
+    </div>
+  </div>
+</body>
+</html>

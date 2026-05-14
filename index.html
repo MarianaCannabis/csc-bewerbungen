@@ -9,6 +9,8 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="format-detection" content="telephone=yes">
 <meta name="robots" content="noindex,nofollow">
+<!-- BEWERBUNG_BUILD: 2026-05-14T1542 (Mobile-UX-Verbesserungen: Sticky-Nav, größere Touch-Targets, Tap-Feedback) -->
+<script>window.__BEWERBUNG_BUILD = '2026-05-14T1542';</script>
 <title>Bewerbung — Mariana Cannabis</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1947,6 +1949,112 @@ button:focus-visible, a:focus-visible {
   @page { size: A4; margin: 0; }
 }
 #print-view { display: none; }
+
+/* =========================================================================
+   MOBILE-UX-VERBESSERUNGEN (Build 2026-05-14T1542)
+   Gezielte Verbesserungen für Touch-Targets, Sticky-Navigation, iOS Safe-Areas
+   ========================================================================= */
+
+@media (max-width: 768px) {
+  /* === Sticky Bottom Navigation (Weiter/Zurück immer sichtbar) === */
+  .button-row {
+    position: sticky;
+    bottom: 0;
+    background: linear-gradient(180deg, transparent 0%, rgba(247,243,232,0.95) 25%, var(--sand-50) 60%);
+    margin-top: 1.5rem;
+    margin-left: -20px;
+    margin-right: -20px;
+    padding: 1rem 20px calc(1rem + env(safe-area-inset-bottom, 0px)) 20px;
+    border-top: 1px solid var(--sand-200);
+    z-index: 50;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  
+  /* Hauptcontainer braucht Bottom-Padding damit sticky-Footer nicht überlappt */
+  main.app-main, #main-content {
+    padding-bottom: 1rem;
+  }
+  
+  /* === Größere Touch-Targets für Verfügbarkeits-Slots === */
+  .grid-slot {
+    min-height: 46px !important;   /* von 40px auf 46px (Apple HIG: 44px+) */
+    font-size: 0.72rem !important;
+  }
+  
+  /* === Bessere Tap-Feedback auf Checkbox-Blöcken === */
+  .checkbox-block:active {
+    transform: scale(0.98);
+    background: var(--olive-100) !important;
+    transition: transform 0.05s ease, background 0.05s;
+  }
+  
+  /* === Role-Cards: bessere Tap-Reaktion === */
+  .role-card:active {
+    transform: scale(0.98);
+    transition: transform 0.05s ease;
+  }
+  
+  /* === Form-Inputs: noch mehr Padding für bequemes Tippen === */
+  .form-input, select.form-input, textarea.form-input {
+    padding: 0.85rem 1rem;
+    min-height: 48px;       /* statt 40px */
+  }
+  
+  /* === Buttons: konsistente Mobile-Größe === */
+  .btn {
+    min-height: 50px;
+    font-size: 16px;
+    padding: 0.85rem 1.4rem;
+  }
+  
+  /* === Sticky Progress-Header (falls vorhanden) === */
+  .progress-bar, .progress-container {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    background: var(--sand-50);
+    padding-top: env(safe-area-inset-top, 0);
+  }
+  
+  /* === Bessere Spacing zwischen Sections === */
+  .section, .form-section {
+    margin-bottom: 1.5rem;
+  }
+}
+
+/* === Sehr schmale Screens (iPhone SE, alte Android) === */
+@media (max-width: 380px) {
+  .button-row {
+    margin-left: -16px;
+    margin-right: -16px;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  .grid-slot {
+    min-height: 44px !important;
+    font-size: 0.65rem !important;
+  }
+}
+
+/* === iOS Speziefika: keine Bounce-Effekte bei Form-Submit === */
+@supports (-webkit-touch-callout: none) {
+  .form-input, textarea.form-input, select.form-input {
+    -webkit-user-select: text;
+    -webkit-appearance: none;
+  }
+  /* iOS: kein doppeltap-Zoom auf Buttons */
+  .btn, .checkbox-block, .role-card { touch-action: manipulation; }
+}
+
+/* === Reduzierte Bewegung respektieren === */
+@media (prefers-reduced-motion: reduce) {
+  .checkbox-block:active, .role-card:active { transform: none; }
+}
+
+/* =========================================================================
+   ENDE Mobile-UX-Verbesserungen
+   ========================================================================= */
 </style>
 </head>
 <body>
@@ -2976,7 +3084,7 @@ function renderSection2() {
       </div>
       <div class="form-group">
         <label class="form-label">${s.sv_nummer}</label>
-        <input type="text" class="form-input" id="i-sv-nummer" autocomplete="off" maxlength="12" placeholder="12-stellig">
+        <input type="text" class="form-input" id="i-sv-nummer" inputmode="numeric" autocomplete="off" maxlength="12" placeholder="12-stellig">
       </div>
     </div>
 

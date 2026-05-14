@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Anleitung für Vorstände — Mariana Bewerbungs-Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --olive-50: #f5f4ed;
+      --olive-100: #e9e7d8;
+      --olive-200: #d3d2bd;
+      --olive-300: #b8bb98;
+      --olive-500: #6f7c4a;
+      --olive-700: #4a5a32;
+      --cream: #faf8f1;
+      --ink: #1f2818;
+      --ink-mute: #5a6356;
+      --info: #1f5278;
+      --warn: #7a5610;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'DM Sans', system-ui, sans-serif;
+      background: var(--cream);
+      color: var(--ink);
+      line-height: 1.6;
+    }
+    .container { max-width: 720px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+    header {
+      border-bottom: 2px solid var(--olive-300);
+      padding-bottom: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    h1 { font-size: 1.8rem; margin: 0 0 0.5rem 0; color: var(--ink); }
+    .subtitle { color: var(--ink-mute); font-size: 1.05rem; margin: 0; }
+    h2 { font-size: 1.3rem; color: var(--olive-700); margin: 2.5rem 0 1rem 0; padding-top: 1rem; border-top: 1px solid var(--olive-200); }
+    h3 { font-size: 1.05rem; color: var(--ink); margin: 1.5rem 0 0.6rem 0; }
+    p { margin: 0.6rem 0; }
+    
+    .step {
+      display: flex;
+      gap: 1.2rem;
+      align-items: flex-start;
+      padding: 1rem 1.2rem;
+      background: white;
+      border: 1px solid var(--olive-200);
+      border-radius: 8px;
+      margin-bottom: 0.8rem;
+    }
+    .step-number {
+      flex-shrink: 0;
+      width: 2.2rem;
+      height: 2.2rem;
+      background: var(--olive-500);
+      color: var(--cream);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 1.05rem;
+    }
+    .step-content { flex: 1; }
+    .step-content p { margin: 0.2rem 0; }
+    .step-content code {
+      background: var(--olive-50);
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 0.9em;
+      font-family: 'DM Mono', monospace;
+    }
+    
+    .info-box {
+      background: #e3f0fa;
+      border-left: 4px solid var(--info);
+      padding: 1rem 1.2rem;
+      border-radius: 4px;
+      margin: 1rem 0;
+      font-size: 0.95rem;
+    }
+    .info-box strong { color: var(--info); }
+    .warn-box {
+      background: #faecc8;
+      border-left: 4px solid var(--warn);
+      padding: 1rem 1.2rem;
+      border-radius: 4px;
+      margin: 1rem 0;
+      font-size: 0.95rem;
+    }
+    .warn-box strong { color: var(--warn); }
+    
+    .icon-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin: 1rem 0;
+    }
+    .icon-card {
+      flex: 1 1 200px;
+      background: var(--olive-50);
+      border: 1px solid var(--olive-200);
+      border-radius: 8px;
+      padding: 1rem;
+    }
+    .icon-card .icon { font-size: 1.6rem; margin-bottom: 0.4rem; display: block; }
+    .icon-card .label { font-weight: 600; color: var(--ink); font-size: 0.95rem; }
+    .icon-card .desc { color: var(--ink-mute); font-size: 0.85rem; margin-top: 0.3rem; }
+    
+    .toc {
+      background: var(--olive-50);
+      padding: 1rem 1.4rem;
+      border-radius: 8px;
+      margin-bottom: 2rem;
+      font-size: 0.95rem;
+    }
+    .toc h3 { margin-top: 0; font-size: 0.85rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--olive-700); }
+    .toc ol { margin: 0; padding-left: 1.4rem; }
+    .toc a { color: var(--olive-700); text-decoration: none; border-bottom: 1px dotted var(--olive-300); }
+    .toc a:hover { border-bottom-style: solid; }
+    
+    code.inline { background: var(--olive-50); padding: 1px 6px; border-radius: 4px; font-family: 'DM Mono', monospace; font-size: 0.9em; }
+    a { color: var(--olive-700); }
+    
+    footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--olive-200); color: var(--ink-mute); font-size: 0.88rem; text-align: center; }
+    
+    @media print {
+      body { background: white; }
+      .toc { background: white; border: 1px solid #ccc; }
+      .step { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🌿 Anleitung für Vorstände</h1>
+      <p class="subtitle">So nutzt du das Mariana-Bewerbungs-Dashboard für deinen Verein.</p>
+    </header>
+    
+    <div class="toc">
+      <h3>Inhalt</h3>
+      <ol>
+        <li><a href="#login">Wie melde ich mich an?</a></li>
+        <li><a href="#ueberblick">Was sehe ich im Dashboard?</a></li>
+        <li><a href="#bewerbung">Wie öffne ich eine Bewerbung?</a></li>
+        <li><a href="#status">Wie ändere ich den Status?</a></li>
+        <li><a href="#notiz">Wie hinterlasse ich Notizen?</a></li>
+        <li><a href="#tags">Was sind Tags?</a></li>
+        <li><a href="#inbox">„Brauchen Antwort"-Inbox</a></li>
+        <li><a href="#mail">E-Mail an Bewerber:in senden</a></li>
+        <li><a href="#fragen">Probleme oder Fragen?</a></li>
+      </ol>
+    </div>
+    
+    <h2 id="login">1. Anmeldung</h2>
+    <p>Du wurdest vom Hauptverein als Vorstand deines Vereins eingetragen. So meldest du dich an:</p>
+    
+    <div class="step">
+      <div class="step-number">1</div>
+      <div class="step-content">
+        <p><strong>Welcome-Mail prüfen:</strong> du hast eine E-Mail von <code>zvm@cscsdeutschland.de</code> bekommen mit dem Betreff „Willkommen bei Mariana Cannabis — dein Zugang ist bereit".</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-number">2</div>
+      <div class="step-content">
+        <p><strong>Magic-Link klicken:</strong> in der Mail ist ein blauer Button „Jetzt anmelden". Ein Klick reicht — kein Passwort nötig.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-number">3</div>
+      <div class="step-content">
+        <p><strong>Dashboard öffnet sich:</strong> du landest auf <code>https://marianacannabis.github.io/csc-bewerbungen/dashboard/</code></p>
+      </div>
+    </div>
+    
+    <div class="warn-box">
+      <strong>Magic-Link funktioniert nicht?</strong> Der Link gilt 1 Stunde. Wenn er abgelaufen ist: schreib an <a href="mailto:communityrecruiting@mariana-cannabis.de">communityrecruiting@mariana-cannabis.de</a>, wir schicken einen neuen.
+    </div>
+    
+    <h2 id="ueberblick">2. Überblick</h2>
+    <p>Im Dashboard siehst du <strong>nur Bewerbungen für deinen Verein</strong>. Die Übersicht hat drei Bereiche:</p>
+    
+    <div class="icon-row">
+      <div class="icon-card">
+        <span class="icon">📊</span>
+        <div class="label">Stat-Karten oben</div>
+        <div class="desc">Anzahl Bewerbungen nach Status. Anklicken filtert die Liste.</div>
+      </div>
+      <div class="icon-card">
+        <span class="icon">📋</span>
+        <div class="label">Liste links</div>
+        <div class="desc">Alle Bewerbungen, sortierbar, durchsuchbar.</div>
+      </div>
+      <div class="icon-card">
+        <span class="icon">🔍</span>
+        <div class="label">Detail-Ansicht rechts</div>
+        <div class="desc">Wenn du eine Bewerbung anklickst, siehst du alles rechts.</div>
+      </div>
+    </div>
+    
+    <h2 id="bewerbung">3. Bewerbung öffnen</h2>
+    <p>In der Liste links auf einen Eintrag klicken → rechts erscheint die komplette Bewerbung mit allen Daten:</p>
+    <ul>
+      <li>Persönliche Daten (Name, Kontakt, Adresse)</li>
+      <li>Rollen-Wunsch (welche Position möchte die Person?)</li>
+      <li>Verfügbarkeit (Tage und Zeiten)</li>
+      <li>Qualifikationen, Sprachen, Soft-Skills</li>
+      <li>Eventuelle Anhänge (Lebenslauf, Zeugnisse)</li>
+    </ul>
+    
+    <h2 id="status">4. Status ändern</h2>
+    <p>Oben im Detail-Bereich gibt es 6 Buttons für die Status-Stufen:</p>
+    <ol>
+      <li><strong>Eingegangen</strong> — neue, noch nicht geprüfte Bewerbung</li>
+      <li><strong>In Prüfung</strong> — du schaust gerade rein</li>
+      <li><strong>Eingeladen</strong> — Bewerber:in soll zum Gespräch kommen</li>
+      <li><strong>Warteliste</strong> — gut, aber aktuell kein Platz</li>
+      <li><strong>Angenommen</strong> — wird Teammitglied 🎉</li>
+      <li><strong>Abgelehnt</strong> — passt nicht</li>
+    </ol>
+    
+    <div class="info-box">
+      <strong>Was passiert bei Status-Wechsel?</strong> Bei „Angenommen" und „Abgelehnt" bekommt die Person automatisch eine entsprechende E-Mail. Bei den anderen Status nicht — die kannst du selber per Hand schicken.
+    </div>
+    
+    <h2 id="notiz">5. Notizen hinterlassen</h2>
+    <p>Es gibt <strong>zwei Notiz-Arten</strong>:</p>
+    
+    <h3>Schnell-Notiz (überschreibend)</h3>
+    <p>Für eine schnelle Zusammenfassung. Jeder neue Eintrag überschreibt den vorherigen. Gut für: „passt gut für Anbau, Anruf nächste Woche".</p>
+    
+    <h3>Notiz-Verlauf (chronologisch)</h3>
+    <p>Append-only Liste mit Datum + Autor. Gut für: „13.5.: angerufen, Termin Freitag" → „17.5.: war beim Termin, sehr positiv". Jeder Eintrag bleibt sichtbar.</p>
+    
+    <h2 id="tags">6. Tags</h2>
+    <p>Du kannst Bewerbungen mit Tags markieren — wie 🔥 für „dringend", ⭐ für „Top-Kandidat:in", 📞 für „muss noch anrufen". Klick auf „+ Tag" oben im Detail-Bereich.</p>
+    <p>In der Liste werden die Tag-Emojis neben dem Namen angezeigt — schneller Überblick auf einen Blick.</p>
+    
+    <h2 id="inbox">7. „Brauchen Antwort"-Inbox</h2>
+    <p>Ganz rechts in den Stat-Karten ist eine besondere Karte: <strong>⚠️ Brauchen Antwort</strong>. Sie zeigt automatisch alle Bewerbungen, die seit:</p>
+    <ul>
+      <li>mehr als <strong>7 Tagen</strong> auf „Eingegangen" stehen (= du hast noch nicht reagiert)</li>
+      <li>mehr als <strong>14 Tagen</strong> auf „In Prüfung" oder „Warteliste" stehen (= Entscheidung steht aus)</li>
+    </ul>
+    <p>Wenn du dich einloggst und es welche gibt, bekommst du <strong>auch einen Hinweis-Toast rechts oben</strong>. Klick auf „Inbox öffnen" und du siehst sie alle.</p>
+    
+    <h2 id="mail">8. E-Mail an Bewerber:in senden</h2>
+    <p>Im Detail-Bereich gibt es einen Button <strong>„✉️ E-Mail"</strong>. Damit kannst du eine personalisierte Nachricht schicken — z.B. eine Einladung zum Gespräch oder eine Rückfrage.</p>
+    <p>Die Mail wird über Mariana versendet, kommt also offiziell aus dem System (nicht von deiner privaten Adresse).</p>
+    
+    <h2 id="fragen">9. Probleme oder Fragen?</h2>
+    <p>Schreib uns einfach:</p>
+    <p>📧 <a href="mailto:communityrecruiting@mariana-cannabis.de">communityrecruiting@mariana-cannabis.de</a></p>
+    <p>Wir helfen meistens innerhalb von einem Werktag.</p>
+    
+    <footer>
+      Mariana Cannabis · 
+      <a href="https://cscsdeutschland.de/datenschutzerklarung" target="_blank" rel="noopener noreferrer">Datenschutz</a> · 
+      <a href="https://cscsdeutschland.de/impressum" target="_blank" rel="noopener noreferrer">Impressum</a>
+      <br><br>
+      <small>Stand: Mai 2026 · Du kannst diese Anleitung gerne ausdrucken und im Vereinslokal aufhängen.</small>
+    </footer>
+  </div>
+</body>
+</html>

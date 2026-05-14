@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mariana Cannabis · Bewerbungs-Dashboard v2</title>
-  <!-- DASHBOARD_BUILD: 2026-05-14T0842 (Notiz-Button prominenter + Strg+Enter Shortcut) -->
-  <script>window.__DASHBOARD_BUILD = '2026-05-14T0842';</script>
+  <!-- DASHBOARD_BUILD: 2026-05-14T0942 (Bug-7-Diagnose: Init/loadDashboard Race-Condition-Schutz + viele Logs) -->
+  <script>window.__DASHBOARD_BUILD = '2026-05-14T0942';</script>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -1127,13 +1127,38 @@ function brauchtAntwort(b) {
 }
 
 async function init() {
+  console.log('[init] STARTED', { time: new Date().toISOString(), build: window.__DASHBOARD_BUILD });
   const { data: { session: existingSession } } = await sb.auth.getSession();
-  if (existingSession) { session = existingSession; await loadDashboard(); }
-  else showLogin();
+  console.log('[init] getSession returned', { existingSession_exists: !!existingSession, email: existingSession?.user?.email });
+  
+  if (existingSession) { 
+    session = existingSession; 
+    console.log('[init] Session vorhanden → loadDashboard');
+    await loadDashboard(); 
+  }
+  else { 
+    console.log('[init] Keine Session → showLogin');
+    showLogin(); 
+  }
   
   sb.auth.onAuthStateChange(async (event, newSession) => {
-    if (event === 'SIGNED_IN' && newSession) { session = newSession; await loadDashboard(); }
-    else if (event === 'SIGNED_OUT') { session = null; showLogin(); }
+    console.log('[onAuthStateChange]', { event, newSession_exists: !!newSession, email: newSession?.user?.email });
+    if (event === 'SIGNED_IN' && newSession) { 
+      // Race-Condition-Schutz: nur loadDashboard wenn noch nicht geladen
+      if (session?.user?.id === newSession.user.id && userContext) {
+        console.log('[onAuthStateChange] SIGNED_IN aber loadDashboard schon ausgeführt — skip');
+        return;
+      }
+      session = newSession; 
+      console.log('[onAuthStateChange] SIGNED_IN → loadDashboard');
+      await loadDashboard(); 
+    }
+    else if (event === 'SIGNED_OUT') { 
+      console.log('[onAuthStateChange] SIGNED_OUT → showLogin');
+      session = null; 
+      userContext = null;
+      showLogin(); 
+    }
   });
 }
 
@@ -1164,22 +1189,44 @@ function showLoginMsg(text, type) {
 
 async function logout() { await sb.auth.signOut(); }
 
+let loadDashboardInProgress = false;
 async function loadDashboard() {
+  if (loadDashboardInProgress) {
+    console.warn('[loadDashboard] BEREITS LAUFEND — skip (Race-Condition-Schutz)');
+    return;
+  }
+  loadDashboardInProgress = true;
+  console.log('[loadDashboard] STARTED', { time: new Date().toISOString() });
+  
   showApp();
   try {
+    console.log('[loadDashboard] hole csc_current_user_context...');
     const { data: userData, error: userErr } = await sb.rpc('csc_current_user_context');
+    console.log('[loadDashboard] context geholt', { error: userErr?.message, rows: userData?.length });
     if (userErr) throw userErr;
     if (!userData || userData.length === 0) {
+      console.warn('[loadDashboard] Kein User-Kontext — User nicht freigeschaltet?');
       document.getElementById('list-items').innerHTML = '<div class="list-empty">Dein Account ist nicht für das Dashboard freigeschaltet.<br><br>Bitte wende dich an den Mariana-Hauptverein.</div>';
       document.getElementById('user-email').textContent = session.user.email;
       document.getElementById('role-pill').textContent = 'Kein Zugriff';
       document.getElementById('role-pill').className = 'role-pill';
       document.getElementById('stats-bar').style.display = 'none';
+      loadDashboardInProgress = false;
       return;
     }
     userContext = userData[0]; userContext.email = session.user.email;
+    console.log('[loadDashboard] userContext gesetzt', { 
+      ist_admin: userContext.ist_admin, 
+      verein_id: userContext.verein_id,
+      email: userContext.email
+    });
     await sb.from('csc_dashboard_user').update({ letzter_login: new Date().toISOString() }).eq('auth_user_id', session.user.id);
-  } catch (e) { toast('Fehler beim Laden des User-Kontexts: ' + e.message, true); return; }
+  } catch (e) { 
+    console.error('[loadDashboard] Fehler beim User-Kontext', e);
+    toast('Fehler beim Laden des User-Kontexts: ' + e.message, true); 
+    loadDashboardInProgress = false;
+    return; 
+  }
   
   document.getElementById('user-email').textContent = userContext.email;
   const pill = document.getElementById('role-pill');
@@ -1192,8 +1239,10 @@ async function loadDashboard() {
   }
   else { pill.textContent = 'Vorstand'; pill.className = 'role-pill vorstand'; }
   
+  console.log('[loadDashboard] lade Vereine + Bewerbungen...');
   await loadVereine();
   await loadBewerbungen();
+  console.log('[loadDashboard] geladen', { vereine_count: Object.keys(vereine).length, bewerbungen_count: bewerbungen.length });
   renderStats();
   
   // Background-Polling alle 25 Sek starten
@@ -1201,6 +1250,9 @@ async function loadDashboard() {
   
   // Auto-Reminder: prominenter Toast wenn es Bewerbungen gibt die Aktion brauchen
   setTimeout(() => maybeShowAutoReminder(), 1500);
+  
+  console.log('[loadDashboard] FERTIG ✓');
+  loadDashboardInProgress = false;
 }
 
 function maybeShowAutoReminder() {
@@ -1641,9 +1693,18 @@ function renderList() {
 }
 
 async function selectBewerbung(id) {
+  console.log('[selectBewerbung] CALLED', { 
+    id, 
+    time: new Date().toISOString(),
+    bewerbungen_count: bewerbungen.length,
+    found: !!bewerbungen.find(x => x.id === id)
+  });
   selectedId = id; renderList();
   const b = bewerbungen.find(x => x.id === id);
-  if (!b) return;
+  if (!b) {
+    console.error('[selectBewerbung] Bewerbung NICHT in bewerbungen[] gefunden!', { id });
+    return;
+  }
   const v = vereine[b.verein_id];
   const status = b.status || 'eingegangen';
   
@@ -2213,17 +2274,37 @@ async function toggleAuditLog(bewerbungId) {
 }
 
 async function setStatus(id, newStatus) {
+  console.log('[setStatus] CALLED', { id, newStatus, time: new Date().toISOString() });
+  console.log('[setStatus] State', {
+    session_exists: !!session,
+    session_email: session?.user?.email,
+    userContext_ist_admin: userContext?.ist_admin,
+    userContext_verein_id: userContext?.verein_id,
+    bewerbungen_count: bewerbungen.length,
+    selectedId,
+  });
+  
   const b = bewerbungen.find(x => x.id === id);
-  if (!b) return;
+  if (!b) { 
+    console.error('[setStatus] Bewerbung NICHT in bewerbungen[] gefunden!', { id, anzahl: bewerbungen.length });
+    toast('Bewerbung nicht im Speicher gefunden — bitte Seite neu laden (F5)', true);
+    return; 
+  }
+  console.log('[setStatus] Bewerbung gefunden:', b.vorname, b.nachname, 'aktueller Status:', b.status);
+  
   const confirmed = confirm(`Status auf "${STATUS_LABELS[newStatus]}" setzen?\n\n${b.vorname} ${b.nachname}`);
+  console.log('[setStatus] confirm result:', confirmed);
   if (!confirmed) return;
+  
   try {
-    // status_geaendert_am und status_geaendert_von werden via Trigger automatisch gesetzt
+    console.log('[setStatus] sende DB-Update...');
     const { error, data } = await sb.from('csc_bewerbungen')
       .update({ status: newStatus })
       .eq('id', id)
       .select()
       .maybeSingle();
+    console.log('[setStatus] DB-Antwort', { error, data_received: !!data, neue_status: data?.status });
+    
     if (error) throw error;
     if (!data) { 
       toast('⚠️ Update fehlgeschlagen — Permission? (RLS)', true); 
@@ -2233,13 +2314,15 @@ async function setStatus(id, newStatus) {
     // Update lokal mit echten DB-Werten (inkl. Trigger-Werte)
     const idx = bewerbungen.findIndex(x => x.id === id);
     if (idx !== -1) bewerbungen[idx] = data;
+    console.log('[setStatus] lokales Array updatet, rendere UI...');
     // UI sofort und vollständig neu rendern
     renderStats();
     renderList();
     if (selectedId === id) selectBewerbung(id);
     toast('Status auf "' + STATUS_LABELS[newStatus] + '" gesetzt');
+    console.log('[setStatus] FERTIG ✓');
   } catch (e) { 
-    console.error('[setStatus]', e);
+    console.error('[setStatus] EXCEPTION', e);
     toast('Fehler: ' + e.message, true); 
   }
 }

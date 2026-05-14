@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mariana Cannabis · Bewerbungs-Dashboard v2</title>
-  <!-- DASHBOARD_BUILD: 2026-05-14T0142 (Inbox-Mode, Tag-Wolke, Notiz-Verlauf, Audit-Log) -->
-  <script>window.__DASHBOARD_BUILD = '2026-05-14T0142';</script>
+  <!-- DASHBOARD_BUILD: 2026-05-14T0342 (Tranche D: Error-Monitoring) -->
+  <script>window.__DASHBOARD_BUILD = '2026-05-14T0342';</script>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -367,6 +367,44 @@
     .audit-entry-meta { color: var(--tx-mute); font-family: 'DM Mono', monospace; font-size: 11px; margin-bottom: 2px; }
     .audit-entry-text { color: var(--tx); }
     .audit-empty { color: var(--tx-mute); font-style: italic; font-size: 12px; padding: 4px 0; }
+    
+    /* Auto-Reminder-Toast */
+    .reminder-toast {
+      position: fixed;
+      top: 78px;
+      right: 24px;
+      max-width: 420px;
+      background: var(--bg-card);
+      border: 1px solid #d4a843;
+      border-left: 4px solid #f5c451;
+      border-radius: 10px;
+      padding: 14px 16px;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.5);
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      z-index: 150;
+      animation: slideInRight 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    @keyframes slideInRight {
+      from { transform: translateX(420px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    .reminder-toast.fade-out { 
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      opacity: 0;
+      transform: translateX(20px);
+    }
+    .reminder-toast-icon { font-size: 1.4rem; line-height: 1; }
+    .reminder-toast-body { flex: 1; font-size: 13px; color: var(--tx); }
+    .reminder-toast-body strong { display: block; margin-bottom: 4px; color: #f5c451; font-size: 14px; }
+    .reminder-toast-detail { color: var(--tx-mute); font-size: 12px; line-height: 1.45; }
+    .reminder-toast-actions { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
+    .reminder-toast-close { background: transparent; border: none; color: var(--tx-mute); font-size: 18px; cursor: pointer; line-height: 1; padding: 2px 6px; }
+    .reminder-toast-close:hover { color: var(--tx); }
+    @media (max-width: 540px) {
+      .reminder-toast { right: 12px; left: 12px; max-width: none; }
+    }
     
     /* Loading & Toast */
     .loading { display: flex; align-items: center; gap: 8px; color: var(--tx-mute); font-size: 13px; padding: 24px; }
@@ -815,6 +853,7 @@
     <div class="header-right">
       <span class="user-email" id="user-email"></span>
       <button class="btn-ghost stats-btn-header" onclick="openStatsModal()" title="Statistik-Übersicht" style="display:none" aria-label="Statistik-Übersicht öffnen"><span aria-hidden="true">📊</span> Statistik</button>
+      <button class="btn-ghost errorlog-btn-header" onclick="openErrorLogModal()" title="Error-Log (technische Fehler)" style="display:none" aria-label="Error-Log öffnen"><span aria-hidden="true">⚠️</span> Errors</button>
       <button class="btn-ghost" onclick="exportCsv()" title="Aktuell sichtbare Bewerbungen als CSV/Excel exportieren" aria-label="Aktuell sichtbare Bewerbungen als CSV exportieren"><span aria-hidden="true">⬇</span> Export</button>
       <button class="btn-ghost" onclick="logout()" aria-label="Abmelden">Abmelden</button>
     </div>
@@ -944,6 +983,57 @@
 const SUPABASE_URL = 'https://gvzayggvtlychyjbnsgv.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd2emF5Z2d2dGx5Y2h5amJuc2d2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3ODEzMTIsImV4cCI6MjA4OTM1NzMxMn0.1L2e98IjFjF8z_-t0Fpm20wwVyrtWfkMdjGG79fJwMg';
 
+// ============================================================================
+// ERROR-LOGGING — JS-Fehler an csc_error_log via Edge-Function
+// ============================================================================
+(function setupErrorLogging() {
+  const SOURCE = 'dashboard';
+  const ENDPOINT = `${SUPABASE_URL}/functions/v1/log-error`;
+  let lastErrorTime = 0;
+  const COOLDOWN_MS = 3000;
+  
+  async function reportError(message, stack, context) {
+    const now = Date.now();
+    if (now - lastErrorTime < COOLDOWN_MS) return;
+    lastErrorTime = now;
+    try {
+      await fetch(ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          'apikey': SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify({
+          source: SOURCE,
+          message: String(message || 'unknown').slice(0, 1500),
+          stack: stack ? String(stack).slice(0, 4000) : null,
+          url: location.href,
+          user_email: window.session?.user?.email || null,
+          context: context || null,
+        }),
+        keepalive: true,
+      });
+    } catch (_) {}
+  }
+  
+  window.addEventListener('error', (e) => {
+    reportError(e.message, e.error?.stack, { 
+      filename: e.filename, lineno: e.lineno, colno: e.colno,
+      selectedId: window.selectedId,
+    });
+  });
+  
+  window.addEventListener('unhandledrejection', (e) => {
+    const reason = e.reason;
+    reportError(
+      reason?.message || String(reason),
+      reason?.stack,
+      { type: 'unhandledrejection', selectedId: window.selectedId }
+    );
+  });
+})();
+
 const STATUS_LABELS = { eingegangen: 'Eingegangen', in_pruefung: 'In Prüfung', eingeladen: 'Eingeladen', warteliste: 'Warteliste', angenommen: 'Angenommen', abgelehnt: 'Abgelehnt' };
 const ROLE_LABELS = { vorstand: 'Vorstand', stellv_vorstand: 'Stellv. Vorstand', grower: 'Grower', head_grower: 'Head Grower', ausgabe: 'Ausgabe', springer: 'Springer', praevention: 'Präventionsbeauftragte:r', sicherheit: 'Sicherheit', reinigung: 'Reinigung' };
 const ANFAHRT_LABELS_AUSGABE = { '15': '≤ 15 min', '30': '≤ 30 min', '45': '≤ 45 min', '60': '≤ 1 h', '90': '≤ 1,5 h', '120': '≤ 2 h', '999': 'auch weiter' };
@@ -1060,12 +1150,50 @@ async function loadDashboard() {
     document.getElementById('filter-verein').style.display = '';
     document.getElementById('filter-bundesland').style.display = '';
     document.querySelector('.stats-btn-header').style.display = '';
+    document.querySelector('.errorlog-btn-header').style.display = '';
   }
   else { pill.textContent = 'Vorstand'; pill.className = 'role-pill vorstand'; }
   
   await loadVereine();
   await loadBewerbungen();
   renderStats();
+  
+  // Auto-Reminder: prominenter Toast wenn es Bewerbungen gibt die Aktion brauchen
+  setTimeout(() => maybeShowAutoReminder(), 1500);
+}
+
+function maybeShowAutoReminder() {
+  if (!bewerbungen || bewerbungen.length === 0) return;
+  const pending = bewerbungen.filter(brauchtAntwort);
+  if (pending.length === 0) return;
+  // Toast bauen — auffälliger als die normalen Toasts, mit Click-Action
+  showReminderToast(pending.length);
+}
+
+function showReminderToast(count) {
+  const existing = document.getElementById('reminder-toast');
+  if (existing) existing.remove();
+  const t = document.createElement('div');
+  t.id = 'reminder-toast';
+  t.className = 'reminder-toast';
+  t.setAttribute('role', 'alert');
+  t.innerHTML = `
+    <div class="reminder-toast-icon" aria-hidden="true">⚠️</div>
+    <div class="reminder-toast-body">
+      <strong>${count} Bewerbung${count > 1 ? 'en' : ''} brauchen Aufmerksamkeit</strong>
+      <div class="reminder-toast-detail">Älter als 7 Tage eingegangen, oder seit >14 Tagen in Prüfung / Warteliste.</div>
+    </div>
+    <div class="reminder-toast-actions">
+      <button type="button" class="action-btn" onclick="document.getElementById('reminder-toast')?.remove(); toggleInboxMode();">Inbox öffnen</button>
+      <button type="button" class="reminder-toast-close" onclick="document.getElementById('reminder-toast')?.remove();" aria-label="Schließen">×</button>
+    </div>
+  `;
+  document.body.appendChild(t);
+  // Auto-Hide nach 12 Sekunden (gibt genug Zeit zum Klicken)
+  setTimeout(() => {
+    t.classList.add('fade-out');
+    setTimeout(() => t.remove(), 400);
+  }, 12000);
 }
 
 async function loadVereine() {
@@ -3024,13 +3152,290 @@ function openStatsModal() {
         ${rolleRows || '<div style="color:var(--tx-mute)">Keine Daten</div>'}
       </div>
     </div>
+    
+    ${buildExtendedStatsHTML()}
   `;
 
   overlay.classList.add('show');
 }
 
+// ============================================================================
+// ERWEITERTE STATISTIK: Demografie, Soft-Skills-Heatmap, Zeit-bis-Annahme,
+// Anstellungsform, Sprachen
+// ============================================================================
+function buildExtendedStatsHTML() {
+  const total = bewerbungen.length;
+  if (total === 0) return '';
+  
+  // 1) Demografie — Alter
+  const heute = new Date();
+  const ages = [];
+  bewerbungen.forEach(b => {
+    if (b.geburtsdatum) {
+      const gd = new Date(b.geburtsdatum);
+      if (!isNaN(gd)) {
+        let a = heute.getFullYear() - gd.getFullYear();
+        if (heute < new Date(heute.getFullYear(), gd.getMonth(), gd.getDate())) a--;
+        if (a >= 18 && a < 99) ages.push(a);
+      }
+    }
+  });
+  const ageBuckets = [
+    { label: '18–24', min: 18, max: 24, count: 0 },
+    { label: '25–34', min: 25, max: 34, count: 0 },
+    { label: '35–44', min: 35, max: 44, count: 0 },
+    { label: '45–54', min: 45, max: 54, count: 0 },
+    { label: '55–64', min: 55, max: 64, count: 0 },
+    { label: '65+',   min: 65, max: 200, count: 0 },
+  ];
+  ages.forEach(a => {
+    const b = ageBuckets.find(b => a >= b.min && a <= b.max);
+    if (b) b.count++;
+  });
+  const maxAge = Math.max(1, ...ageBuckets.map(b => b.count));
+  const avgAge = ages.length ? Math.round(ages.reduce((s, a) => s + a, 0) / ages.length) : 0;
+  
+  // 2) Anstellungsform-Verteilung
+  const anstellungStats = {};
+  bewerbungen.forEach(b => {
+    const af = Array.isArray(b.anstellungsform) ? b.anstellungsform : [];
+    af.forEach(a => { anstellungStats[a] = (anstellungStats[a] || 0) + 1; });
+  });
+  const anstellungLabels = { ehrenamt: 'Ehrenamt', minijob: 'Minijob', teilzeit: 'Teilzeit', vollzeit: 'Vollzeit' };
+  const anstellungList = Object.entries(anstellungStats)
+    .map(([k, c]) => ({ k, l: anstellungLabels[k] || k, c }))
+    .sort((a, b) => b.c - a.c);
+  
+  // 3) Soft-Skills-Heatmap (Durchschnitt pro Skill)
+  const skills = ['stress', 'kunde', 'verschwiegenheit', 'team', 'genauigkeit'];
+  const skillLabels = { stress: 'Stress-Resistenz', kunde: 'Kunden-Umgang', verschwiegenheit: 'Verschwiegenheit', team: 'Team-Arbeit', genauigkeit: 'Genauigkeit' };
+  const skillSums = {};
+  const skillCounts = {};
+  bewerbungen.forEach(b => {
+    const ss = b.soft_skills || {};
+    skills.forEach(s => {
+      const v = parseInt(ss[s]);
+      if (v >= 1 && v <= 5) {
+        skillSums[s] = (skillSums[s] || 0) + v;
+        skillCounts[s] = (skillCounts[s] || 0) + 1;
+      }
+    });
+  });
+  
+  // 4) Zeit-bis-Annahme (durchschnittlich)
+  const zeitenZurAnnahme = [];
+  const zeitenZurAblehnung = [];
+  const zeitenZurErsterPruefung = [];
+  bewerbungen.forEach(b => {
+    if (!b.eingegangen_am) return;
+    const eingang = new Date(b.eingegangen_am).getTime();
+    if (b.status_geaendert_am) {
+      const change = new Date(b.status_geaendert_am).getTime();
+      const tage = (change - eingang) / 86400000;
+      if (tage >= 0 && tage < 365) {
+        if (b.status === 'angenommen') zeitenZurAnnahme.push(tage);
+        else if (b.status === 'abgelehnt') zeitenZurAblehnung.push(tage);
+        if (b.status !== 'eingegangen') zeitenZurErsterPruefung.push(tage);
+      }
+    }
+  });
+  const avg = (arr) => arr.length ? (arr.reduce((s, v) => s + v, 0) / arr.length).toFixed(1) : null;
+  
+  // 5) Sprachen-Verteilung
+  const sprachStats = {};
+  bewerbungen.forEach(b => {
+    const sp = b.sprachen || {};
+    Object.entries(sp).forEach(([lang, niveau]) => {
+      if (niveau) sprachStats[lang] = (sprachStats[lang] || 0) + 1;
+    });
+  });
+  const sprachLabels = { de: 'Deutsch', en: 'Englisch', fr: 'Französisch', es: 'Spanisch', tr: 'Türkisch', ar: 'Arabisch', ru: 'Russisch', pl: 'Polnisch' };
+  const sprachList = Object.entries(sprachStats)
+    .map(([k, c]) => ({ k, l: sprachLabels[k] || k.toUpperCase(), c }))
+    .sort((a, b) => b.c - a.c);
+  
+  // HTML rendern
+  return `
+    <div class="st-section">
+      <h3 class="st-section-title">Demografie · Alter</h3>
+      ${ages.length === 0 ? '<div style="color:var(--tx-mute)">Keine Altersdaten</div>' : `
+        <div style="display:flex;gap:24px;align-items:flex-end;flex-wrap:wrap;margin-bottom:12px">
+          <div><span style="font-size:24px;font-weight:700;color:var(--green)">${avgAge}</span> <span style="color:var(--tx-mute);font-size:12px">Ø Alter</span></div>
+          <div><span style="font-size:24px;font-weight:700;color:var(--tx)">${ages.length}</span> <span style="color:var(--tx-mute);font-size:12px">mit Altersdaten</span></div>
+        </div>
+        <div class="st-day-chart" style="height:140px">
+          ${ageBuckets.map(b => {
+            const h = b.count > 0 ? Math.max(8, (b.count / maxAge) * 100) : 2;
+            return `
+              <div class="st-day-bar-wrap" title="${b.label}: ${b.count}">
+                <div class="st-day-count">${b.count}</div>
+                <div class="st-day-bar" style="height:${h}%;background:var(--green-dim)"></div>
+                <div class="st-day-label">${b.label}</div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `}
+    </div>
+    
+    <div class="st-section-2col">
+      <div class="st-section">
+        <h3 class="st-section-title">Anstellungsform-Wünsche</h3>
+        ${anstellungList.length === 0 ? '<div style="color:var(--tx-mute)">Keine Daten</div>' : 
+          anstellungList.map(a => {
+            const pct = total > 0 ? Math.round((a.c / total) * 100) : 0;
+            return `<div class="st-status-row"><div class="st-status-label">${escapeHtml(a.l)}</div><div class="st-bar-track"><div class="st-bar-fill" style="width:${pct}%;background:var(--blue)"></div></div><div class="st-status-count">${a.c} <span style="color:var(--tx-mute);font-size:11px">(${pct}%)</span></div></div>`;
+          }).join('')}
+      </div>
+      <div class="st-section">
+        <h3 class="st-section-title">Sprachen (Anzahl)</h3>
+        ${sprachList.length === 0 ? '<div style="color:var(--tx-mute)">Keine Daten</div>' : `
+          <div style="display:flex;flex-wrap:wrap;gap:8px">
+            ${sprachList.map(s => `
+              <span style="background:var(--bg-elev);border:1px solid var(--border);padding:6px 12px;border-radius:14px;font-size:12px">
+                <strong style="color:var(--tx)">${escapeHtml(s.l)}</strong> 
+                <span style="color:var(--tx-mute)">${s.c}</span>
+              </span>
+            `).join('')}
+          </div>
+        `}
+      </div>
+    </div>
+    
+    <div class="st-section">
+      <h3 class="st-section-title">Soft-Skills · Durchschnitt aller Bewerbungen</h3>
+      ${skills.every(s => !skillCounts[s]) ? '<div style="color:var(--tx-mute)">Keine Soft-Skill-Daten</div>' : `
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px">
+          ${skills.map(s => {
+            const sum = skillSums[s] || 0;
+            const cnt = skillCounts[s] || 0;
+            const avg = cnt > 0 ? (sum / cnt).toFixed(1) : '–';
+            const pct = cnt > 0 ? ((sum / cnt) / 5) * 100 : 0;
+            // Farbverlauf: rot bei 1 → grün bei 5
+            const hue = Math.round((pct / 100) * 120);
+            return `
+              <div style="background:var(--bg-elev);border:1px solid var(--border);padding:12px 14px;border-radius:8px">
+                <div style="font-size:11px;color:var(--tx-mute);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">${escapeHtml(skillLabels[s])}</div>
+                <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:6px">
+                  <span style="font-size:22px;font-weight:700;color:hsl(${hue}, 50%, 55%)">${avg}</span>
+                  <span style="color:var(--tx-mute);font-size:11px">aus ${cnt} Bewerbung${cnt === 1 ? '' : 'en'}</span>
+                </div>
+                <div style="height:6px;background:var(--bg-card);border-radius:3px;overflow:hidden">
+                  <div style="height:100%;width:${pct}%;background:hsl(${hue}, 50%, 50%)"></div>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `}
+    </div>
+    
+    <div class="st-section">
+      <h3 class="st-section-title">Bearbeitungszeit · Ø Tage</h3>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px">
+        <div style="background:var(--bg-elev);border:1px solid var(--border);padding:14px 16px;border-radius:8px">
+          <div style="font-size:11px;color:var(--tx-mute);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Bis zur ersten Prüfung</div>
+          <div style="font-size:22px;font-weight:700;color:var(--gold)">${avg(zeitenZurErsterPruefung) || '–'}</div>
+          <div style="font-size:11px;color:var(--tx-mute);margin-top:2px">${zeitenZurErsterPruefung.length} Werte</div>
+        </div>
+        <div style="background:var(--bg-elev);border:1px solid var(--border);padding:14px 16px;border-radius:8px">
+          <div style="font-size:11px;color:var(--tx-mute);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Bis zur Annahme</div>
+          <div style="font-size:22px;font-weight:700;color:var(--green)">${avg(zeitenZurAnnahme) || '–'}</div>
+          <div style="font-size:11px;color:var(--tx-mute);margin-top:2px">${zeitenZurAnnahme.length} angenommen</div>
+        </div>
+        <div style="background:var(--bg-elev);border:1px solid var(--border);padding:14px 16px;border-radius:8px">
+          <div style="font-size:11px;color:var(--tx-mute);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Bis zur Ablehnung</div>
+          <div style="font-size:22px;font-weight:700;color:var(--red)">${avg(zeitenZurAblehnung) || '–'}</div>
+          <div style="font-size:11px;color:var(--tx-mute);margin-top:2px">${zeitenZurAblehnung.length} abgelehnt</div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 function closeStatsModal() {
   document.getElementById('st-overlay')?.classList.remove('show');
+}
+
+// ============================================================================
+// ERROR-LOG-MODAL (admin-only)
+// ============================================================================
+async function openErrorLogModal() {
+  if (!userContext?.ist_admin) return;
+  const overlay = document.getElementById('errorlog-overlay');
+  const body = document.getElementById('errorlog-body');
+  if (!overlay || !body) return;
+  body.innerHTML = '<div class="loading">Lade Errors…</div>';
+  overlay.classList.add('show');
+  try {
+    const { data, error } = await sb.from('csc_error_log')
+      .select('*')
+      .order('erstellt_am', { ascending: false })
+      .limit(200);
+    if (error) throw error;
+    if (!data || data.length === 0) {
+      body.innerHTML = '<div style="padding:24px;text-align:center;color:var(--tx-mute)">Keine Errors geloggt — alles ruhig! 🌿</div>';
+      return;
+    }
+    // Group by source
+    const bySource = {};
+    data.forEach(e => {
+      const s = e.source || 'unknown';
+      if (!bySource[s]) bySource[s] = [];
+      bySource[s].push(e);
+    });
+    const sourceLabels = { bewerbungsbogen: '📝 Bewerbungsbogen', dashboard: '📊 Dashboard', 'status-seite': '🔗 Status-Seite' };
+    const headerHtml = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border)">
+        <div style="color:var(--tx-mute);font-size:13px"><strong style="color:var(--tx)">${data.length}</strong> Errors (max. 200, neueste zuerst, älter als 90 Tage werden auto-gelöscht)</div>
+        <button class="action-btn loeschen" onclick="clearOldErrors()" style="font-size:12px">🗑 Alte löschen (>30 Tage)</button>
+      </div>
+    `;
+    const sections = Object.entries(bySource).map(([source, entries]) => `
+      <div style="margin-bottom:24px">
+        <h3 style="font-size:13px;color:var(--green);letter-spacing:0.08em;text-transform:uppercase;margin:0 0 10px 0">${sourceLabels[source] || source} <span style="color:var(--tx-mute);font-weight:400">· ${entries.length}</span></h3>
+        ${entries.map(e => {
+          const dat = new Date(e.erstellt_am).toLocaleString('de-DE');
+          return `
+            <details style="background:var(--bg-elev);border:1px solid var(--border);border-radius:6px;padding:10px 12px;margin-bottom:6px">
+              <summary style="cursor:pointer;font-size:13px;display:flex;justify-content:space-between;gap:8px">
+                <span style="color:var(--red);font-family:'DM Mono',monospace;flex:1;word-break:break-word">${escapeHtml((e.message || '').slice(0, 200))}</span>
+                <span style="color:var(--tx-mute);font-size:11px;white-space:nowrap">${dat}</span>
+              </summary>
+              <div style="margin-top:10px;font-size:12px;line-height:1.5">
+                ${e.user_email ? `<div><strong>User:</strong> ${escapeHtml(e.user_email)}</div>` : ''}
+                ${e.url ? `<div><strong>URL:</strong> <code style="font-size:11px">${escapeHtml(e.url)}</code></div>` : ''}
+                ${e.user_agent ? `<div><strong>Browser:</strong> <span style="color:var(--tx-mute);font-size:11px">${escapeHtml(e.user_agent)}</span></div>` : ''}
+                ${e.context ? `<div><strong>Kontext:</strong> <pre style="background:var(--bg-card);padding:6px;border-radius:4px;font-size:11px;overflow:auto;margin:4px 0">${escapeHtml(JSON.stringify(e.context, null, 2))}</pre></div>` : ''}
+                ${e.stack ? `<div><strong>Stack:</strong> <pre style="background:var(--bg-card);padding:6px;border-radius:4px;font-size:11px;overflow:auto;margin:4px 0;max-height:200px">${escapeHtml(e.stack)}</pre></div>` : ''}
+              </div>
+            </details>
+          `;
+        }).join('')}
+      </div>
+    `).join('');
+    body.innerHTML = headerHtml + sections;
+  } catch (e) {
+    console.error('[Error-Log]', e);
+    body.innerHTML = `<div style="padding:20px;color:var(--red)">Fehler beim Laden: ${escapeHtml(e.message || String(e))}</div>`;
+  }
+}
+
+function closeErrorLogModal() {
+  document.getElementById('errorlog-overlay')?.classList.remove('show');
+}
+
+async function clearOldErrors() {
+  if (!confirm('Errors älter als 30 Tage löschen? Dies kann nicht rückgängig gemacht werden.')) return;
+  try {
+    const cutoff = new Date(Date.now() - 30 * 86400000).toISOString();
+    const { error } = await sb.from('csc_error_log').delete().lt('erstellt_am', cutoff);
+    if (error) throw error;
+    toast('✓ Alte Errors gelöscht');
+    openErrorLogModal();
+  } catch (e) {
+    toast('Fehler: ' + (e.message || e), true);
+  }
 }
 
 
@@ -4148,6 +4553,17 @@ document.addEventListener('DOMContentLoaded', () => {
       <button class="em-close" onclick="closeStatsModal()" type="button" aria-label="Schließen">✕ Schließen</button>
     </div>
     <div id="st-body" class="em-body"></div>
+  </div>
+</div>
+
+<!-- ===== ERROR-LOG MODAL ===== -->
+<div id="errorlog-overlay" class="em-overlay" onclick="if(event.target===this)closeErrorLogModal()" role="dialog" aria-modal="true" aria-labelledby="errorlog-title">
+  <div class="em-modal" style="max-width:900px">
+    <div class="em-head">
+      <h2 id="errorlog-title">⚠️ Error-Log · technische Fehler</h2>
+      <button class="em-close" onclick="closeErrorLogModal()" type="button" aria-label="Schließen">✕ Schließen</button>
+    </div>
+    <div id="errorlog-body" class="em-body"></div>
   </div>
 </div>
 

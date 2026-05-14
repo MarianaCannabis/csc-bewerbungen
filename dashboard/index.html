@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mariana Cannabis · Bewerbungs-Dashboard v2</title>
-  <!-- DASHBOARD_BUILD: 2026-05-14T0042 (Anhang-Spalten-Fix, Krankenkasse-Object-Fix) -->
-  <script>window.__DASHBOARD_BUILD = '2026-05-14T0042';</script>
+  <!-- DASHBOARD_BUILD: 2026-05-14T0142 (Inbox-Mode, Tag-Wolke, Notiz-Verlauf, Audit-Log) -->
+  <script>window.__DASHBOARD_BUILD = '2026-05-14T0142';</script>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -137,6 +137,54 @@
     .stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; cursor: pointer; transition: all 0.15s; }
     .stat-card:hover { border-color: var(--border-strong); transform: translateY(-1px); }
     .stat-card.active { border-color: var(--green); background: #1c2b22; }
+    .stat-card.stat-inbox.has-pending { border-color: #d4a843; }
+    .stat-card.stat-inbox.has-pending .stat-value { color: #f5c451; }
+    .stat-card.stat-inbox.active { background: #2a2418; border-color: #f5c451; }
+    .stat-icon-warn { font-size: 0.85rem; margin-right: 0.3em; }
+    
+    /* Tag-Wolke */
+    .tag-cloud-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding: 8px 14px;
+      margin-bottom: 12px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      align-items: center;
+    }
+    .tag-cloud-label {
+      font-size: 0.75rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--tx-mute);
+      margin-right: 0.4rem;
+    }
+    .tag-cloud-pill {
+      background: transparent;
+      border: 1px solid var(--border-strong);
+      color: var(--tx);
+      padding: 4px 10px;
+      border-radius: 14px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      font-family: inherit;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.15s;
+    }
+    .tag-cloud-pill:hover { background: var(--bg-elev); border-color: var(--green-dim); }
+    .tag-cloud-pill.active { background: var(--green-glow); border-color: var(--green); color: var(--green); font-weight: 600; }
+    .tag-cloud-count { 
+      color: var(--tx-mute); 
+      font-size: 0.74rem; 
+      background: var(--bg-elev);
+      padding: 1px 6px;
+      border-radius: 8px;
+    }
+    .tag-cloud-pill.active .tag-cloud-count { background: var(--green); color: #0a1410; }
     .stat-label { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--tx-mute); margin-bottom: 6px; font-weight: 600; }
     .stat-value { font-size: 26px; font-weight: 700; }
     .stat-sub { font-size: 12px; color: var(--tx-dim); margin-top: 2px; }
@@ -289,6 +337,36 @@
     .notiz-textarea:focus { outline: none; border-color: var(--gold); }
     .notiz-save-hint { font-size: 11px; color: var(--tx-mute); margin-top: 6px; }
     .notiz-save-hint.saved { color: var(--green); }
+    
+    /* Notiz-Verlauf (chronologisch) */
+    .notiz-verlauf-section { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; margin-bottom: 24px; }
+    .notiz-verlauf-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .notiz-verlauf-title { font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--green); font-weight: 600; }
+    .notiz-verlauf-count { background: var(--bg-elev); color: var(--tx-mute); padding: 1px 8px; border-radius: 10px; font-size: 11px; margin-left: 4px; }
+    .notiz-verlauf-list { display: flex; flex-direction: column; gap: 8px; max-height: 320px; overflow-y: auto; padding-right: 4px; }
+    .notiz-verlauf-empty { color: var(--tx-mute); font-size: 13px; font-style: italic; padding: 12px 0; text-align: center; }
+    .notiz-verlauf-entry { background: var(--bg-elev); border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; }
+    .notiz-verlauf-meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; font-size: 11px; color: var(--tx-mute); font-family: 'DM Mono', monospace; }
+    .notiz-verlauf-autor { color: var(--green); font-weight: 500; }
+    .notiz-verlauf-datum { white-space: nowrap; }
+    .notiz-verlauf-text { font-size: 13px; line-height: 1.5; color: var(--tx); white-space: pre-wrap; word-break: break-word; }
+    .notiz-verlauf-delete { background: transparent; border: none; color: var(--tx-mute); font-size: 13px; cursor: pointer; padding: 0 4px; opacity: 0.6; }
+    .notiz-verlauf-delete:hover { color: var(--red); opacity: 1; }
+    .notiz-verlauf-form { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; }
+    .notiz-verlauf-form .notiz-textarea { min-height: 56px; }
+    .notiz-verlauf-form .action-btn { align-self: flex-start; }
+    
+    /* Audit-Log */
+    .audit-section { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; margin-bottom: 24px; }
+    .audit-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; cursor: pointer; user-select: none; }
+    .audit-title { font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--tx-mute); font-weight: 600; }
+    .audit-toggle { color: var(--tx-mute); font-size: 16px; }
+    .audit-list { display: flex; flex-direction: column; gap: 6px; max-height: 320px; overflow-y: auto; padding-right: 4px; display: none; }
+    .audit-list.open { display: flex; }
+    .audit-entry { background: var(--bg-elev); border-left: 2px solid var(--green-dim); padding: 8px 10px; border-radius: 4px; font-size: 12px; }
+    .audit-entry-meta { color: var(--tx-mute); font-family: 'DM Mono', monospace; font-size: 11px; margin-bottom: 2px; }
+    .audit-entry-text { color: var(--tx); }
+    .audit-empty { color: var(--tx-mute); font-style: italic; font-size: 12px; padding: 4px 0; }
     
     /* Loading & Toast */
     .loading { display: flex; align-items: center; gap: 8px; color: var(--tx-mute); font-size: 13px; padding: 24px; }
@@ -743,6 +821,7 @@
   </header>
   
   <div class="stats-bar" id="stats-bar"></div>
+  <div class="tag-cloud-bar" id="tag-cloud-bar" style="display:none"></div>
   
   <div class="main" id="main-content">
     <aside class="list-panel" aria-label="Bewerbungs-Liste mit Filtern">
@@ -903,7 +982,21 @@ function slotsFor(standort) { return SLOTS_BY_STANDORT[standort] || SLOTS_BY_STA
 // Legacy-Alias für Backwards-Compat in Code, der noch SLOT_DETAILS erwartet
 const SLOT_DETAILS = SLOTS_BY_STANDORT.allgemein;
 
-let sb = null, session = null, userContext = null, bewerbungen = [], vereine = {}, selectedId = null, activeStatusFilter = '';
+let sb = null, session = null, userContext = null, bewerbungen = [], vereine = {}, selectedId = null, activeStatusFilter = '', activeInboxMode = false;
+
+// "Brauchen Antwort" Check — eine Bewerbung braucht Aufmerksamkeit, wenn:
+// - Status 'eingegangen' und älter als 7 Tage (Erstreaktion fehlt)
+// - Status 'in_pruefung' und älter als 14 Tage (Entscheidung steht aus)
+// - Status 'warteliste' und älter als 14 Tage (Folge-Aktion fehlt)
+function brauchtAntwort(b) {
+  if (!b.eingegangen_am) return false;
+  const status = b.status || 'eingegangen';
+  const ageDays = (Date.now() - new Date(b.eingegangen_am).getTime()) / 86400000;
+  if (status === 'eingegangen' && ageDays > 7) return true;
+  if (status === 'in_pruefung' && ageDays > 14) return true;
+  if (status === 'warteliste' && ageDays > 14) return true;
+  return false;
+}
 
 async function init() {
   const { data: { session: existingSession } } = await sb.auth.getSession();
@@ -1014,6 +1107,9 @@ function renderStats() {
     { key: 'angenommen', label: 'Angenommen', value: counts.angenommen, sub: 'aktiv im Verein', icon: 'angenommen' },
   ];
   
+  // "Brauchen Antwort"-Card als Inbox-Toggle
+  const brauchtAntwortCount = bewerbungen.filter(brauchtAntwort).length;
+  
   let html = cards.map(c => `
     <div class="stat-card ${activeStatusFilter === c.key ? 'active' : ''}" onclick="setStatusFilter('${c.key}')">
       <div class="stat-label">${c.icon ? `<span class="stat-icon ${c.icon}"></span>` : ''}${c.label}</div>
@@ -1021,6 +1117,17 @@ function renderStats() {
       ${c.sub ? `<div class="stat-sub">${c.sub}</div>` : ''}
     </div>
   `).join('');
+  
+  // Inbox-Card (auffällig wenn Aktion nötig)
+  html += `
+    <div class="stat-card stat-inbox ${activeInboxMode ? 'active' : ''} ${brauchtAntwortCount > 0 ? 'has-pending' : ''}" 
+         onclick="toggleInboxMode()" 
+         title="Bewerbungen die eine Aktion brauchen: >7 Tage eingegangen oder >14 Tage in_pruefung / warteliste">
+      <div class="stat-label"><span class="stat-icon-warn" aria-hidden="true">⚠️</span> Brauchen Antwort</div>
+      <div class="stat-value">${brauchtAntwortCount}</div>
+      <div class="stat-sub">${brauchtAntwortCount === 0 ? 'alles aktuell ✓' : 'jetzt anklicken'}</div>
+    </div>
+  `;
   
   if (userContext.ist_admin && total > 0) {
     const vereinCounts = {};
@@ -1038,7 +1145,51 @@ function renderStats() {
 function setStatusFilter(status) {
   activeStatusFilter = activeStatusFilter === status ? '' : status;
   document.getElementById('filter-status').value = activeStatusFilter;
+  // Beim Klick auf Status-Filter: Inbox-Mode raus (sonst widerspricht es sich)
+  if (activeInboxMode && activeStatusFilter) activeInboxMode = false;
   renderStats(); renderList();
+}
+
+function toggleInboxMode() {
+  activeInboxMode = !activeInboxMode;
+  // Beim Inbox-Mode: Status-Filter raus (Inbox geht über alle Status)
+  if (activeInboxMode) {
+    activeStatusFilter = '';
+    document.getElementById('filter-status').value = '';
+  }
+  renderStats(); renderList();
+}
+
+// Tag-Wolke: zeigt verwendete Tags als anklickbare Pillen mit Count
+function renderTagCloud() {
+  const bar = document.getElementById('tag-cloud-bar');
+  if (!bar) return;
+  const counts = {};
+  bewerbungen.forEach(b => {
+    if (Array.isArray(b.tags)) {
+      b.tags.forEach(t => { counts[t] = (counts[t] || 0) + 1; });
+    }
+  });
+  const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]); // nach Count absteigend
+  if (sorted.length === 0) {
+    bar.style.display = 'none';
+    return;
+  }
+  bar.style.display = 'flex';
+  const activeTag = document.getElementById('filter-tag')?.value || '';
+  bar.innerHTML = '<span class="tag-cloud-label">Tags</span>' + sorted.map(([t, c]) => {
+    const info = tagInfo(t);
+    const isActive = activeTag === t;
+    return `<button type="button" class="tag-cloud-pill ${isActive ? 'active' : ''}" onclick="setTagFilter('${t.replace(/'/g, "\\'")}')">${info.e || ''} ${escapeHtml(info.l)} <span class="tag-cloud-count">${c}</span></button>`;
+  }).join('') + (activeTag ? ` <button type="button" class="tag-cloud-pill" onclick="setTagFilter('')" style="border-style:dashed">✕ Filter aus</button>` : '');
+}
+
+function setTagFilter(tag) {
+  const sel = document.getElementById('filter-tag');
+  if (!sel) return;
+  // Toggle: wenn der gleiche Tag schon aktiv → leeren, sonst setzen
+  sel.value = (sel.value === tag) ? '' : tag;
+  renderList();
 }
 
 function filterByVerein(vereinId) { document.getElementById('filter-verein').value = vereinId; renderList(); }
@@ -1087,6 +1238,8 @@ function renderList() {
   });
 
   let filtered = bewerbungen;
+  // Inbox-Mode: nur Bewerbungen die Aktion brauchen
+  if (activeInboxMode) filtered = filtered.filter(brauchtAntwort);
   if (statusFilter) filtered = filtered.filter(b => (b.status || 'eingegangen') === statusFilter);
   if (vereinFilter) filtered = filtered.filter(b => b.verein_id === vereinFilter);
   if (rolleFilter) filtered = filtered.filter(b => Array.isArray(b.rollen) && b.rollen.includes(rolleFilter));
@@ -1170,6 +1323,7 @@ function renderList() {
   // Letzte gefilterte Liste merken für "Alle auswählen"
   lastFilteredList = filtered;
   renderBulkBar();
+  renderTagCloud();
 }
 
 async function selectBewerbung(id) {
@@ -1343,13 +1497,34 @@ async function selectBewerbung(id) {
     
     <div class="notiz-section">
       <div class="notiz-header">
-        <div class="notiz-header-title">📝 Interne Notiz</div>
+        <div class="notiz-header-title">📝 Schnell-Notiz</div>
         <div class="notiz-header-meta" id="notiz-meta">${b.notiz_geaendert_am ? 'zuletzt: ' + new Date(b.notiz_geaendert_am).toLocaleString('de-DE', {day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'}) + (b.notiz_geaendert_von ? ' · ' + escapeHtml(b.notiz_geaendert_von) : '') : 'noch keine Notiz'}</div>
       </div>
       <textarea class="notiz-textarea" id="notiz-textarea" 
-        placeholder="Hier interne Notizen eintragen (nur für Vorstand sichtbar)..."
+        placeholder="Schnell-Notiz (für deinen schnellen Überblick) — überschreibt jedes Mal..."
         onblur="saveNotiz('${b.id}')">${escapeHtml(b.vorstand_notiz || '')}</textarea>
-      <div class="notiz-save-hint" id="notiz-save-hint">Speichert automatisch beim Verlassen des Felds</div>
+      <div class="notiz-save-hint" id="notiz-save-hint">Speichert beim Verlassen des Felds (überschreibt die vorherige Notiz)</div>
+    </div>
+    
+    <!-- Notiz-Verlauf (chronologisch, nicht überschreibbar) -->
+    <div class="notiz-verlauf-section">
+      <div class="notiz-verlauf-header">
+        <div class="notiz-verlauf-title">💬 Notiz-Verlauf <span class="notiz-verlauf-count" id="notiz-verlauf-count">–</span></div>
+      </div>
+      <div class="notiz-verlauf-list" id="notiz-verlauf-list">Lade…</div>
+      <div class="notiz-verlauf-form">
+        <textarea class="notiz-textarea" id="new-notiz-text" placeholder="Neuen Eintrag hinzufügen (chronologischer Verlauf — wird nicht überschrieben)..." rows="2"></textarea>
+        <button class="action-btn" onclick="addNotiz('${b.id}')" id="btn-add-notiz">+ Eintrag hinzufügen</button>
+      </div>
+    </div>
+    
+    <!-- Audit-Log: Änderungs-Historie aus csc_bewerbung_changes -->
+    <div class="audit-section">
+      <div class="audit-header" onclick="toggleAuditLog('${b.id}')">
+        <div class="audit-title">🔍 Änderungs-Historie (Audit-Log)</div>
+        <div class="audit-toggle" id="audit-toggle-${b.id}">▾</div>
+      </div>
+      <div class="audit-list" id="audit-list-${b.id}"></div>
     </div>
     
     <div class="section">
@@ -1534,6 +1709,138 @@ async function selectBewerbung(id) {
   `;
   
   document.getElementById('detail-panel').innerHTML = html;
+  // Notiz-Verlauf asynchron nachladen
+  loadNotizVerlauf(id);
+}
+
+// ============================================================================
+// NOTIZ-VERLAUF (csc_bewerbung_notizen)
+// ============================================================================
+async function loadNotizVerlauf(bewerbungId) {
+  const listEl = document.getElementById('notiz-verlauf-list');
+  const countEl = document.getElementById('notiz-verlauf-count');
+  if (!listEl) return;
+  try {
+    const { data, error } = await sb.from('csc_bewerbung_notizen')
+      .select('*')
+      .eq('bewerbung_id', bewerbungId)
+      .order('erstellt_am', { ascending: false });
+    if (error) {
+      console.warn('[Notiz-Verlauf]', error);
+      listEl.innerHTML = '<div class="notiz-verlauf-empty">Verlauf nicht verfügbar (Tabelle vielleicht noch nicht angelegt?)</div>';
+      countEl.textContent = '0';
+      return;
+    }
+    if (!data || data.length === 0) {
+      listEl.innerHTML = '<div class="notiz-verlauf-empty">Noch keine Einträge — füge unten den ersten hinzu.</div>';
+      countEl.textContent = '0';
+      return;
+    }
+    countEl.textContent = data.length;
+    const userEmail = (session?.user?.email || '').toLowerCase();
+    const userId = session?.user?.id;
+    listEl.innerHTML = data.map(n => {
+      const isOwn = n.autor_id === userId;
+      const canDelete = isOwn || userContext?.ist_admin;
+      const dat = new Date(n.erstellt_am).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
+      return `
+        <div class="notiz-verlauf-entry">
+          <div class="notiz-verlauf-meta">
+            <span class="notiz-verlauf-autor">${escapeHtml(n.autor_email || (isOwn ? 'du' : '—'))}</span>
+            <span class="notiz-verlauf-datum">${dat}${canDelete ? ` · <button class="notiz-verlauf-delete" onclick="deleteNotiz('${n.id}', '${bewerbungId}')" title="Notiz löschen" aria-label="Notiz löschen">🗑</button>` : ''}</span>
+          </div>
+          <div class="notiz-verlauf-text">${escapeHtml(n.text)}</div>
+        </div>
+      `;
+    }).join('');
+  } catch (e) {
+    console.error('[Notiz-Verlauf] Exception:', e);
+    listEl.innerHTML = '<div class="notiz-verlauf-empty">Fehler beim Laden.</div>';
+  }
+}
+
+async function addNotiz(bewerbungId) {
+  const txtEl = document.getElementById('new-notiz-text');
+  const btn = document.getElementById('btn-add-notiz');
+  if (!txtEl || !btn) return;
+  const text = (txtEl.value || '').trim();
+  if (!text) { toast('Notiz ist leer', true); return; }
+  btn.disabled = true;
+  try {
+    const { error } = await sb.from('csc_bewerbung_notizen').insert({
+      bewerbung_id: bewerbungId,
+      text: text,
+      autor_email: session?.user?.email || null
+      // autor_id wird via DEFAULT auth.uid() gesetzt
+    });
+    if (error) throw error;
+    txtEl.value = '';
+    toast('✓ Notiz hinzugefügt');
+    await loadNotizVerlauf(bewerbungId);
+  } catch (e) {
+    console.error('[addNotiz]', e);
+    toast('Fehler: ' + (e.message || e), true);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function deleteNotiz(notizId, bewerbungId) {
+  if (!confirm('Diese Notiz wirklich löschen?')) return;
+  try {
+    const { error } = await sb.from('csc_bewerbung_notizen').delete().eq('id', notizId);
+    if (error) throw error;
+    toast('Notiz gelöscht');
+    await loadNotizVerlauf(bewerbungId);
+  } catch (e) {
+    console.error('[deleteNotiz]', e);
+    toast('Fehler: ' + (e.message || e), true);
+  }
+}
+
+// ============================================================================
+// AUDIT-LOG (csc_bewerbung_changes)
+// ============================================================================
+async function toggleAuditLog(bewerbungId) {
+  const listEl = document.getElementById(`audit-list-${bewerbungId}`);
+  const toggleEl = document.getElementById(`audit-toggle-${bewerbungId}`);
+  if (!listEl) return;
+  if (listEl.classList.contains('open')) {
+    listEl.classList.remove('open');
+    if (toggleEl) toggleEl.textContent = '▾';
+    return;
+  }
+  listEl.classList.add('open');
+  if (toggleEl) toggleEl.textContent = '▴';
+  listEl.innerHTML = '<div class="audit-empty">Lade…</div>';
+  try {
+    const { data, error } = await sb.from('csc_bewerbung_changes')
+      .select('*')
+      .eq('bewerbung_id', bewerbungId)
+      .order('geaendert_am', { ascending: false })
+      .limit(50);
+    if (error) throw error;
+    if (!data || data.length === 0) {
+      listEl.innerHTML = '<div class="audit-empty">Keine Änderungs-Einträge vorhanden.</div>';
+      return;
+    }
+    listEl.innerHTML = data.map(c => {
+      const dat = new Date(c.geaendert_am).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
+      const feld = c.feld || c.field || '—';
+      const alt = c.alt_wert ?? c.old_value ?? '—';
+      const neu = c.neu_wert ?? c.new_value ?? '—';
+      const autor = c.geaendert_von || c.changed_by || '—';
+      return `
+        <div class="audit-entry">
+          <div class="audit-entry-meta">${dat} · ${escapeHtml(autor)}</div>
+          <div class="audit-entry-text"><strong>${escapeHtml(feld)}:</strong> ${escapeHtml(String(alt))} → ${escapeHtml(String(neu))}</div>
+        </div>
+      `;
+    }).join('');
+  } catch (e) {
+    console.error('[Audit-Log]', e);
+    listEl.innerHTML = '<div class="audit-empty">Fehler beim Laden: ' + escapeHtml(e.message || String(e)) + '</div>';
+  }
 }
 
 async function setStatus(id, newStatus) {

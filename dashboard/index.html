@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mariana Cannabis · Bewerbungs-Dashboard v2</title>
-  <!-- DASHBOARD_BUILD: 2026-05-14T1242 (Score-Pille in Liste + Faktor-Aufschlüsselung im Detail-View) -->
-  <script>window.__DASHBOARD_BUILD = '2026-05-14T1242';</script>
+  <!-- DASHBOARD_BUILD: 2026-05-14T1342 (Score kompakt + Notiz-Vorlagen + Anhang-Thumbnails inline) -->
+  <script>window.__DASHBOARD_BUILD = '2026-05-14T1342';</script>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -270,17 +270,45 @@
     .section-title { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--tx-mute); margin-bottom: 10px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
     
     /* === Score-System === */
-    .score-overview { display: flex; align-items: center; gap: 16px; background: rgba(76,175,106,0.04); border: 1px solid rgba(76,175,106,0.18); border-radius: 10px; padding: 14px; margin-bottom: 12px; }
-    .score-gauge { width: 88px; height: 88px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; border: 3px solid; position: relative; }
-    .score-gauge.gauge-gruen { background: rgba(76,175,106,0.15); border-color: #4caf6a; color: #4caf6a; }
-    .score-gauge.gauge-gelb  { background: rgba(249,199,79,0.15); border-color: #f9c74f; color: #f9c74f; }
-    .score-gauge.gauge-rot   { background: rgba(236,100,100,0.15); border-color: #ec6464; color: #ec6464; }
-    .gauge-value { font-size: 28px; font-weight: 800; line-height: 1; }
-    .gauge-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em; margin-top: 3px; opacity: 0.7; }
-    .score-meta { flex: 1; min-width: 0; }
-    .score-meta-label { font-size: 14px; font-weight: 600; color: var(--tx); margin-bottom: 4px; }
-    .score-meta-sub { font-size: 12px; color: var(--tx-mute); line-height: 1.4; }
+    .score-section { padding: 12px 14px !important; }
     
+    /* Kompakte Top-Anzeige */
+    .score-compact { display: flex; align-items: center; gap: 14px; }
+    .score-gauge-mini { width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 3px solid; }
+    .score-gauge-mini.gauge-gruen { background: rgba(76,175,106,0.15); border-color: #4caf6a; color: #6ed080; }
+    .score-gauge-mini.gauge-gelb  { background: rgba(249,199,79,0.15); border-color: #f9c74f; color: #f9c74f; }
+    .score-gauge-mini.gauge-rot   { background: rgba(236,100,100,0.15); border-color: #ec6464; color: #ec6464; }
+    .gauge-mini-value { font-size: 19px; font-weight: 800; line-height: 1; }
+    .score-compact-info { flex: 1; min-width: 0; }
+    .score-compact-label { font-size: 13px; font-weight: 600; color: var(--tx); margin-bottom: 6px; }
+    .score-compact-pills { display: flex; flex-wrap: wrap; gap: 4px; }
+    .mini-pill { display: inline-flex; align-items: center; gap: 3px; padding: 2px 7px; border-radius: 10px; font-size: 11px; font-weight: 600; border: 1px solid; font-variant-numeric: tabular-nums; cursor: help; }
+    .mini-pill.gruen { background: rgba(76,175,106,0.12); color: #6ed080; border-color: rgba(76,175,106,0.4); }
+    .mini-pill.gelb  { background: rgba(249,199,79,0.12); color: #f9c74f; border-color: rgba(249,199,79,0.4); }
+    .mini-pill.rot   { background: rgba(236,100,100,0.12); color: #ec6464; border-color: rgba(236,100,100,0.4); }
+    
+    /* Akkordeons */
+    .score-details { margin-top: 10px; }
+    .score-details > summary { 
+      cursor: pointer; padding: 6px 10px; background: var(--bg-elev); border: 1px solid var(--border); 
+      border-radius: 6px; font-size: 12px; color: var(--tx-mute); list-style: none;
+      font-weight: 500; user-select: none; transition: background 0.1s;
+    }
+    .score-details > summary:hover { background: var(--bg-card); color: var(--tx); }
+    .score-details > summary::-webkit-details-marker { display: none; }
+    .score-details > summary::before { content: '▸ '; display: inline-block; transition: transform 0.15s; color: var(--green); margin-right: 2px; }
+    .score-details[open] > summary::before { transform: rotate(90deg); }
+    .score-details[open] > summary { background: var(--bg-card); color: var(--tx); border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+    .score-details > .score-rollen,
+    .score-details > .score-faktoren,
+    .score-details > .verfueg-heatmap { 
+      border-top: none !important; 
+      border-top-left-radius: 0 !important; 
+      border-top-right-radius: 0 !important;
+      margin-bottom: 0 !important;
+    }
+    
+    /* Legacy: Bestehende score-rollen / score-faktoren / verfueg-heatmap-Styles bleiben */
     .score-rollen { background: var(--bg-elev); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; }
     .score-rollen-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--tx-mute); margin-bottom: 8px; font-weight: 600; }
     .score-rolle-row { display: grid; grid-template-columns: 130px 1fr 40px; gap: 8px; align-items: center; margin-bottom: 5px; font-size: 13px; }
@@ -293,7 +321,7 @@
     .score-rolle-fill.rot   { background: linear-gradient(90deg, #ec6464, #f59999); }
     .score-rolle-num { text-align: right; font-weight: 700; color: var(--tx); font-variant-numeric: tabular-nums; }
     
-    .score-hardfilter { background: rgba(236,100,100,0.1); border: 1px solid rgba(236,100,100,0.3); border-radius: 6px; padding: 10px 12px; color: var(--tx); font-size: 13px; margin-bottom: 12px; }
+    .score-hardfilter { background: rgba(236,100,100,0.1); border: 1px solid rgba(236,100,100,0.3); border-radius: 6px; padding: 10px 12px; color: var(--tx); font-size: 13px; margin-bottom: 12px; margin-top: 8px; }
     
     /* Faktor-Aufschlüsselung */
     .score-faktoren { background: var(--bg-elev); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; margin-bottom: 12px; }
@@ -363,13 +391,23 @@
     
     /* Anhänge */
     .anhang-list { display: flex; flex-direction: column; gap: 8px; }
-    .anhang-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--bg-elev); border: 1px solid var(--border); border-radius: 8px; font-size: 13px; gap: 12px; }
+    .anhang-item { display: flex; align-items: center; padding: 10px 14px; background: var(--bg-elev); border: 1px solid var(--border); border-radius: 8px; font-size: 13px; gap: 12px; }
     .anhang-info { flex: 1; min-width: 0; }
-    .anhang-item .name { color: var(--tx); font-weight: 500; }
-    .anhang-item .meta { color: var(--tx-mute); font-size: 12px; font-family: 'DM Mono', monospace; }
+    .anhang-item .name { color: var(--tx); font-weight: 500; word-break: break-word; }
+    .anhang-item .meta { color: var(--tx-mute); font-size: 12px; font-family: 'DM Mono', monospace; margin-top: 2px; }
     .anhang-actions { display: flex; gap: 6px; flex-shrink: 0; }
-    .anhang-link { color: var(--green); text-decoration: none; font-size: 13px; font-weight: 600; padding: 6px 12px; border: 1px solid var(--green-dim); border-radius: 6px; background: transparent; cursor: pointer; transition: all 0.15s; }
+    .anhang-link { color: var(--green); text-decoration: none; font-size: 12px; font-weight: 600; padding: 5px 10px; border: 1px solid var(--green-dim); border-radius: 6px; background: transparent; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
     .anhang-link:hover { background: var(--green-glow); }
+    
+    /* Anhang-Thumbnails (inline-Vorschau) */
+    .anhang-thumb-wrap { width: 60px; height: 60px; flex-shrink: 0; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: border-color 0.15s, transform 0.15s; }
+    .anhang-thumb-wrap:hover { border-color: var(--green); transform: scale(1.04); }
+    .anhang-thumb-wrap.no-preview { cursor: default; font-size: 24px; }
+    .anhang-thumb-wrap.no-preview:hover { border-color: var(--border); transform: none; }
+    .anhang-thumb-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .anhang-thumb-pdf { width: 100%; height: 100%; pointer-events: none; }
+    .anhang-thumb-loading { color: var(--tx-mute); font-size: 16px; }
+    .anhang-thumb-err { color: var(--red); font-size: 18px; }
     
     /* Vorschau-Modal */
     .preview-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.85); z-index: 200; display: none; align-items: center; justify-content: center; padding: 24px; }
@@ -410,6 +448,13 @@
     .notiz-verlauf-delete:hover { color: var(--red); opacity: 1; }
     .notiz-verlauf-form { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; }
     .notiz-verlauf-form .notiz-textarea { min-height: 56px; }
+    .notiz-templates-row { display: flex; gap: 6px; }
+    .notiz-template-select {
+      flex: 1; background: var(--bg-elev); border: 1px solid var(--border);
+      color: var(--tx); padding: 6px 10px; border-radius: 6px;
+      font-family: inherit; font-size: 12px; cursor: pointer;
+    }
+    .notiz-template-select:hover { border-color: var(--green); }
     .notiz-verlauf-form-actions { display: flex; align-items: center; gap: 12px; }
     .btn-add-notiz-primary {
       background: var(--green);
@@ -1960,6 +2005,21 @@ async function selectBewerbung(id) {
       </div>
       <div class="notiz-verlauf-list" id="notiz-verlauf-list">Lade…</div>
       <div class="notiz-verlauf-form">
+        <div class="notiz-templates-row">
+          <select class="notiz-template-select" id="notiz-template-select" onchange="insertNotizTemplate(this.value)">
+            <option value="">📋 Vorlage einfügen…</option>
+            <option value="vorgespraech_geplant">📅 Vorgespräch geplant</option>
+            <option value="vorgespraech_durch">✅ Vorgespräch durchgeführt</option>
+            <option value="probearbeit_geplant">🛠 Probearbeit geplant</option>
+            <option value="probearbeit_durch">✅ Probearbeit durchgeführt</option>
+            <option value="unterlagen_fehlen">📎 Unterlagen unvollständig</option>
+            <option value="telefon">📞 Telefonisch kontaktiert</option>
+            <option value="email">✉️ Per E-Mail kontaktiert</option>
+            <option value="warteliste">⏳ Auf Warteliste — Begründung</option>
+            <option value="absage_eigene">👋 Absage durch Bewerber:in</option>
+            <option value="hinweis">⚠️ Hinweis / Achtung</option>
+          </select>
+        </div>
         <textarea class="notiz-textarea" id="new-notiz-text" 
           placeholder="Neuen Eintrag hinzufügen (chronologischer Verlauf — wird nicht überschrieben)..." 
           rows="2"
@@ -2122,49 +2182,29 @@ async function selectBewerbung(id) {
     </div>
     
     ${(b.score_gesamt !== null && b.score_gesamt !== undefined) ? `
-    <div class="section">
-      <div class="section-title">📊 Bewertung / Score</div>
-      
-      <!-- Gesamt-Score mit Ampel -->
-      <div class="score-overview">
-        <div class="score-gauge ${b.score_gesamt >= 75 ? 'gauge-gruen' : b.score_gesamt >= 50 ? 'gauge-gelb' : 'gauge-rot'}">
-          <div class="gauge-value">${b.score_gesamt}</div>
-          <div class="gauge-label">von 100</div>
+    <div class="section score-section">
+      <!-- Kompakte Top-Zeile: Gauge + Label + Mini-Faktoren-Pillen -->
+      <div class="score-compact">
+        <div class="score-gauge-mini ${b.score_gesamt >= 75 ? 'gauge-gruen' : b.score_gesamt >= 50 ? 'gauge-gelb' : 'gauge-rot'}">
+          <div class="gauge-mini-value">${b.score_gesamt}</div>
         </div>
-        <div class="score-meta">
-          <div class="score-meta-label">
+        <div class="score-compact-info">
+          <div class="score-compact-label">
             ${b.score_gesamt >= 75 ? '🟢 Starker Kandidat' : b.score_gesamt >= 50 ? '🟡 Mittlerer Kandidat' : '🔴 Schwacher Kandidat'}
           </div>
-          <div class="score-meta-sub">
-            Berechnet aus Verfügbarkeit, Qualifikation, Mobilität, Soft-Skills, Bereitschaft und Sachkunde
-          </div>
+          ${b.score_pro_rolle && b.score_pro_rolle._faktoren ? `
+            <div class="score-compact-pills">
+              ${['verfuegbarkeit','erfahrung','mobilitaet','softskills','bereitschaft','sachkunde'].map(k => {
+                const v = b.score_pro_rolle._faktoren[k]; if (v === undefined) return '';
+                const cls = v >= 75 ? 'gruen' : v >= 50 ? 'gelb' : 'rot';
+                const ic = {verfuegbarkeit:'📅',erfahrung:'🎓',mobilitaet:'🚗',softskills:'🤝',bereitschaft:'🌙',sachkunde:'📜'}[k];
+                const tt = {verfuegbarkeit:'Verfügbarkeit',erfahrung:'Erfahrung',mobilitaet:'Mobilität',softskills:'Soft-Skills',bereitschaft:'Bereitschaft',sachkunde:'Sachkunde'}[k];
+                return `<span class="mini-pill ${cls}" title="${tt}: ${v}/100">${ic} ${v}</span>`;
+              }).join('')}
+            </div>
+          ` : ''}
         </div>
       </div>
-      
-      <!-- Score pro Rolle mit Balken -->
-      ${b.score_pro_rolle && typeof b.score_pro_rolle === 'object' && Object.keys(b.score_pro_rolle).filter(k => !k.startsWith('_')).length > 0 ? `
-        <div class="score-rollen">
-          <div class="score-rollen-title">Score pro beworbener Rolle</div>
-          ${Object.entries(b.score_pro_rolle).filter(([k]) => !k.startsWith('_')).map(([role, score]) => {
-            const cls = score >= 75 ? 'gruen' : score >= 50 ? 'gelb' : 'rot';
-            return `
-              <div class="score-rolle-row">
-                <div class="score-rolle-name">${ROLE_LABELS[role] || role}</div>
-                <div class="score-rolle-bar"><div class="score-rolle-fill ${cls}" style="width:${score}%"></div></div>
-                <div class="score-rolle-num">${score}</div>
-              </div>
-            `;
-          }).join('')}
-        </div>
-      ` : ''}
-      
-      <!-- Faktoren-Aufschlüsselung (6 Einzelfaktoren) -->
-      ${b.score_pro_rolle && b.score_pro_rolle._faktoren ? `
-        <div class="score-faktoren">
-          <div class="score-rollen-title">Faktor-Aufschlüsselung</div>
-          ${renderFaktoren(b.score_pro_rolle._faktoren, b)}
-        </div>
-      ` : ''}
       
       ${b.score_pro_rolle && b.score_pro_rolle._hardfilter ? `
         <div class="score-hardfilter">
@@ -2172,12 +2212,41 @@ async function selectBewerbung(id) {
         </div>
       ` : ''}
       
-      <!-- Verfügbarkeits-Heatmap (7×5 Slots) -->
+      <!-- Details als klappbare Akkordeons -->
+      <details class="score-details">
+        <summary>📊 Score pro Rolle + Gewichtungen</summary>
+        ${b.score_pro_rolle && typeof b.score_pro_rolle === 'object' && Object.keys(b.score_pro_rolle).filter(k => !k.startsWith('_')).length > 0 ? `
+          <div class="score-rollen">
+            ${Object.entries(b.score_pro_rolle).filter(([k]) => !k.startsWith('_')).map(([role, score]) => {
+              const cls = score >= 75 ? 'gruen' : score >= 50 ? 'gelb' : 'rot';
+              return `
+                <div class="score-rolle-row">
+                  <div class="score-rolle-name">${ROLE_LABELS[role] || role}</div>
+                  <div class="score-rolle-bar"><div class="score-rolle-fill ${cls}" style="width:${score}%"></div></div>
+                  <div class="score-rolle-num">${score}</div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        ` : '<div style="color:var(--tx-mute);font-size:12px">Keine Rollen-Daten.</div>'}
+      </details>
+      
+      ${b.score_pro_rolle && b.score_pro_rolle._faktoren ? `
+        <details class="score-details">
+          <summary>🔍 Faktor-Aufschlüsselung (Details + Erklärung)</summary>
+          <div class="score-faktoren">
+            ${renderFaktoren(b.score_pro_rolle._faktoren, b)}
+          </div>
+        </details>
+      ` : ''}
+      
       ${b.verfuegbarkeit && typeof b.verfuegbarkeit === 'object' ? `
-        <div class="verfueg-heatmap">
-          <div class="verfueg-title">Verfügbarkeits-Heatmap</div>
-          ${renderVerfuegbarkeitHeatmap(b.verfuegbarkeit)}
-        </div>
+        <details class="score-details">
+          <summary>📅 Verfügbarkeits-Heatmap</summary>
+          <div class="verfueg-heatmap">
+            ${renderVerfuegbarkeitHeatmap(b.verfuegbarkeit)}
+          </div>
+        </details>
       ` : ''}
     </div>
     ` : ''}
@@ -2196,16 +2265,20 @@ async function selectBewerbung(id) {
           const sizeKb = a.groesse_bytes ? Math.round(a.groesse_bytes/1024) + ' KB' : '';
           const icon = isImage ? '🖼️' : isPdf ? '📄' : '📎';
           const typ = a.typ || '';
+          const previewId = `anhang-preview-${idx}`;
           
           return `
           <div class="anhang-item">
+            ${previewable ? `<div class="anhang-thumb-wrap" id="${previewId}" data-storage="${escapeHtml(storagePath)}" data-type="${isPdf ? 'pdf' : 'image'}" data-filename="${escapeHtml(filename)}" onclick="previewAnhang('${escapeHtml(storagePath)}', '${escapeHtml(filename)}', '${isPdf ? 'pdf' : 'image'}')">
+              <div class="anhang-thumb-loading">⏳</div>
+            </div>` : `<div class="anhang-thumb-wrap no-preview"><span>${icon}</span></div>`}
             <div class="anhang-info">
               <div class="name">${icon} ${escapeHtml(filename)}</div>
               <div class="meta">${escapeHtml(typ)}${sizeKb ? ' · ' + sizeKb : ''}${previewable ? ' · klickbar' : ''}</div>
             </div>
             <div class="anhang-actions">
-              ${previewable ? `<button class="anhang-link" onclick="previewAnhang('${storagePath}', '${escapeHtml(filename)}', '${isPdf ? 'pdf' : 'image'}')">👁 Ansehen</button>` : ''}
-              <button class="anhang-link" onclick="downloadAnhang('${storagePath}', '${escapeHtml(filename)}')">⬇ Download</button>
+              ${previewable ? `<button class="anhang-link" onclick="previewAnhang('${escapeHtml(storagePath)}', '${escapeHtml(filename)}', '${isPdf ? 'pdf' : 'image'}')">👁 Groß</button>` : ''}
+              <button class="anhang-link" onclick="downloadAnhang('${escapeHtml(storagePath)}', '${escapeHtml(filename)}')">⬇ Download</button>
             </div>
           </div>
         `;}).join('')}
@@ -2217,6 +2290,34 @@ async function selectBewerbung(id) {
   document.getElementById('detail-panel').innerHTML = html;
   // Notiz-Verlauf asynchron nachladen
   loadNotizVerlauf(id);
+  // Anhang-Thumbnails async laden
+  loadAnhangThumbnails();
+}
+
+// ============================================================================
+// ANHANG-THUMBNAILS (inline-Vorschau im Detail-View)
+// ============================================================================
+async function loadAnhangThumbnails() {
+  const wraps = document.querySelectorAll('.anhang-thumb-wrap[data-storage]');
+  for (const w of wraps) {
+    const storagePath = w.getAttribute('data-storage');
+    const type = w.getAttribute('data-type');
+    if (!storagePath) continue;
+    try {
+      const { data, error } = await sb.storage.from('bewerbung-anhaenge').createSignedUrl(storagePath, 600);
+      if (error) throw error;
+      const url = data.signedUrl;
+      if (type === 'image') {
+        w.innerHTML = `<img class="anhang-thumb-img" src="${url}" alt="Vorschau" loading="lazy">`;
+      } else if (type === 'pdf') {
+        // PDF erste Seite via embed
+        w.innerHTML = `<embed src="${url}#toolbar=0&navpanes=0&scrollbar=0&page=1&view=Fit" type="application/pdf" class="anhang-thumb-pdf">`;
+      }
+    } catch (e) {
+      console.error('[Anhang-Thumb]', storagePath, e);
+      w.innerHTML = '<div class="anhang-thumb-err">❌</div>';
+    }
+  }
 }
 
 // ============================================================================
@@ -2744,6 +2845,48 @@ function toast(msg, isError = false) {
   el.textContent = msg; el.className = 'toast show' + (isError ? ' error' : '');
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+// ============================================================================
+// NOTIZ-VORLAGEN
+// ============================================================================
+const NOTIZ_TEMPLATES = {
+  vorgespraech_geplant: 'Vorgespräch geplant am [DATUM] um [UHRZEIT] Uhr.\nKontakt-Art: [Telefon / Video / Vor Ort]\nNotizen vorab: ',
+  vorgespraech_durch:   'Vorgespräch durchgeführt am [DATUM].\nEindruck: \nStärken: \nBedenken: \nNächste Schritte: ',
+  probearbeit_geplant:  'Probearbeit geplant am [DATUM] von [UHRZEIT] bis [UHRZEIT] Uhr.\nOrt: \nAufgaben: ',
+  probearbeit_durch:    'Probearbeit durchgeführt am [DATUM].\nDauer: [STUNDEN]h\nLeistung: \nTeamfähigkeit: \nFazit: ',
+  unterlagen_fehlen:    'Folgende Unterlagen fehlen noch:\n- \n\nBewerber:in wurde per [E-Mail / Telefon] am [DATUM] kontaktiert. Frist: [DATUM].',
+  telefon:              'Telefonisch kontaktiert am [DATUM] um [UHRZEIT].\nDauer: [MINUTEN] min\nThema: \nErgebnis: ',
+  email:                'Per E-Mail kontaktiert am [DATUM].\nBetreff: \nKurz-Inhalt: \nAntwort erwartet bis: [DATUM]',
+  warteliste:           'Auf Warteliste gesetzt am [DATUM].\nBegründung: \nWiedervorlage am: [DATUM]',
+  absage_eigene:        'Absage durch Bewerber:in am [DATUM].\nBegründung (falls genannt): \nKommunikation: [E-Mail / Telefon / Persönlich]',
+  hinweis:              '⚠️ HINWEIS: '
+};
+
+function insertNotizTemplate(key) {
+  if (!key) return;
+  const tpl = NOTIZ_TEMPLATES[key];
+  if (!tpl) return;
+  const ta = document.getElementById('new-notiz-text');
+  if (!ta) return;
+  // Vor existierenden Inhalt setzen, oder anhängen wenn schon was drin steht
+  const heute = new Date().toLocaleDateString('de-DE');
+  const text = tpl.replace(/\[DATUM\](?![^\[]*\])/, heute);  // erstes [DATUM] = heute
+  if (ta.value.trim()) {
+    ta.value = ta.value.trim() + '\n\n' + text;
+  } else {
+    ta.value = text;
+  }
+  ta.focus();
+  // Cursor an erste Platzhalter-Stelle setzen
+  const firstPlaceholder = ta.value.indexOf('[');
+  if (firstPlaceholder !== -1) {
+    const endBracket = ta.value.indexOf(']', firstPlaceholder);
+    if (endBracket !== -1) ta.setSelectionRange(firstPlaceholder, endBracket + 1);
+  }
+  // Dropdown zurücksetzen
+  const sel = document.getElementById('notiz-template-select');
+  if (sel) sel.value = '';
 }
 
 // ============================================================================

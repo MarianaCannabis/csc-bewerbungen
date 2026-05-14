@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mariana Cannabis · Bewerbungs-Dashboard v2</title>
-  <!-- DASHBOARD_BUILD: 2026-05-14T1142 (Score-System UI: Ampel, Score-pro-Rolle-Balken, Verfügbarkeits-Heatmap) -->
-  <script>window.__DASHBOARD_BUILD = '2026-05-14T1142';</script>
+  <!-- DASHBOARD_BUILD: 2026-05-14T1242 (Score-Pille in Liste + Faktor-Aufschlüsselung im Detail-View) -->
+  <script>window.__DASHBOARD_BUILD = '2026-05-14T1242';</script>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -295,6 +295,24 @@
     
     .score-hardfilter { background: rgba(236,100,100,0.1); border: 1px solid rgba(236,100,100,0.3); border-radius: 6px; padding: 10px 12px; color: var(--tx); font-size: 13px; margin-bottom: 12px; }
     
+    /* Faktor-Aufschlüsselung */
+    .score-faktoren { background: var(--bg-elev); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; margin-bottom: 12px; }
+    .faktor-row { margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px dashed var(--border); }
+    .faktor-row:last-of-type { border-bottom: none; padding-bottom: 0; margin-bottom: 6px; }
+    .faktor-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+    .faktor-name { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--tx); font-weight: 500; }
+    .faktor-icon { font-size: 14px; }
+    .faktor-gewicht { font-size: 10px; color: var(--tx-mute); background: rgba(255,255,255,0.05); padding: 1px 6px; border-radius: 8px; font-weight: 600; }
+    .faktor-num { font-size: 13px; font-weight: 700; color: var(--tx); font-variant-numeric: tabular-nums; display: flex; align-items: center; gap: 6px; }
+    .faktor-beitrag { font-size: 11px; color: var(--green); font-weight: 500; }
+    .faktor-bar { height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden; margin-bottom: 4px; }
+    .faktor-fill { height: 100%; transition: width 0.4s ease; border-radius: 3px; }
+    .faktor-fill.gruen { background: linear-gradient(90deg, #4caf6a, #6ed080); }
+    .faktor-fill.gelb  { background: linear-gradient(90deg, #f9c74f, #fde68a); }
+    .faktor-fill.rot   { background: linear-gradient(90deg, #ec6464, #f59999); }
+    .faktor-erklaerung { font-size: 11px; color: var(--tx-mute); padding-left: 22px; }
+    .faktor-summary { font-size: 11px; color: var(--tx-mute); text-align: center; padding-top: 8px; border-top: 1px solid var(--border); margin-top: 8px; font-style: italic; }
+    
     .verfueg-heatmap { background: var(--bg-elev); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
     .verfueg-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--tx-mute); margin-bottom: 8px; font-weight: 600; }
     .verfueg-standort { margin-bottom: 10px; }
@@ -480,6 +498,17 @@
     
     /* Listen-Indikatoren (Notiz, Anhänge, etc.) */
     .li-indicator { display: inline-block; font-size: 12px; opacity: 0.8; margin: 0 1px; cursor: help; }
+    .li-score { 
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 26px; height: 18px; padding: 0 4px;
+      border-radius: 9px; font-size: 11px; font-weight: 700;
+      vertical-align: middle; margin: 0 2px;
+      font-variant-numeric: tabular-nums; cursor: help;
+      border: 1px solid;
+    }
+    .li-score.sg-gruen { background: rgba(76,175,106,0.18); color: #6ed080; border-color: rgba(76,175,106,0.5); }
+    .li-score.sg-gelb  { background: rgba(249,199,79,0.18); color: #f9c74f; border-color: rgba(249,199,79,0.5); }
+    .li-score.sg-rot   { background: rgba(236,100,100,0.18); color: #ec6464; border-color: rgba(236,100,100,0.5); }
     
     /* Loading & Toast */
     .loading { display: flex; align-items: center; gap: 8px; color: var(--tx-mute); font-size: 13px; padding: 24px; }
@@ -1709,8 +1738,14 @@ function renderList() {
     const stdHtml = stdLabel ? `<span class="list-item-std">${stdLabel}</span>` : '';
     const isSelected = selectedIds.has(b.id);
     
-    // Mini-Indikatoren neben dem Namen: Notiz, Anhänge, etc.
+    // Mini-Indikatoren neben dem Namen: Notiz, Anhänge, Score, etc.
     let indicators = '';
+    // Score-Pille (Ampel-Farbe)
+    if (b.score_gesamt !== null && b.score_gesamt !== undefined) {
+      const sCls = b.score_gesamt >= 75 ? 'sg-gruen' : b.score_gesamt >= 50 ? 'sg-gelb' : 'sg-rot';
+      const sTitle = b.score_gesamt >= 75 ? 'Starker Kandidat' : b.score_gesamt >= 50 ? 'Mittlerer Kandidat' : 'Schwacher Kandidat';
+      indicators += `<span class="li-score ${sCls}" title="Score: ${b.score_gesamt}/100 — ${sTitle}" aria-label="Score ${b.score_gesamt}">${b.score_gesamt}</span>`;
+    }
     if (b.vorstand_notiz && b.vorstand_notiz.trim()) {
       indicators += `<span class="li-indicator" title="Schnell-Notiz vorhanden" aria-label="Notiz vorhanden">💬</span>`;
     }
@@ -2120,6 +2155,14 @@ async function selectBewerbung(id) {
               </div>
             `;
           }).join('')}
+        </div>
+      ` : ''}
+      
+      <!-- Faktoren-Aufschlüsselung (6 Einzelfaktoren) -->
+      ${b.score_pro_rolle && b.score_pro_rolle._faktoren ? `
+        <div class="score-faktoren">
+          <div class="score-rollen-title">Faktor-Aufschlüsselung</div>
+          ${renderFaktoren(b.score_pro_rolle._faktoren, b)}
         </div>
       ` : ''}
       
@@ -2701,6 +2744,92 @@ function toast(msg, isError = false) {
   el.textContent = msg; el.className = 'toast show' + (isError ? ' error' : '');
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+// ============================================================================
+// FAKTOR-AUFSCHLÜSSELUNG (für Score-Section)
+// ============================================================================
+const FAKTOR_LABELS = {
+  verfuegbarkeit: { label: 'Verfügbarkeit', icon: '📅', erklaerung: 'Anteil deiner belegten Verfügbarkeits-Slots' },
+  erfahrung:      { label: 'Erfahrung & Qualifikation', icon: '🎓', erklaerung: 'Vorerfahrung, Bildungsabschluss, Sprachen' },
+  mobilitaet:     { label: 'Mobilität', icon: '🚗', erklaerung: 'Max. Anfahrtszeit + eigenes Fahrzeug' },
+  softskills:     { label: 'Soft Skills', icon: '🤝', erklaerung: 'Mittelwert der Selbsteinschätzung' },
+  bereitschaft:   { label: 'Bereitschaft', icon: '🌙', erklaerung: 'Wochenende / Feiertag / Nacht' },
+  sachkunde:      { label: 'Sachkunde', icon: '📜', erklaerung: 'Präventions-Sachkundenachweis' }
+};
+
+function renderFaktoren(faktoren, b) {
+  if (!faktoren || typeof faktoren !== 'object') return '';
+  
+  // Wenn nur eine Rolle: zeige Gewichtung dazu
+  const rollenScores = b.score_pro_rolle 
+    ? Object.entries(b.score_pro_rolle).filter(([k]) => !k.startsWith('_'))
+    : [];
+  let gewichtungInfo = '';
+  if (rollenScores.length === 1) {
+    const [rolle] = rollenScores[0];
+    const gewichtungen = {
+      'ausgabe':                  { v:30, e:20, m:15, s:20, b:10, k:5 },
+      'grower':                   { v:25, e:35, m:10, s:10, b:15, k:5 },
+      'head_grower':              { v:25, e:40, m:10, s:10, b:10, k:5 },
+      'vorstand':                 { v:15, e:40, m:10, s:25, b:5, k:5 },
+      'stellv_vorstand':          { v:15, e:40, m:10, s:25, b:5, k:5 },
+      'praevention':              { v:15, e:25, m:10, s:15, b:5, k:30 },
+      'praeventionsbeauftragter': { v:15, e:25, m:10, s:15, b:5, k:30 },
+      'sicherheit':               { v:30, e:25, m:15, s:10, b:15, k:5 },
+      'reinigung':                { v:40, e:15, m:20, s:10, b:10, k:5 },
+      'springer':                 { v:45, e:15, m:15, s:10, b:10, k:5 }
+    };
+    const g = gewichtungen[rolle.toLowerCase()] || { v:25, e:25, m:15, s:15, b:10, k:10 };
+    gewichtungInfo = g;
+  }
+  
+  const order = ['verfuegbarkeit', 'erfahrung', 'mobilitaet', 'softskills', 'bereitschaft', 'sachkunde'];
+  const gewichtKey = { verfuegbarkeit: 'v', erfahrung: 'e', mobilitaet: 'm', softskills: 's', bereitschaft: 'b', sachkunde: 'k' };
+  
+  let html = '';
+  order.forEach(key => {
+    const val = faktoren[key];
+    if (val === undefined || val === null) return;
+    const info = FAKTOR_LABELS[key];
+    const cls = val >= 75 ? 'gruen' : val >= 50 ? 'gelb' : 'rot';
+    const gewicht = gewichtungInfo ? gewichtungInfo[gewichtKey[key]] : null;
+    const beitrag = gewicht !== null ? Math.round(val * gewicht / 100) : null;
+    
+    html += `
+      <div class="faktor-row">
+        <div class="faktor-head">
+          <div class="faktor-name">
+            <span class="faktor-icon">${info.icon}</span>
+            <span>${info.label}</span>
+            ${gewicht !== null ? `<span class="faktor-gewicht" title="Gewichtung für diese Rolle">${gewicht}%</span>` : ''}
+          </div>
+          <div class="faktor-num">
+            ${val}
+            ${beitrag !== null ? `<span class="faktor-beitrag" title="Beitrag zum Gesamt-Score">→ ${beitrag}</span>` : ''}
+          </div>
+        </div>
+        <div class="faktor-bar"><div class="faktor-fill ${cls}" style="width:${val}%"></div></div>
+        <div class="faktor-erklaerung">${info.erklaerung}</div>
+      </div>
+    `;
+  });
+  
+  if (gewichtungInfo) {
+    html += `
+      <div class="faktor-summary">
+        <span>Summe der gewichteten Beiträge ergibt den Rollen-Score (${rollenScores[0][1]} / 100).</span>
+      </div>
+    `;
+  } else if (rollenScores.length > 1) {
+    html += `
+      <div class="faktor-summary">
+        <span>Bei mehreren Rollen wird pro Rolle unterschiedlich gewichtet. Zahlen oben zeigen die Roh-Faktoren.</span>
+      </div>
+    `;
+  }
+  
+  return html;
 }
 
 // ============================================================================

@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mariana Cannabis · Bewerbungs-Dashboard v2</title>
-  <!-- DASHBOARD_BUILD: 2026-05-14T0442 (Auto-Refresh: Polling + Refresh-Button + Smart-UI-Updates) -->
-  <script>window.__DASHBOARD_BUILD = '2026-05-14T0442';</script>
+  <!-- DASHBOARD_BUILD: 2026-05-14T0542 (Bug-Fixes: Notiz-Indikator, Polling-Debug, Inbox-Sync) -->
+  <script>window.__DASHBOARD_BUILD = '2026-05-14T0542';</script>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -411,6 +411,9 @@
     #btn-refresh .refresh-icon { display: inline-block; transition: transform 0.3s; }
     #btn-refresh.refreshing .refresh-icon { animation: spin-icon 0.8s linear infinite; }
     @keyframes spin-icon { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    
+    /* Listen-Indikatoren (Notiz, Anhänge, etc.) */
+    .li-indicator { display: inline-block; font-size: 12px; opacity: 0.8; margin: 0 1px; cursor: help; }
     
     /* Loading & Toast */
     .loading { display: flex; align-items: center; gap: 8px; color: var(--tx-mute); font-size: 13px; padding: 24px; }
@@ -1242,14 +1245,25 @@ async function refreshOneBewerbung(id) {
 
 // Alle Bewerbungen silent neu laden — ohne UI-Disruption
 async function silentReloadBewerbungen() {
-  if (document.hidden) return;  // Tab nicht aktiv: skip
+  if (document.hidden) { console.log('[Polling] skip, tab hidden'); return; }
   try {
     let q = sb.from('csc_bewerbungen').select('*').order('eingegangen_am', { ascending: false });
     if (!userContext?.ist_admin && userContext?.verein_id) {
       q = q.eq('verein_id', userContext.verein_id);
     }
     const { data, error } = await q;
-    if (error || !data) return;
+    if (error) { console.warn('[Polling] DB-Fehler:', error); return; }
+    if (!data) return;
+    
+    // Notiz-Verlauf-Counts mit nachladen (für 🗒-Indikator)
+    try {
+      const { data: notes } = await sb.from('csc_bewerbung_notizen').select('bewerbung_id');
+      if (notes) {
+        const counts = {};
+        notes.forEach(n => { counts[n.bewerbung_id] = (counts[n.bewerbung_id] || 0) + 1; });
+        data.forEach(b => { b.notiz_verlauf_count = counts[b.id] || 0; });
+      }
+    } catch (_) {}
     
     // Diff: was hat sich geändert?
     const prevCount = bewerbungen.length;
@@ -1263,6 +1277,8 @@ async function silentReloadBewerbungen() {
       selectBewerbung(selectedId);
     }
     
+    console.log('[Polling] OK,', data.length, 'Bewerbungen', added.length > 0 ? `(+${added.length} neu)` : '');
+    
     // Stille Notification bei neuer Bewerbung
     if (added.length > 0 && prevCount > 0) {
       const msg = added.length === 1 
@@ -1275,10 +1291,14 @@ async function silentReloadBewerbungen() {
 
 function startBackgroundPolling() {
   if (pollingTimer) return;
+  console.log('[Polling] Started, interval', POLL_INTERVAL_MS, 'ms');
   pollingTimer = setInterval(silentReloadBewerbungen, POLL_INTERVAL_MS);
   // Wenn Tab wieder sichtbar wird: sofort pollen
   document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) silentReloadBewerbungen();
+    if (!document.hidden) {
+      console.log('[Polling] Tab visible, triggering immediate poll');
+      silentReloadBewerbungen();
+    }
   });
 }
 
@@ -1312,6 +1332,19 @@ async function loadBewerbungen() {
   const { data, error } = await sb.from('csc_bewerbungen').select('*').order('eingegangen_am', { ascending: false });
   if (error) { document.getElementById('list-items').innerHTML = '<div class="list-empty">Fehler beim Laden: ' + escapeHtml(error.message) + '</div>'; return; }
   bewerbungen = data || [];
+  
+  // Notiz-Verlauf-Counts pro Bewerbung nachladen (für Listen-Indikator 🗒)
+  // Wenn die Tabelle nicht existiert oder ein Fehler kommt: still ignorieren
+  try {
+    const { data: notes, error: notesErr } = await sb.from('csc_bewerbung_notizen')
+      .select('bewerbung_id');
+    if (!notesErr && notes) {
+      const counts = {};
+      notes.forEach(n => { counts[n.bewerbung_id] = (counts[n.bewerbung_id] || 0) + 1; });
+      bewerbungen.forEach(b => { b.notiz_verlauf_count = counts[b.id] || 0; });
+    }
+  } catch (_) {}
+  
   renderList();
 }
 
@@ -1535,11 +1568,21 @@ function renderList() {
     }
     const stdHtml = stdLabel ? `<span class="list-item-std">${stdLabel}</span>` : '';
     const isSelected = selectedIds.has(b.id);
+    
+    // Mini-Indikatoren neben dem Namen: Notiz, Anhänge, etc.
+    let indicators = '';
+    if (b.vorstand_notiz && b.vorstand_notiz.trim()) {
+      indicators += `<span class="li-indicator" title="Schnell-Notiz vorhanden" aria-label="Notiz vorhanden">💬</span>`;
+    }
+    if (b.notiz_verlauf_count > 0) {
+      indicators += `<span class="li-indicator" title="${b.notiz_verlauf_count} Eintrag${b.notiz_verlauf_count !== 1 ? 'e' : ''} im Verlauf" aria-label="Notiz-Verlauf">🗒</span>`;
+    }
+    
     const itemLabel = `Bewerbung von ${b.vorname || ''} ${b.nachname || ''}, Status ${STATUS_LABELS[status] || status}${rollenLabel ? ', Rolle ' + rollenLabel : ''}${stdLabel ? ', ' + stdLabel : ''}${v ? ', Verein ' + v.name : ''}`;
     return `<div class="list-item ${b.id === selectedId ? 'active' : ''} ${isSelected ? 'bulk-selected' : ''}" role="listitem">
       <input type="checkbox" class="list-item-cb" ${isSelected ? 'checked' : ''} onclick="event.stopPropagation(); toggleSelectBewerbung('${b.id}')" aria-label="Auswählen: ${escapeHtml(b.vorname || '')} ${escapeHtml(b.nachname || '')}">
       <button class="list-item-content" type="button" onclick="selectBewerbung('${b.id}')" aria-label="${escapeHtml(itemLabel)}" aria-current="${b.id === selectedId ? 'true' : 'false'}">
-        <div class="list-item-top"><div class="list-item-name">${escapeHtml(b.vorname || '')} ${escapeHtml(b.nachname || '')} ${dupBadge} ${tagsList}</div><div class="list-item-date">${date}</div></div>
+        <div class="list-item-top"><div class="list-item-name">${escapeHtml(b.vorname || '')} ${escapeHtml(b.nachname || '')} ${dupBadge} ${indicators} ${tagsList}</div><div class="list-item-date">${date}</div></div>
         <div class="list-item-meta"><span class="status-badge ${status}">${STATUS_LABELS[status] || status}</span><span class="list-item-rolle">${escapeHtml(rollenLabel || '–')}</span>${stdHtml}</div>
         ${userContext.ist_admin && v ? `<div class="list-item-verein">${escapeHtml(v.name)}</div>` : ''}
       </button>
@@ -2002,6 +2045,10 @@ async function addNotiz(bewerbungId) {
     if (error) throw error;
     txtEl.value = '';
     toast('✓ Notiz hinzugefügt');
+    // Lokalen Count erhöhen damit 🗒-Indikator in Liste erscheint
+    const b = bewerbungen.find(x => x.id === bewerbungId);
+    if (b) b.notiz_verlauf_count = (b.notiz_verlauf_count || 0) + 1;
+    renderList();
     await loadNotizVerlauf(bewerbungId);
   } catch (e) {
     console.error('[addNotiz]', e);
@@ -2017,6 +2064,10 @@ async function deleteNotiz(notizId, bewerbungId) {
     const { error } = await sb.from('csc_bewerbung_notizen').delete().eq('id', notizId);
     if (error) throw error;
     toast('Notiz gelöscht');
+    // Lokalen Count runterzählen
+    const b = bewerbungen.find(x => x.id === bewerbungId);
+    if (b && b.notiz_verlauf_count > 0) b.notiz_verlauf_count--;
+    renderList();
     await loadNotizVerlauf(bewerbungId);
   } catch (e) {
     console.error('[deleteNotiz]', e);

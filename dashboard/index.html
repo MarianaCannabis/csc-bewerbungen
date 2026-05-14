@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mariana Cannabis · Bewerbungs-Dashboard v2</title>
-  <!-- DASHBOARD_BUILD: 2026-05-14T0542 (Bug-Fixes: Notiz-Indikator, Polling-Debug, Inbox-Sync) -->
-  <script>window.__DASHBOARD_BUILD = '2026-05-14T0542';</script>
+  <!-- DASHBOARD_BUILD: 2026-05-14T0642 (RLS-Detection, Polling-No-Disrupt, Generic Audit-Log) -->
+  <script>window.__DASHBOARD_BUILD = '2026-05-14T0642';</script>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -1246,6 +1246,15 @@ async function refreshOneBewerbung(id) {
 // Alle Bewerbungen silent neu laden — ohne UI-Disruption
 async function silentReloadBewerbungen() {
   if (document.hidden) { console.log('[Polling] skip, tab hidden'); return; }
+  
+  // Wenn User gerade in einem Input/Textarea ist, NICHT neu rendern
+  // (sonst gehen Eingaben verloren beim Detail-Re-Render)
+  const active = document.activeElement;
+  if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable)) {
+    console.log('[Polling] skip, user is typing');
+    return;
+  }
+  
   try {
     let q = sb.from('csc_bewerbungen').select('*').order('eingegangen_am', { ascending: false });
     if (!userContext?.ist_admin && userContext?.verein_id) {
@@ -1268,13 +1277,21 @@ async function silentReloadBewerbungen() {
     // Diff: was hat sich geändert?
     const prevCount = bewerbungen.length;
     const prevIds = new Set(bewerbungen.map(b => b.id));
+    const prevByIdMap = new Map(bewerbungen.map(b => [b.id, b]));
     const added = data.filter(b => !prevIds.has(b.id));
     
     bewerbungen = data;
     refreshUI({ stats: true, list: true });
-    if (selectedId && data.find(b => b.id === selectedId)) {
-      // Detail nur neu rendern wenn aktuell geöffnet
-      selectBewerbung(selectedId);
+    
+    // Detail nur re-rendern wenn die offene Bewerbung tatsächlich geändert wurde
+    // (sonst flickert es bei jedem Poll, und Eingaben in Notiz-Verlauf gehen verloren)
+    if (selectedId) {
+      const current = data.find(b => b.id === selectedId);
+      const prevB = prevByIdMap.get(selectedId);
+      if (current && prevB && JSON.stringify(current) !== JSON.stringify(prevB)) {
+        console.log('[Polling] Detail-View aktualisieren weil Daten geändert');
+        selectBewerbung(selectedId);
+      }
     }
     
     console.log('[Polling] OK,', data.length, 'Bewerbungen', added.length > 0 ? `(+${added.length} neu)` : '');
@@ -2031,18 +2048,25 @@ async function loadNotizVerlauf(bewerbungId) {
 async function addNotiz(bewerbungId) {
   const txtEl = document.getElementById('new-notiz-text');
   const btn = document.getElementById('btn-add-notiz');
-  if (!txtEl || !btn) return;
+  if (!txtEl || !btn) { console.warn('[addNotiz] Elemente fehlen'); return; }
   const text = (txtEl.value || '').trim();
   if (!text) { toast('Notiz ist leer', true); return; }
   btn.disabled = true;
+  console.log('[addNotiz] Insert versucht für', bewerbungId, 'als', session?.user?.email);
   try {
-    const { error } = await sb.from('csc_bewerbung_notizen').insert({
+    const { data, error } = await sb.from('csc_bewerbung_notizen').insert({
       bewerbung_id: bewerbungId,
       text: text,
       autor_email: session?.user?.email || null
       // autor_id wird via DEFAULT auth.uid() gesetzt
-    });
+    }).select().maybeSingle();
     if (error) throw error;
+    if (!data) {
+      console.error('[addNotiz] RLS-Block: Insert hat 0 Zeilen erzeugt');
+      toast('⚠️ Insert blockiert (RLS) — siehe Console', true);
+      return;
+    }
+    console.log('[addNotiz] OK, neuer Eintrag:', data);
     txtEl.value = '';
     toast('✓ Notiz hinzugefügt');
     // Lokalen Count erhöhen damit 🗒-Indikator in Liste erscheint
@@ -2051,8 +2075,8 @@ async function addNotiz(bewerbungId) {
     renderList();
     await loadNotizVerlauf(bewerbungId);
   } catch (e) {
-    console.error('[addNotiz]', e);
-    toast('Fehler: ' + (e.message || e), true);
+    console.error('[addNotiz] Exception:', e);
+    toast('Fehler: ' + (e.message || JSON.stringify(e)), true);
   } finally {
     btn.disabled = false;
   }
@@ -2091,32 +2115,52 @@ async function toggleAuditLog(bewerbungId) {
   if (toggleEl) toggleEl.textContent = '▴';
   listEl.innerHTML = '<div class="audit-empty">Lade…</div>';
   try {
+    // Generisch: ALLE Spalten selektieren, ohne fest auf Spaltennamen zu bauen
     const { data, error } = await sb.from('csc_bewerbung_changes')
       .select('*')
       .eq('bewerbung_id', bewerbungId)
-      .order('geaendert_am', { ascending: false })
-      .limit(50);
+      .limit(100);
     if (error) throw error;
+    console.log('[Audit-Log] geladen:', data?.length || 0, 'Einträge für', bewerbungId);
     if (!data || data.length === 0) {
-      listEl.innerHTML = '<div class="audit-empty">Keine Änderungs-Einträge vorhanden.</div>';
+      listEl.innerHTML = `
+        <div class="audit-empty">
+          Keine Änderungs-Einträge vorhanden.<br>
+          <small style="color:var(--tx-mute)">Falls hier nichts erscheint, obwohl du gerade was geändert hast:<br>
+          die Tabelle <code>csc_bewerbung_changes</code> wird vermutlich nicht durch einen Trigger befüllt.</small>
+        </div>`;
       return;
     }
+    
+    // Spalten erkennen: was ist Zeit-Spalte, was Wert-Spalten?
+    const sample = data[0];
+    const allCols = Object.keys(sample);
+    // Erkenne Zeit-Spalte heuristisch
+    const timeCol = ['geaendert_am','changed_at','created_at','timestamp','zeit'].find(c => allCols.includes(c)) || allCols.find(c => sample[c] && typeof sample[c] === 'string' && /^\d{4}-\d{2}/.test(sample[c]));
+    
+    // Sortiere wenn Zeit-Spalte gefunden
+    if (timeCol) data.sort((a, b) => new Date(b[timeCol]) - new Date(a[timeCol]));
+    
     listEl.innerHTML = data.map(c => {
-      const dat = new Date(c.geaendert_am).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
-      const feld = c.feld || c.field || '—';
-      const alt = c.alt_wert ?? c.old_value ?? '—';
-      const neu = c.neu_wert ?? c.new_value ?? '—';
-      const autor = c.geaendert_von || c.changed_by || '—';
+      const dat = timeCol && c[timeCol] ? new Date(c[timeCol]).toLocaleString('de-DE') : '—';
+      // Wert-Spalten: alles außer id, bewerbung_id, Zeit-Spalten
+      const valueCols = allCols.filter(k => 
+        k !== 'id' && k !== 'bewerbung_id' && k !== timeCol && c[k] !== null && c[k] !== undefined
+      );
+      const valuesHtml = valueCols.map(k => {
+        const val = typeof c[k] === 'object' ? JSON.stringify(c[k]) : String(c[k]);
+        return `<div><strong style="color:var(--green-dim)">${escapeHtml(k)}:</strong> <span style="color:var(--tx)">${escapeHtml(val)}</span></div>`;
+      }).join('');
       return `
         <div class="audit-entry">
-          <div class="audit-entry-meta">${dat} · ${escapeHtml(autor)}</div>
-          <div class="audit-entry-text"><strong>${escapeHtml(feld)}:</strong> ${escapeHtml(String(alt))} → ${escapeHtml(String(neu))}</div>
+          <div class="audit-entry-meta">${dat}</div>
+          <div class="audit-entry-text" style="display:flex;flex-direction:column;gap:2px">${valuesHtml || '<em style="color:var(--tx-mute)">leer</em>'}</div>
         </div>
       `;
     }).join('');
   } catch (e) {
-    console.error('[Audit-Log]', e);
-    listEl.innerHTML = '<div class="audit-empty">Fehler beim Laden: ' + escapeHtml(e.message || String(e)) + '</div>';
+    console.error('[Audit-Log] Fehler:', e);
+    listEl.innerHTML = `<div class="audit-empty">Fehler beim Laden: <code>${escapeHtml(e.message || String(e))}</code><br><small>Häufige Ursache: Tabelle <code>csc_bewerbung_changes</code> existiert nicht oder du hast keine SELECT-Permission.</small></div>`;
   }
 }
 
@@ -2127,17 +2171,29 @@ async function setStatus(id, newStatus) {
   if (!confirmed) return;
   try {
     // status_geaendert_am und status_geaendert_von werden via Trigger automatisch gesetzt
-    const { error } = await sb.from('csc_bewerbungen').update({ status: newStatus }).eq('id', id);
+    const { error, data } = await sb.from('csc_bewerbungen')
+      .update({ status: newStatus })
+      .eq('id', id)
+      .select()
+      .maybeSingle();
     if (error) throw error;
-    // Lokal sofort updaten (für instant UI feedback)
-    b.status = newStatus; 
-    b.status_geaendert_am = new Date().toISOString();
-    b.status_geaendert_von = session.user.email;
-    renderList(); selectBewerbung(id); renderStats();
+    if (!data) { 
+      toast('⚠️ Update fehlgeschlagen — Permission? (RLS)', true); 
+      console.warn('[setStatus] Keine Zeile aktualisiert. RLS-Policy verweigert?', { id, newStatus });
+      return; 
+    }
+    // Update lokal mit echten DB-Werten (inkl. Trigger-Werte)
+    const idx = bewerbungen.findIndex(x => x.id === id);
+    if (idx !== -1) bewerbungen[idx] = data;
+    // UI sofort und vollständig neu rendern
+    renderStats();
+    renderList();
+    if (selectedId === id) selectBewerbung(id);
     toast('Status auf "' + STATUS_LABELS[newStatus] + '" gesetzt');
-    // Nach 800ms: einmal aus DB nachladen damit Trigger-Werte sichtbar werden
-    setTimeout(() => refreshOneBewerbung(id), 800);
-  } catch (e) { toast('Fehler: ' + e.message, true); }
+  } catch (e) { 
+    console.error('[setStatus]', e);
+    toast('Fehler: ' + e.message, true); 
+  }
 }
 
 // Notiz speichern (onblur)
@@ -3901,13 +3957,17 @@ async function addTag(bewerbungId, tagValue) {
   if (current.includes(tagValue)) { toast('Tag schon vorhanden', true); return; }
   const newTags = [...current, tagValue];
   try {
-    const { error } = await sb.from('csc_bewerbungen').update({ tags: newTags }).eq('id', bewerbungId);
+    const { data, error } = await sb.from('csc_bewerbungen')
+      .update({ tags: newTags }).eq('id', bewerbungId).select().maybeSingle();
     if (error) throw error;
-    b.tags = newTags;
+    if (!data) { toast('⚠️ Update blockiert (RLS)', true); return; }
+    // Lokal mit DB-Werten updaten
+    const idx = bewerbungen.findIndex(x => x.id === bewerbungId);
+    if (idx !== -1) bewerbungen[idx] = data;
     toast('✓ Tag hinzugefügt');
-    selectBewerbung(bewerbungId);
+    if (selectedId === bewerbungId) selectBewerbung(bewerbungId);
     renderList();
-    renderStats();  // Inbox-Count könnte sich nicht ändern, aber für Konsistenz
+    renderStats();
   } catch (e) {
     console.error('[Tag] Hinzufügen-Fehler:', e);
     toast('Fehler: ' + (e.message || e), true);
@@ -3920,11 +3980,14 @@ async function removeTag(bewerbungId, tagValue) {
   const current = Array.isArray(b.tags) ? b.tags : [];
   const newTags = current.filter(t => t !== tagValue);
   try {
-    const { error } = await sb.from('csc_bewerbungen').update({ tags: newTags }).eq('id', bewerbungId);
+    const { data, error } = await sb.from('csc_bewerbungen')
+      .update({ tags: newTags }).eq('id', bewerbungId).select().maybeSingle();
     if (error) throw error;
-    b.tags = newTags;
+    if (!data) { toast('⚠️ Update blockiert (RLS)', true); return; }
+    const idx = bewerbungen.findIndex(x => x.id === bewerbungId);
+    if (idx !== -1) bewerbungen[idx] = data;
     toast('Tag entfernt');
-    selectBewerbung(bewerbungId);
+    if (selectedId === bewerbungId) selectBewerbung(bewerbungId);
     renderList();
     renderStats();
   } catch (e) {

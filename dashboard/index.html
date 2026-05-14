@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mariana Cannabis · Bewerbungs-Dashboard v2</title>
-  <!-- DASHBOARD_BUILD: 2026-05-14T1642 (Sortier-Optionen erweitert: Score, Stunden, Termin, Wartedauer + 3 neue Mail-Vorlagen) -->
-  <script>window.__DASHBOARD_BUILD = '2026-05-14T1642';</script>
+  <!-- DASHBOARD_BUILD: 2026-05-14T1742 (Branded HTML = Default für Mails + aufgewertete HTML-Vorlage mit Datenschutz-Links) -->
+  <script>window.__DASHBOARD_BUILD = '2026-05-14T1742';</script>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -3988,28 +3988,65 @@ function applyMailPlaceholders(text, b, v) {
 }
 
 function plainToHtml(text, b, v) {
-  // wandelt Plain-Text in einfaches branded HTML
+  // wandelt Plain-Text in branded HTML mit Mariana-Look
   const escaped = String(text).replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
-  const paragraphs = escaped.split(/\n\n+/).map(p => `<p style="margin:0 0 12px 0;line-height:1.6">${p.replace(/\n/g, '<br>')}</p>`).join('');
+  const paragraphs = escaped.split(/\n\n+/).map(p => `<p style="margin:0 0 14px 0;line-height:1.65;color:#1a1a1a">${p.replace(/\n/g, '<br>')}</p>`).join('');
   const vereinName = v?.name || 'Mariana Cannabis';
+  const vereinEmail = v?.email || 'communityrecruiting@mariana-cannabis.de';
   return `<!DOCTYPE html>
-<html lang="de"><head><meta charset="UTF-8"></head>
-<body style="margin:0;padding:0;background:#f6f7f5;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif">
-<table width="100%" cellpadding="0" cellspacing="0" style="background:#f6f7f5;padding:24px">
+<html lang="de"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>${escapeHtml(vereinName)}</title>
+</head>
+<body style="margin:0;padding:0;background:#f6f7f5;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1a1a1a;-webkit-font-smoothing:antialiased">
+<!-- Wrapper -->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f6f7f5;padding:24px 12px">
   <tr><td align="center">
-    <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;border:1px solid #e6e8e3">
-      <tr><td style="background:#08100b;padding:22px 30px;color:#ffffff">
-        <div style="font-size:18px;font-weight:600;color:#4caf6a;letter-spacing:-0.01em">🌿 ${escapeHtml(vereinName)}</div>
-        <div style="font-size:12px;color:#9aa6a0;margin-top:4px">Cannabis Social Club · Mariana Cannabis</div>
+    
+    <!-- Mail-Container -->
+    <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e6e8e3;max-width:600px;box-shadow:0 2px 8px rgba(8,16,11,0.04)">
+      
+      <!-- Header mit Mariana-Branding -->
+      <tr><td style="background:linear-gradient(135deg,#08100b 0%,#0f1f15 100%);padding:28px 36px;color:#ffffff">
+        <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+          <td style="vertical-align:middle">
+            <div style="font-size:22px;font-weight:700;color:#4caf6a;letter-spacing:-0.02em;line-height:1.1">🌿 ${escapeHtml(vereinName)}</div>
+            <div style="font-size:12px;color:#9aa6a0;margin-top:6px;letter-spacing:0.02em">Cannabis Social Club &nbsp;·&nbsp; Mariana Cannabis</div>
+          </td>
+        </tr></table>
       </td></tr>
-      <tr><td style="padding:30px;color:#1a1a1a;font-size:14px">${paragraphs}</td></tr>
-      <tr><td style="background:#f3f5f1;padding:16px 30px;font-size:11px;color:#6e7670;border-top:1px solid #e6e8e3">
-        Diese E-Mail wurde im Rahmen deiner Bewerbung bei <strong>${escapeHtml(vereinName)}</strong> versendet.
-        Bei Fragen einfach auf diese Mail antworten.
+      
+      <!-- Inhalt -->
+      <tr><td style="padding:36px 36px 24px 36px;font-size:14.5px">${paragraphs}</td></tr>
+      
+      <!-- Reply-Hint -->
+      <tr><td style="padding:0 36px 24px 36px">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f3f8f5;border:1px solid #d8e8de;border-radius:8px;padding:0">
+          <tr><td style="padding:12px 16px;font-size:12.5px;color:#3a5040;line-height:1.5">
+            💬 <strong>Antworten möglich:</strong> Du kannst direkt auf diese E-Mail antworten — wir lesen mit.
+          </td></tr>
+        </table>
       </td></tr>
+      
+      <!-- Footer -->
+      <tr><td style="background:#f3f5f1;padding:20px 36px 22px 36px;font-size:11.5px;color:#6e7670;border-top:1px solid #e6e8e3;line-height:1.6">
+        <div style="margin-bottom:8px"><strong style="color:#4a5a50">${escapeHtml(vereinName)}</strong> &nbsp;·&nbsp; Mariana Cannabis Dachorganisation</div>
+        <div>
+          <a href="mailto:${escapeHtml(vereinEmail)}" style="color:#4caf6a;text-decoration:none">${escapeHtml(vereinEmail)}</a>
+          &nbsp;·&nbsp;
+          <a href="https://cscsdeutschland.de/datenschutzerklarung" style="color:#6e7670;text-decoration:underline">Datenschutz</a>
+          &nbsp;·&nbsp;
+          <a href="https://cscsdeutschland.de/impressum" style="color:#6e7670;text-decoration:underline">Impressum</a>
+        </div>
+        <div style="margin-top:10px;color:#9aa6a0;font-size:11px">Diese E-Mail wurde im Rahmen deiner Bewerbung versendet.</div>
+      </td></tr>
+      
     </table>
+    
   </td></tr>
-</table></body></html>`;
+</table>
+</body></html>`;
 }
 
 let currentMailBewerbung = null;
@@ -4044,8 +4081,8 @@ function openMailModal(id) {
         Empfehlung: für Status-Wechsel die Status-Buttons oben nutzen — die senden die Auto-Mail.
       </div>
       <div style="display:flex;gap:14px;margin-top:10px;font-size:12px">
-        <label style="cursor:pointer"><input type="radio" name="mail-format" value="plain" checked onchange="renderMailPreview()"> Plain-Text</label>
-        <label style="cursor:pointer"><input type="radio" name="mail-format" value="html" onchange="renderMailPreview()"> Branded HTML</label>
+        <label style="cursor:pointer"><input type="radio" name="mail-format" value="html" checked onchange="renderMailPreview()"> 🎨 Branded HTML <span style="color:var(--tx-mute)">(empfohlen)</span></label>
+        <label style="cursor:pointer"><input type="radio" name="mail-format" value="plain" onchange="renderMailPreview()"> Plain-Text</label>
       </div>
     </div>
 
@@ -4099,7 +4136,7 @@ function renderMailPreview() {
   const v = vereine[b.verein_id];
   const subject = document.getElementById('mail-subject').value;
   const bodyText = document.getElementById('mail-body-text').value;
-  const format = document.querySelector('input[name="mail-format"]:checked')?.value || 'plain';
+  const format = document.querySelector('input[name="mail-format"]:checked')?.value || 'html';
   const preview = document.getElementById('mail-preview');
   const subjectHtml = `<div style="font-weight:600;border-bottom:1px solid var(--border);padding-bottom:8px;margin-bottom:10px">📧 ${escapeHtml(subject || '(kein Betreff)')}</div>`;
   if (format === 'html') {
@@ -4122,7 +4159,7 @@ async function sendMail() {
   const tpl = mailTemplate(tplId);
   const subject = document.getElementById('mail-subject').value.trim();
   const bodyText = document.getElementById('mail-body-text').value.trim();
-  const format = document.querySelector('input[name="mail-format"]:checked')?.value || 'plain';
+  const format = document.querySelector('input[name="mail-format"]:checked')?.value || 'html';
 
   if (!subject) { toast('Betreff fehlt', true); return; }
   if (!bodyText) { toast('Nachricht fehlt', true); return; }

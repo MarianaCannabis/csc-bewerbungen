@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mariana Cannabis · Bewerbungs-Dashboard v2</title>
-  <!-- DASHBOARD_BUILD: 2026-05-14T1542 (Verfügbarkeits-Heatmap V2: offen by default, mit Tag-/Slot-Summary, Wochenend-Highlight) -->
-  <script>window.__DASHBOARD_BUILD = '2026-05-14T1542';</script>
+  <!-- DASHBOARD_BUILD: 2026-05-14T1642 (Sortier-Optionen erweitert: Score, Stunden, Termin, Wartedauer + 3 neue Mail-Vorlagen) -->
+  <script>window.__DASHBOARD_BUILD = '2026-05-14T1642';</script>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -1246,12 +1246,28 @@
         <div class="filter-row">
           <label for="sort-by" class="sr-only">Sortieren nach</label>
           <select id="sort-by" onchange="renderList()" aria-label="Liste sortieren nach">
-            <option value="date_desc">Neueste zuerst</option>
-            <option value="date_asc">Älteste zuerst</option>
-            <option value="status">Nach Status</option>
-            <option value="verein">Nach Verein A-Z</option>
-            <option value="bundesland">Nach Bundesland</option>
-            <option value="name">Nach Name A-Z</option>
+            <optgroup label="Datum">
+              <option value="date_desc">⏱ Neueste zuerst</option>
+              <option value="date_asc">⏱ Älteste zuerst</option>
+              <option value="wartet_lange">⏰ Wartet am längsten (überfällige zuerst)</option>
+            </optgroup>
+            <optgroup label="Score">
+              <option value="score_desc">⭐ Score: hoch → niedrig</option>
+              <option value="score_asc">⭐ Score: niedrig → hoch</option>
+            </optgroup>
+            <optgroup label="Status &amp; Stunden">
+              <option value="status">📋 Nach Status</option>
+              <option value="stunden_desc">⏰ Wunsch-Stunden: hoch → niedrig</option>
+              <option value="stunden_asc">⏰ Wunsch-Stunden: niedrig → hoch</option>
+            </optgroup>
+            <optgroup label="Verein &amp; Name">
+              <option value="verein">📍 Nach Verein A-Z</option>
+              <option value="bundesland">🗺 Nach Bundesland</option>
+              <option value="name">👤 Nach Name A-Z</option>
+            </optgroup>
+            <optgroup label="Termine">
+              <option value="termin_naechster">📅 Nächster Termin zuerst</option>
+            </optgroup>
           </select>
         </div>
       </div>
@@ -1946,10 +1962,59 @@ function renderList() {
   }
   
   const statusOrder = ['eingegangen', 'in_pruefung', 'eingeladen', 'warteliste', 'angenommen', 'abgelehnt'];
+  
+  // Helper für neue Sort-Modi
+  const naechsterTermin = (b) => {
+    if (!Array.isArray(b.interview_termine)) return Infinity;
+    const offene = b.interview_termine
+      .filter(t => (t.status || 'geplant') === 'geplant' && t.datum)
+      .map(t => new Date(t.datum).getTime());
+    return offene.length > 0 ? Math.min(...offene) : Infinity;
+  };
+  const wartetTage = (b) => {
+    if (!b.eingegangen_am) return 0;
+    return (Date.now() - new Date(b.eingegangen_am).getTime()) / 86400000;
+  };
+  
   filtered.sort((a, b) => {
     switch (sortBy) {
       case 'date_asc': return new Date(a.eingegangen_am || 0) - new Date(b.eingegangen_am || 0);
       case 'date_desc': return new Date(b.eingegangen_am || 0) - new Date(a.eingegangen_am || 0);
+      case 'wartet_lange': {
+        // Aktive Status (eingegangen/in_pruefung/warteliste) zuerst, dann nach Wartezeit absteigend
+        const aActive = ['eingegangen','in_pruefung','warteliste'].includes(a.status || 'eingegangen');
+        const bActive = ['eingegangen','in_pruefung','warteliste'].includes(b.status || 'eingegangen');
+        if (aActive !== bActive) return aActive ? -1 : 1;
+        return wartetTage(b) - wartetTage(a);
+      }
+      case 'score_desc': {
+        const aS = a.score_gesamt ?? -1, bS = b.score_gesamt ?? -1;
+        if (aS !== bS) return bS - aS;
+        return new Date(b.eingegangen_am || 0) - new Date(a.eingegangen_am || 0);
+      }
+      case 'score_asc': {
+        const aS = a.score_gesamt ?? 101, bS = b.score_gesamt ?? 101;
+        if (aS !== bS) return aS - bS;
+        return new Date(b.eingegangen_am || 0) - new Date(a.eingegangen_am || 0);
+      }
+      case 'stunden_desc': {
+        const aS = a.wunsch_stunden_max ?? a.wunsch_stunden_min ?? -1;
+        const bS = b.wunsch_stunden_max ?? b.wunsch_stunden_min ?? -1;
+        if (aS !== bS) return bS - aS;
+        return new Date(b.eingegangen_am || 0) - new Date(a.eingegangen_am || 0);
+      }
+      case 'stunden_asc': {
+        const aS = a.wunsch_stunden_min ?? a.wunsch_stunden_max ?? 999;
+        const bS = b.wunsch_stunden_min ?? b.wunsch_stunden_max ?? 999;
+        if (aS !== bS) return aS - bS;
+        return new Date(b.eingegangen_am || 0) - new Date(a.eingegangen_am || 0);
+      }
+      case 'termin_naechster': {
+        const aT = naechsterTermin(a);
+        const bT = naechsterTermin(b);
+        if (aT !== bT) return aT - bT;
+        return new Date(b.eingegangen_am || 0) - new Date(a.eingegangen_am || 0);
+      }
       case 'status': { const sA = statusOrder.indexOf(a.status || 'eingegangen'); const sB = statusOrder.indexOf(b.status || 'eingegangen'); if (sA !== sB) return sA - sB; return new Date(b.eingegangen_am || 0) - new Date(a.eingegangen_am || 0); }
       case 'verein': return (vereine[a.verein_id]?.name || '').localeCompare(vereine[b.verein_id]?.name || '', 'de');
       case 'bundesland': { const bA = vereine[a.verein_id]?.bundesland || ''; const bB = vereine[b.verein_id]?.bundesland || ''; if (bA !== bB) return bA.localeCompare(bB, 'de'); return (vereine[a.verein_id]?.name || '').localeCompare(vereine[b.verein_id]?.name || '', 'de'); }
@@ -3760,6 +3825,63 @@ ich habe noch eine kurze Rückfrage zu deiner Bewerbung:
 [FRAGE HIER EINFÜGEN]
 
 Antworte einfach auf diese E-Mail. Danke!
+
+Grüne Grüße
+{verein_name}`,
+  },
+  {
+    id: 'probearbeit',
+    label: '🛠 Zur Probearbeit einladen',
+    auto: false,
+    subject: 'Einladung zur Probearbeit – {verein_name}',
+    plain: `Hallo {vorname},
+
+vielen Dank für unser Gespräch — wir würden dich gerne zur Probearbeit einladen, damit du den Verein und dein zukünftiges Team in echt kennenlernen kannst.
+
+Termin: [WOCHENTAG, TT.MM.JJJJ] von [UHRZEIT] bis [UHRZEIT]
+Ort: [ADRESSE]
+Mitzubringen: [optional, z. B. festes Schuhwerk, Sicherheitsschuhe, etc.]
+Ansprechperson vor Ort: [NAME] · [TELEFON]
+
+Sag mir bitte kurz Bescheid, ob der Termin für dich passt. Falls nicht, suchen wir gerne eine Alternative.
+
+Wir freuen uns auf dich!
+
+Grüne Grüße
+{verein_name}`,
+  },
+  {
+    id: 'absage_freundlich',
+    label: '👋 Höfliche Absage (frei formuliert)',
+    auto: false,
+    subject: 'Deine Bewerbung bei uns – {verein_name}',
+    plain: `Hallo {vorname},
+
+vielen Dank, dass du dich bei uns beworben hast, und entschuldige, dass die Rückmeldung etwas gedauert hat.
+
+Nach reiflicher Überlegung haben wir uns entschieden, deine Bewerbung diesmal nicht weiter zu verfolgen. Das hat nichts mit deiner Qualifikation an sich zu tun — der Grund liegt in:
+
+[HIER GRUND EINFÜGEN, z. B.: aktuell keine passende offene Stelle / bessere Übereinstimmung anderer Bewerbungen mit dem konkreten Profil / etc.]
+
+Falls sich bei uns etwas verändert, melden wir uns gerne wieder bei dir. Du kannst auch jederzeit nochmal eine neue Bewerbung schicken, wenn du Lust hast.
+
+Wir wünschen dir alles Gute für deinen weiteren Weg!
+
+Grüne Grüße
+{verein_name}`,
+  },
+  {
+    id: 'check_in',
+    label: '👋 Status-Check / Wie geht es voran?',
+    auto: false,
+    subject: 'Kurzes Update zu deiner Bewerbung – {verein_name}',
+    plain: `Hallo {vorname},
+
+ich melde mich kurz mit einem Status-Update zu deiner Bewerbung:
+
+[KURZER STAND, z. B. „Wir sind noch in der Sichtungsphase und melden uns bis spätestens Ende Mai bei dir." / „Wir haben dich auf der Warteliste, weil aktuell die Plätze knapp sind."]
+
+Wenn du Fragen hast — schreib gerne zurück.
 
 Grüne Grüße
 {verein_name}`,

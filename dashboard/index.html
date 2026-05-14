@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mariana Cannabis · Bewerbungs-Dashboard v2</title>
-  <!-- DASHBOARD_BUILD: 2026-05-14T1742 (Branded HTML = Default für Mails + aufgewertete HTML-Vorlage mit Datenschutz-Links) -->
-  <script>window.__DASHBOARD_BUILD = '2026-05-14T1742';</script>
+  <!-- DASHBOARD_BUILD: 2026-05-14T1842 (Reaktivierungs-Mail-Vorlage hinzugefügt) -->
+  <script>window.__DASHBOARD_BUILD = '2026-05-14T1842';</script>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -3828,6 +3828,39 @@ Antworte einfach auf diese E-Mail. Danke!
 
 Grüne Grüße
 {verein_name}`,
+  },
+  {
+    id: 'reaktivierung',
+    label: '🔄 Reaktivierung: bitte neu bewerben (für Alt-Mitarbeiter)',
+    auto: false,
+    subject: 'Bitte einmal kurz nachregistrieren — Mariana Cannabis Bewerberpool 2026',
+    plain: `Hallo {vorname},
+
+danke, dass du Teil unserer Bewegung sein willst. 🌱
+
+Du hast dich in der Vergangenheit schon einmal bei uns gemeldet oder beworben — herzlichen Dank dafür. Inzwischen haben wir unser zentrales Bewerbungs- und Personalsystem aufgebaut, mit dem wir jetzt bundesweit über alle 182 Vereine hinweg arbeiten.
+
+Damit wir dich im neuen System richtig erfassen können und du im Mariana-Bewerberpool auftauchst, bitten wir dich um einen kurzen Schritt:
+
+✏️ Bitte fülle einmalig den neuen Bewerbungsbogen aus.
+Dauert ca. 10–15 Minuten. Du gibst nur Daten an, die wir für die Einstellung und die Zuordnung zum richtigen Verein wirklich brauchen. Alles transparent und DSGVO-konform.
+
+→ Zum Bewerbungsbogen:
+https://marianacannabis.github.io/csc-bewerbungen/
+
+WAS PASSIERT DANACH?
+1. Du bekommst eine Bestätigungs-E-Mail mit einem persönlichen Status-Link.
+2. Dein zukünftiger Vereinsvorstand sichtet die Bewerbung und meldet sich.
+3. Über den Status-Link kannst du jederzeit sehen, wie es steht.
+4. Falls du es dir anders überlegst, kannst du die Bewerbung dort auch jederzeit zurückziehen (DSGVO).
+
+WICHTIG: Auch wenn du dich früher schon einmal beworben hast — bitte fülle den neuen Bogen nochmal aus. Die alten Daten waren noch nicht im jetzigen System erfasst.
+
+Bei Fragen melde dich gerne — wir antworten meist innerhalb eines Tages:
+communityrecruiting@mariana-cannabis.de
+
+Grüne Grüße
+das Mariana-Cannabis-Team`,
   },
   {
     id: 'probearbeit',

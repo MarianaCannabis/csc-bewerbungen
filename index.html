@@ -1732,6 +1732,217 @@ button:focus-visible, a:focus-visible {
 }
 .validation-summary.show { display: block; }
 .validation-summary strong { display: block; margin-bottom: 0.3rem; }
+
+/* Smart-Suggestion-Banner (Verein-Vorschlag basierend auf Stadt) */
+.smart-suggestion {
+  background: var(--olive-50);
+  border: 1px solid var(--olive-300);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.88rem;
+  color: var(--ink);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+.smart-suggestion-icon { font-size: 1.1rem; }
+.smart-suggestion-text { flex: 1; min-width: 200px; }
+.smart-suggestion-actions { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.smart-suggestion-btn {
+  background: var(--olive-500);
+  color: var(--cream);
+  border: none;
+  padding: 0.4rem 0.8rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.83rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+.smart-suggestion-btn:hover { background: var(--olive-700); }
+.smart-suggestion-dismiss {
+  background: transparent;
+  border: 1px solid var(--olive-300);
+  color: var(--ink-mute);
+  padding: 0.4rem 0.7rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.83rem;
+  cursor: pointer;
+  font-family: inherit;
+}
+.smart-suggestion-dismiss:hover { background: var(--olive-100); }
+
+/* FAQ-Items */
+.faq-item {
+  border-bottom: 1px solid var(--olive-200);
+  padding: 0.75rem 0;
+}
+.faq-item:last-of-type { border-bottom: none; }
+.faq-item summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--ink);
+  padding: 0.25rem 0;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+}
+.faq-item summary::-webkit-details-marker { display: none; }
+.faq-item summary::before {
+  content: '+';
+  display: inline-block;
+  width: 1.2rem;
+  text-align: center;
+  color: var(--olive-700);
+  font-weight: 700;
+  font-size: 1.1rem;
+  transition: transform 0.2s ease;
+}
+.faq-item[open] summary::before { content: '−'; }
+.faq-item summary:hover { color: var(--olive-700); }
+.faq-item summary:focus-visible {
+  outline: 2px solid var(--olive-700);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+.faq-item p {
+  margin: 0.5rem 0 0.25rem 1.7rem;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: var(--ink-mute);
+}
+.faq-item p a { color: var(--olive-700); }
+
+/* Pre-Submit-Vorschau (Full-Screen-Overlay) */
+.review-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--cream);
+  z-index: 200;
+  display: none;
+  overflow-y: auto;
+  padding: 1.5rem;
+}
+.review-overlay.show { display: block; }
+.review-container {
+  max-width: 760px;
+  margin: 0 auto;
+}
+.review-header {
+  margin-bottom: 1.5rem;
+}
+.review-header h2 {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 1.6rem;
+  color: var(--ink);
+  margin: 0 0 0.5rem 0;
+}
+.review-header p {
+  color: var(--ink-mute);
+  font-size: 0.95rem;
+  margin: 0;
+}
+.review-section {
+  background: white;
+  border: 1px solid var(--olive-200);
+  border-radius: var(--radius-md);
+  padding: 1rem 1.2rem;
+  margin-bottom: 1rem;
+}
+.review-section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.6rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid var(--olive-100);
+  gap: 0.5rem;
+}
+.review-section-title {
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 700;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--olive-700);
+  margin: 0;
+}
+.review-edit-btn {
+  background: transparent;
+  border: 1px solid var(--olive-300);
+  color: var(--olive-700);
+  padding: 0.3rem 0.8rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+.review-edit-btn:hover { background: var(--olive-100); border-color: var(--olive-700); }
+.review-fields { display: grid; grid-template-columns: minmax(140px, 200px) 1fr; gap: 0.5rem 1rem; font-size: 0.9rem; }
+.review-label { color: var(--ink-mute); font-weight: 500; }
+.review-value { color: var(--ink); word-break: break-word; }
+.review-value.empty { color: var(--ink-mute); font-style: italic; }
+.review-value-list { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.review-tag { 
+  display: inline-block; 
+  background: var(--olive-100); 
+  color: var(--olive-700); 
+  padding: 2px 8px; 
+  border-radius: 10px; 
+  font-size: 0.82rem; 
+}
+.review-actions {
+  position: sticky;
+  bottom: 0;
+  background: var(--cream);
+  padding: 1rem 0;
+  margin-top: 1.5rem;
+  border-top: 2px solid var(--olive-200);
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+@media (max-width: 540px) {
+  .review-overlay { padding: 1rem; }
+  .review-fields { grid-template-columns: 1fr; gap: 0.2rem; }
+  .review-label { font-size: 0.78rem; margin-top: 0.4rem; }
+  .review-actions { flex-direction: column-reverse; }
+  .review-actions .btn { width: 100%; }
+}
+
+/* Print-Style für PDF-Export der Bewerbung */
+@media print {
+  body * { visibility: hidden; }
+  #print-view, #print-view * { visibility: visible; }
+  #print-view {
+    position: absolute;
+    left: 0; top: 0;
+    width: 100%;
+    padding: 20mm 18mm;
+    background: white;
+    color: black;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 10pt;
+    line-height: 1.4;
+  }
+  #print-view h1 { font-size: 16pt; margin: 0 0 4mm 0; }
+  #print-view h2 { font-size: 11pt; margin: 6mm 0 2mm 0; color: #4a5a32; border-bottom: 0.5pt solid #ccc; padding-bottom: 1mm; }
+  #print-view .print-meta { font-size: 9pt; color: #666; margin-bottom: 6mm; }
+  #print-view .print-fields { display: grid; grid-template-columns: 50mm 1fr; gap: 1.5mm 4mm; }
+  #print-view .print-label { color: #666; font-weight: 500; }
+  #print-view .print-value { color: black; }
+  #print-view .print-footer { margin-top: 8mm; padding-top: 3mm; border-top: 0.5pt solid #ccc; font-size: 8pt; color: #666; }
+  .review-overlay { display: none !important; }
+}
+#print-view { display: none; }
 </style>
 </head>
 <body>
@@ -1745,6 +1956,9 @@ button:focus-visible, a:focus-visible {
       <p class="brand-subtitle" id="brand-subtitle">Bewerbung für Mitarbeiter:innen</p>
     </div>
     <div class="lang-switcher" style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap">
+      <button type="button" class="resume-link-btn" id="btn-faq" onclick="openFaqModal()" title="Häufig gestellte Fragen" aria-label="Häufig gestellte Fragen öffnen">
+        ❓ FAQ
+      </button>
       <button type="button" class="resume-link-btn" id="btn-resume-link" onclick="openResumeModal()" title="Bewerbung pausieren und später per Mail weitermachen" style="display:none">
         ✉ Pausieren
       </button>
@@ -1830,6 +2044,14 @@ button:focus-visible, a:focus-visible {
       <span class="app-id-label" data-i18n="success.id_label"></span>
       <span class="app-id" id="success-id">—</span>
     </div>
+    <div style="margin-top: 1.5rem;">
+      <button type="button" class="btn btn-secondary" id="btn-print-bewerbung" onclick="printBewerbung()">
+        📄 Bewerbung als PDF speichern
+      </button>
+      <p class="form-hint" style="margin-top: 0.5rem; font-size: 0.82rem;">
+        Tipp: im Druck-Dialog „Als PDF speichern" wählen — für deine Unterlagen.
+      </p>
+    </div>
   </div>
 
 </main>
@@ -1854,6 +2076,72 @@ button:focus-visible, a:focus-visible {
     </div>
   </div>
 </div>
+
+<!-- FAQ-Modal -->
+<div class="resume-modal-overlay" id="faq-modal" role="dialog" aria-modal="true" aria-labelledby="faq-modal-title" onclick="if(event.target===this)closeFaqModal()">
+  <div class="resume-modal" style="max-width:640px;max-height:85vh;overflow-y:auto">
+    <h3 id="faq-modal-title">Häufig gestellte Fragen</h3>
+    
+    <details class="faq-item">
+      <summary>Was passiert mit meinen Daten?</summary>
+      <p>Deine Daten werden vom Mariana Cannabis Gesamtverein und dem von dir gewählten Verein zur Bewerbungsbearbeitung gespeichert. Sie werden nicht an Dritte weitergegeben. Du kannst jederzeit Auskunft, Berichtigung oder Löschung verlangen — Details in Sektion 9 und in unserer 
+      <a href="https://cscsdeutschland.de/datenschutzerklarung" target="_blank" rel="noopener noreferrer">Datenschutzerklärung</a>.</p>
+    </details>
+    
+    <details class="faq-item">
+      <summary>Wie lange dauert die Bearbeitung?</summary>
+      <p>In der Regel meldet sich der zuständige Verein innerhalb von ein bis zwei Wochen bei dir. Bei vielen Bewerbungen kann es auch etwas länger dauern. Du erhältst sofort nach dem Absenden eine Bestätigungs-Mail.</p>
+    </details>
+    
+    <details class="faq-item">
+      <summary>Welche Unterlagen brauche ich?</summary>
+      <p>Pflicht ist nichts — auch ohne Anhänge kannst du dich bewerben. Hilfreich sind: Lebenslauf (auch handschriftlich oder als Foto), eventuell relevante Zeugnisse, bei Präventionsbeauftragten: Sachkundenachweis. PDF, JPG, PNG und HEIC werden unterstützt, jeweils bis 10 MB.</p>
+    </details>
+    
+    <details class="faq-item">
+      <summary>Kann ich später weitermachen, wenn ich jetzt unterbreche?</summary>
+      <p>Ja, gleich auf zwei Wegen: <br>1. <strong>Auf demselben Gerät:</strong> deine Eingaben werden automatisch im Browser gespeichert — komm einfach zurück. <br>2. <strong>Auf einem anderen Gerät:</strong> klick oben auf „Pausieren" und lass dir per Mail einen Link schicken.</p>
+    </details>
+    
+    <details class="faq-item">
+      <summary>Kann ich die Bewerbung nach dem Absenden noch ändern?</summary>
+      <p>Nach dem Absenden kannst du sie nicht mehr direkt im Bogen ändern. Wenn du eine Korrektur brauchst, schreib uns einfach: 
+      <a href="mailto:communityrecruiting@mariana-cannabis.de">communityrecruiting@mariana-cannabis.de</a> — wir nehmen die Änderung manuell vor.</p>
+    </details>
+    
+    <details class="faq-item">
+      <summary>Was passiert nach dem Absenden?</summary>
+      <p>Du erhältst eine Bestätigungs-Mail mit einer Übersicht deiner Bewerbung. Der zuständige Verein bekommt eine Benachrichtigung und prüft deine Unterlagen. Bei Bedarf kontaktiert er dich direkt — meist per Mail.</p>
+    </details>
+    
+    <details class="faq-item">
+      <summary>Muss ich Mitglied im Verein sein?</summary>
+      <p>Nein, du kannst dich auch ohne Mitgliedschaft bewerben. Wenn du eingestellt wirst, ist eine Mitgliedschaft im jeweiligen Cannabis Social Club aber Voraussetzung — der Verein hilft dir beim Beitritt.</p>
+    </details>
+    
+    <div class="btn-row" style="margin-top:1rem">
+      <button type="button" class="btn btn-secondary" onclick="closeFaqModal()">Schließen</button>
+    </div>
+  </div>
+</div>
+
+<!-- Pre-Submit-Vorschau Overlay -->
+<div class="review-overlay" id="review-overlay" role="dialog" aria-modal="true" aria-labelledby="review-title">
+  <div class="review-container">
+    <div class="review-header">
+      <h2 id="review-title">Bereit zum Absenden?</h2>
+      <p>Bitte schau alles nochmal durch. Du kannst jede Sektion mit „Bearbeiten" zurück öffnen und ändern. Erst wenn du auf „Endgültig absenden" klickst, wird die Bewerbung übermittelt.</p>
+    </div>
+    <div id="review-content"></div>
+    <div class="review-actions">
+      <button type="button" class="btn btn-secondary" onclick="closeReviewOverlay()">Zurück zum Bogen</button>
+      <button type="button" class="btn btn-primary" id="btn-review-submit" onclick="confirmAndSubmit()">✓ Endgültig absenden</button>
+    </div>
+  </div>
+</div>
+
+<!-- Print-View für PDF-Export der Bewerbung (nur sichtbar beim Drucken) -->
+<div id="print-view" aria-hidden="true"></div>
 
 <footer class="app-footer">
   Mariana Cannabis · <a href="https://cscsdeutschland.de/datenschutzerklarung" target="_blank" rel="noopener noreferrer">Datenschutz</a> · <a href="https://cscsdeutschland.de/impressum" target="_blank" rel="noopener noreferrer">Impressum</a>
@@ -2413,6 +2701,7 @@ function renderSection1() {
 
     <div class="form-group" id="fg-verein">
       <label class="form-label" for="verein-search">${s.verein_label}<span class="required">*</span></label>
+      <div class="smart-suggestion" id="smart-verein-suggestion" style="display:none" role="region" aria-label="Vorschlag"></div>
       <div class="combobox" id="verein-combobox">
         <input type="text" class="form-input" id="verein-search" placeholder="${s.verein_placeholder}" autocomplete="off" aria-autocomplete="list">
         <div class="combobox-list" id="verein-list"></div>
@@ -3390,6 +3679,50 @@ function attachSection1() {
   const selected = document.getElementById('verein-selected');
   const selectedText = document.getElementById('verein-selected-text');
   const clearBtn = document.getElementById('verein-clear');
+  const suggestionEl = document.getElementById('smart-verein-suggestion');
+
+  // Smart-Default: wenn Stadt in Sektion 2 schon ausgefüllt UND kein Verein gewählt
+  // → zeige Vorschlag mit den Vereinen in dieser Stadt
+  function renderSmartSuggestion() {
+    if (!suggestionEl) return;
+    const ort = (state.formData.adresse_ort || '').trim();
+    const dismissed = state.formData._smart_verein_dismissed;
+    if (!ort || state.formData.verein_id || dismissed) {
+      suggestionEl.style.display = 'none';
+      return;
+    }
+    const ortLower = ort.toLowerCase();
+    const matches = state.vereine.filter(v => 
+      (v.ort && v.ort.toLowerCase() === ortLower) ||
+      (v.name && v.name.toLowerCase().includes(ortLower))
+    ).slice(0, 3);
+    if (matches.length === 0) {
+      suggestionEl.style.display = 'none';
+      return;
+    }
+    suggestionEl.innerHTML = `
+      <span class="smart-suggestion-icon" aria-hidden="true">💡</span>
+      <span class="smart-suggestion-text">
+        ${matches.length === 1 
+          ? `In <strong>${escapeHtml(ort)}</strong> gibt es einen Verein:`
+          : `In <strong>${escapeHtml(ort)}</strong> gibt es ${matches.length} Vereine:`}
+      </span>
+      <span class="smart-suggestion-actions">
+        ${matches.map(v => `<button type="button" class="smart-suggestion-btn" data-suggest-id="${v.id}">${escapeHtml(v.name)}</button>`).join('')}
+        <button type="button" class="smart-suggestion-dismiss" data-suggest-dismiss>Schließen</button>
+      </span>
+    `;
+    suggestionEl.style.display = 'flex';
+    suggestionEl.querySelectorAll('[data-suggest-id]').forEach(btn => {
+      btn.addEventListener('click', () => selectVerein(btn.dataset.suggestId));
+    });
+    suggestionEl.querySelector('[data-suggest-dismiss]')?.addEventListener('click', () => {
+      state.formData._smart_verein_dismissed = true;
+      saveDraft();
+      suggestionEl.style.display = 'none';
+    });
+  }
+  renderSmartSuggestion();
 
   function renderList(filter = '') {
     const f = filter.toLowerCase().trim();
@@ -3436,6 +3769,7 @@ function attachSection1() {
     search.style.display = 'none';
     list.classList.remove('open');
     document.getElementById('fg-verein').classList.remove('has-error');
+    if (suggestionEl) suggestionEl.style.display = 'none';
     saveDraft();
   }
 
@@ -5188,7 +5522,7 @@ function afterSectionShown(n) {
   document.getElementById('btn-back').disabled = n === 1;
   const nextBtn = document.getElementById('btn-next');
   if (n === state.totalSections) {
-    nextBtn.innerHTML = t('progress.submit');
+    nextBtn.innerHTML = 'Zur Übersicht →';
   } else {
     nextBtn.innerHTML = `${t('progress.next')} →`;
   }
@@ -5243,7 +5577,8 @@ function tryGoNext() {
   if (state.currentSection < state.totalSections) {
     showSection(state.currentSection + 1);
   } else {
-    submitForm();
+    // Sektion 9 (letzte): Pre-Submit-Vorschau statt direktem Submit
+    openReviewOverlay();
   }
 }
 
@@ -5251,6 +5586,309 @@ function goBack() {
   if (state.currentSection > 1) {
     showSection(state.currentSection - 1);
   }
+}
+
+// ============================================================================
+// PDF-EXPORT — nutzt window.print() mit print-spezifischem CSS
+// ============================================================================
+function printBewerbung() {
+  const printView = document.getElementById('print-view');
+  if (!printView) return;
+  
+  const d = state.formData;
+  const E = escapeHtml;
+  const val = (v) => v ? E(String(v)) : '–';
+  const valBool = (v) => v === true ? 'Ja' : v === false ? 'Nein' : '–';
+  const valDate = (v) => v ? new Date(v).toLocaleDateString('de-DE') : '–';
+  const valArr = (a) => Array.isArray(a) && a.length ? a.map(x => E(x)).join(', ') : '–';
+  
+  const verein = state.vereine?.find(v => v.id === d.verein_id);
+  const vereinText = verein ? `${verein.name} (${verein.plz || ''} ${verein.ort || ''})` : '–';
+  
+  const bewerbungsId = document.getElementById('success-id')?.textContent || '–';
+  const datum = new Date().toLocaleString('de-DE');
+  
+  // Soft-Skills
+  const softSkills = d.soft_skills || {};
+  const softMap = { stress: 'Stress', kunde: 'Kunde', verschwiegenheit: 'Verschwiegenheit', team: 'Team', genauigkeit: 'Genauigkeit' };
+  const softText = Object.entries(softMap).map(([k, label]) => softSkills[k] ? `${label}: ${softSkills[k]}/5` : null).filter(Boolean).join(', ') || '–';
+  
+  // Sprachen
+  const sprachen = d.sprachen || {};
+  const sprachenText = Object.entries(sprachen).filter(([_, v]) => v).map(([k, v]) => `${k.toUpperCase()}: ${v}`).join(', ') || '–';
+  
+  // Verfügbarkeit
+  const verfueg = d.verfuegbarkeit || {};
+  let totalSlots = 0;
+  for (const standort of ['anbau', 'ausgabe', 'allgemein']) {
+    if (verfueg[standort]) {
+      for (const day of ['mo','di','mi','do','fr','sa','so']) {
+        if (Array.isArray(verfueg[standort][day])) totalSlots += verfueg[standort][day].filter(Boolean).length;
+      }
+    }
+  }
+  
+  const block = (titel, felder) => `
+    <h2>${titel}</h2>
+    <div class="print-fields">${felder.map(([l, v]) => `<span class="print-label">${l}</span><span class="print-value">${v}</span>`).join('')}</div>
+  `;
+  
+  printView.innerHTML = `
+    <h1>Bewerbung — Mariana Cannabis</h1>
+    <div class="print-meta">Bewerbungs-ID: ${E(bewerbungsId)} · Gedruckt am ${E(datum)}</div>
+    
+    ${block('Verein & Zugang', [
+      ['Verein', val(vereinText)],
+      ['Volljährig', valBool(d.ist_volljaehrig)],
+      ['Wohnsitz Deutschland 6 Mon.', valBool(d.wohnsitz_de_6monate)],
+      ['CSC-Mitglied', val(d.ist_mitglied)]
+    ])}
+    
+    ${block('Kontakt & Person', [
+      ['Name', val((d.vorname || '') + ' ' + (d.nachname || ''))],
+      ['E-Mail', val(d.email)],
+      ['Telefon', val(d.telefon)],
+      ['Geburtsdatum', valDate(d.geburtsdatum)],
+      ['Geburtsort', val(d.geburtsort)],
+      ['Staatsangehörigkeit', val(d.staatsangehoerigkeit)],
+      ['Adresse', val([d.adresse_strasse, d.adresse_plz, d.adresse_ort].filter(Boolean).join(', '))]
+    ])}
+    
+    ${block('Bewerbung & Rolle', [
+      ['Rollen', valArr(d.rollen)],
+      ['Anstellungsform(en)', valArr(d.anstellungsform)],
+      ['Motivation', val(d.motivation)]
+    ])}
+    
+    ${block('Qualifikationen', [
+      ['Bildungsabschluss', val(d.bildungsabschluss)],
+      ['Letzte Tätigkeit', val(d.letzte_taetigkeit)],
+      ['Sprachen', E(sprachenText)],
+      ['Soft-Skills', E(softText)]
+    ])}
+    
+    ${block('Verfügbarkeit', [
+      ['Verfügbare Slots', totalSlots + ' Slot(s)'],
+      ['Wunsch-Stunden/Woche', val((d.wunsch_stunden_min && d.wunsch_stunden_max) ? d.wunsch_stunden_min + '–' + d.wunsch_stunden_max + ' h' : null)],
+      ['Wunsch-Zeiten', val(d.wunsch_zeiten)],
+      ['Wochenende möglich', valBool(d.bereit_we)],
+      ['Feiertag möglich', valBool(d.bereit_feiertag)],
+      ['Nacht möglich', valBool(d.bereit_nacht)]
+    ])}
+    
+    ${block('Mobilität', [
+      ['Max. Anfahrt', val(d.max_anfahrt)],
+      ['Eigenes Fahrzeug', val(d.eigenes_fahrzeug)],
+      ['Führerschein', val(d.fuehrerschein)]
+    ])}
+    
+    ${block('Nachweise & Sachkunde', [
+      ['Präventions-Sachkunde', val(d.praevention)],
+      ['Sicherheits-Nachweis', val(d.sicherheit)],
+      ['Sucht-Relevanz', val(d.sucht_relevant)],
+      ['Schwerbehinderung', val(d.schwerbehinderung)],
+      ...(d.schwerbehinderung === 'ja' ? [
+        ['GdB', val(d.schwerbehinderung_gdb)],
+        ['Einschränkungen', val(d.schwerbehinderung_einschr)],
+        ['Anpassungen', val(d.schwerbehinderung_anpassungen)]
+      ] : [])
+    ])}
+    
+    ${block('Personalien für Anstellung', [
+      ['Steuer-ID', val(d.steuer_id)],
+      ['Sozialvers.-Nr.', val(d.sv_nummer)],
+      ['Krankenkasse', val(d.krankenkasse?.name)],
+      ['IBAN', val(d.iban)]
+    ])}
+    
+    ${block('Compliance', [
+      ['DSGVO-Einwilligung', valBool(d.dsgvo_einwilligung)],
+      ['Wahrheits-Erklärung', valBool(d.wahrheit_einwilligung)]
+    ])}
+    
+    <div class="print-footer">
+      Diese Übersicht ist eine persönliche Kopie für deine Unterlagen. 
+      Original-Bewerbung liegt bei Mariana Cannabis · Bewerbungs-ID ${E(bewerbungsId)}.
+    </div>
+  `;
+  
+  // Print auslösen
+  setTimeout(() => window.print(), 100);
+}
+
+// ============================================================================
+// PRE-SUBMIT-VORSCHAU
+// Renders eine Übersichts-Seite mit allen eingegebenen Daten, plus Edit-Buttons
+// pro Sektion. Bewerber bestätigt explizit den Submit.
+// ============================================================================
+function openReviewOverlay() {
+  const overlay = document.getElementById('review-overlay');
+  const content = document.getElementById('review-content');
+  if (!overlay || !content) return;
+  content.innerHTML = buildReviewHTML();
+  // Edit-Buttons verkabeln
+  content.querySelectorAll('[data-edit-sec]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const sec = parseInt(btn.dataset.editSec);
+      closeReviewOverlay();
+      // Kurz warten damit Overlay-Animation abschließt, dann zur Sektion
+      setTimeout(() => showSection(sec), 100);
+    });
+  });
+  overlay.classList.add('show');
+  document.body.style.overflow = 'hidden';
+  // Focus für Screenreader
+  setTimeout(() => document.getElementById('review-title')?.focus(), 50);
+}
+
+function closeReviewOverlay() {
+  const overlay = document.getElementById('review-overlay');
+  if (!overlay) return;
+  overlay.classList.remove('show');
+  document.body.style.overflow = '';
+}
+
+async function confirmAndSubmit() {
+  closeReviewOverlay();
+  await submitForm();
+}
+
+function buildReviewHTML() {
+  const d = state.formData;
+  const s = state.i18n.sections;
+  const E = escapeHtml;
+  
+  // Helper: Wert oder "—"
+  const val = (v) => {
+    if (v === null || v === undefined || v === '') return '<span class="review-value empty">— nicht ausgefüllt</span>';
+    return `<span class="review-value">${E(String(v))}</span>`;
+  };
+  const valBool = (v) => v === true ? '<span class="review-value">Ja</span>' : v === false ? '<span class="review-value">Nein</span>' : '<span class="review-value empty">—</span>';
+  const valDate = (v) => v ? `<span class="review-value">${new Date(v).toLocaleDateString('de-DE')}</span>` : '<span class="review-value empty">—</span>';
+  const valList = (arr, labelMap) => {
+    if (!Array.isArray(arr) || arr.length === 0) return '<span class="review-value empty">—</span>';
+    return '<span class="review-value-list">' + arr.map(x => `<span class="review-tag">${E(labelMap ? (labelMap[x] || x) : x)}</span>`).join('') + '</span>';
+  };
+  
+  // Verein-Name aus state.vereine
+  const verein = state.vereine?.find(v => v.id === d.verein_id);
+  const vereinText = verein ? `${verein.name} (${verein.plz || ''} ${verein.ort || ''})` : null;
+  
+  // Rollen-Labels (aus i18n)
+  const rollenLabels = {};
+  if (s['3']) {
+    for (const [k, v] of Object.entries(s['3'])) {
+      if (k.startsWith('rolle_') && k.endsWith('_title')) {
+        const id = k.replace('rolle_', '').replace('_title', '');
+        rollenLabels[id] = v;
+      }
+    }
+  }
+  
+  // Anhänge übersicht
+  const anhText = Array.isArray(d.anhaenge) && d.anhaenge.length > 0
+    ? `<span class="review-value">${d.anhaenge.length} Datei(en): ${d.anhaenge.map(a => E(a.filename || 'datei')).join(', ')}</span>`
+    : '<span class="review-value empty">— keine Anhänge</span>';
+  
+  // Soft-Skills
+  const softSkills = d.soft_skills || {};
+  const softMap = {
+    stress: 'Stress-Resistenz', kunde: 'Kundenumgang',
+    verschwiegenheit: 'Verschwiegenheit', team: 'Team-Arbeit', genauigkeit: 'Genauigkeit'
+  };
+  const softText = Object.entries(softMap).map(([k, label]) => 
+    softSkills[k] ? `${label}: ${softSkills[k]}/5` : null
+  ).filter(Boolean).join(' · ');
+  
+  // Sprachen
+  const sprachen = d.sprachen || {};
+  const sprachenText = Object.entries(sprachen).filter(([_, v]) => v).map(([k, v]) => `${k.toUpperCase()}: ${v}`).join(' · ');
+  
+  // Verfügbarkeits-Slots
+  const verfueg = d.verfuegbarkeit || {};
+  let totalSlots = 0;
+  for (const standort of ['anbau', 'ausgabe', 'allgemein']) {
+    if (verfueg[standort]) {
+      for (const day of ['mo','di','mi','do','fr','sa','so']) {
+        if (Array.isArray(verfueg[standort][day])) {
+          totalSlots += verfueg[standort][day].filter(Boolean).length;
+        }
+      }
+    }
+  }
+  
+  const section = (sec, title, fieldsHtml) => `
+    <div class="review-section">
+      <div class="review-section-head">
+        <h3 class="review-section-title">${title}</h3>
+        <button type="button" class="review-edit-btn" data-edit-sec="${sec}" aria-label="Sektion ${title} bearbeiten">Bearbeiten</button>
+      </div>
+      <div class="review-fields">${fieldsHtml}</div>
+    </div>
+  `;
+  
+  return [
+    section(1, 'Verein & Zugang', `
+      <span class="review-label">Verein</span>${val(vereinText)}
+      <span class="review-label">Volljährig</span>${valBool(d.ist_volljaehrig)}
+      <span class="review-label">Wohnsitz Deutschland 6 Mon.</span>${valBool(d.wohnsitz_de_6monate)}
+      <span class="review-label">CSC-Mitglied</span>${val(d.ist_mitglied)}
+    `),
+    section(2, 'Kontakt & Person', `
+      <span class="review-label">Name</span>${val((d.vorname || '') + ' ' + (d.nachname || ''))}
+      <span class="review-label">E-Mail</span>${val(d.email)}
+      <span class="review-label">Telefon</span>${val(d.telefon)}
+      <span class="review-label">Geburtsdatum</span>${valDate(d.geburtsdatum)}
+      <span class="review-label">Geburtsort</span>${val(d.geburtsort)}
+      <span class="review-label">Staatsangehörigkeit</span>${val(d.staatsangehoerigkeit)}
+      <span class="review-label">Adresse</span>${val([d.adresse_strasse, d.adresse_plz, d.adresse_ort].filter(Boolean).join(', '))}
+    `),
+    section(3, 'Bewerbung & Rolle', `
+      <span class="review-label">Rollen</span>${valList(d.rollen, rollenLabels)}
+      <span class="review-label">Anstellungsform(en)</span>${valList(d.anstellungsform)}
+      <span class="review-label">Motivation</span>${val(d.motivation)}
+    `),
+    section(4, 'Qualifikationen & Anhänge', `
+      <span class="review-label">Bildungsabschluss</span>${val(d.bildungsabschluss)}
+      <span class="review-label">Letzte Tätigkeit</span>${val(d.letzte_taetigkeit)}
+      <span class="review-label">Sprachen</span>${sprachenText ? `<span class="review-value">${E(sprachenText)}</span>` : '<span class="review-value empty">—</span>'}
+      <span class="review-label">Soft-Skills</span>${softText ? `<span class="review-value">${E(softText)}</span>` : '<span class="review-value empty">—</span>'}
+      <span class="review-label">Anhänge</span>${anhText}
+    `),
+    section(5, 'Verfügbarkeit', `
+      <span class="review-label">Slots gewählt</span><span class="review-value">${totalSlots} Slot(s)</span>
+      <span class="review-label">Wunsch-Stunden/Woche</span>${val((d.wunsch_stunden_min && d.wunsch_stunden_max) ? d.wunsch_stunden_min + '–' + d.wunsch_stunden_max : null)}
+      <span class="review-label">Wunsch-Zeiten</span>${val(d.wunsch_zeiten)}
+      <span class="review-label">Wochenende möglich</span>${valBool(d.bereit_we)}
+      <span class="review-label">Feiertag möglich</span>${valBool(d.bereit_feiertag)}
+      <span class="review-label">Nacht möglich</span>${valBool(d.bereit_nacht)}
+    `),
+    section(6, 'Anfahrt & Mobilität', `
+      <span class="review-label">Max. Anfahrt</span>${val(d.max_anfahrt)}
+      <span class="review-label">Eigenes Fahrzeug</span>${val(d.eigenes_fahrzeug)}
+      <span class="review-label">Führerschein</span>${val(d.fuehrerschein)}
+    `),
+    section(7, 'Nachweise & Sachkunde', `
+      <span class="review-label">Präventions-Sachkunde</span>${val(d.praevention)}
+      <span class="review-label">Sicherheits-Nachweis</span>${val(d.sicherheit)}
+      <span class="review-label">Sucht-Relevanz</span>${val(d.sucht_relevant)}
+      <span class="review-label">Schwerbehinderung</span>${val(d.schwerbehinderung)}
+      ${d.schwerbehinderung === 'ja' ? `
+        <span class="review-label">GdB</span>${val(d.schwerbehinderung_gdb)}
+        <span class="review-label">Einschränkungen</span>${val(d.schwerbehinderung_einschr)}
+        <span class="review-label">Anpassungen gewünscht</span>${val(d.schwerbehinderung_anpassungen)}` : ''}
+    `),
+    section(8, 'Personalien für Anstellung', `
+      <span class="review-label">Steuer-ID</span>${val(d.steuer_id)}
+      <span class="review-label">Sozialvers.-Nr.</span>${val(d.sv_nummer)}
+      <span class="review-label">Krankenkasse</span>${val(d.krankenkasse?.name)}
+      <span class="review-label">IBAN</span>${val(d.iban)}
+    `),
+    section(9, 'Datenschutz', `
+      <span class="review-label">DSGVO-Einwilligung</span>${valBool(d.dsgvo_einwilligung)}
+      <span class="review-label">Wahrheits-Erklärung</span>${valBool(d.wahrheit_einwilligung)}
+    `)
+  ].join('');
 }
 
 // ============================================================================
@@ -5542,6 +6180,18 @@ function openResumeModal() {
 
 function closeResumeModal() {
   document.getElementById('resume-modal')?.classList.remove('show');
+}
+
+// FAQ-Modal
+function openFaqModal() {
+  const modal = document.getElementById('faq-modal');
+  if (!modal) return;
+  modal.classList.add('show');
+  setTimeout(() => modal.querySelector('summary')?.focus(), 50);
+}
+
+function closeFaqModal() {
+  document.getElementById('faq-modal')?.classList.remove('show');
 }
 
 function buildResumeUrl() {

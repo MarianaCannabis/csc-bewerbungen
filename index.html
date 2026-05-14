@@ -2044,6 +2044,22 @@ button:focus-visible, a:focus-visible {
       <span class="app-id-label" data-i18n="success.id_label"></span>
       <span class="app-id" id="success-id">—</span>
     </div>
+    
+    <!-- Status-Link für den Bewerber -->
+    <div id="success-status-link" style="margin-top: 1.5rem; padding: 1rem 1.2rem; background: var(--olive-50); border-radius: var(--radius-md); display: none;">
+      <p style="margin: 0 0 0.5rem 0; font-weight: 600; color: var(--olive-700); font-size: 0.95rem;">
+        🔗 Status deiner Bewerbung verfolgen
+      </p>
+      <p style="margin: 0 0 0.75rem 0; font-size: 0.88rem; color: var(--ink-mute);">
+        Den persönlichen Link findest du auch in deiner Bestätigungs-Mail:
+      </p>
+      <div style="display: flex; gap: 0.5rem; align-items: stretch; flex-wrap: wrap;">
+        <input type="text" id="status-url" readonly style="flex: 1; min-width: 240px; padding: 0.5rem 0.7rem; border: 1px solid var(--olive-300); border-radius: var(--radius-sm); background: white; font-family: monospace; font-size: 0.82rem; color: var(--ink);">
+        <button type="button" class="btn btn-secondary" onclick="copyStatusUrl()" style="padding: 0.5rem 0.9rem; font-size: 0.88rem;">📋 Kopieren</button>
+        <a id="status-url-link" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-secondary" style="padding: 0.5rem 0.9rem; font-size: 0.88rem; text-decoration: none;">↗ Öffnen</a>
+      </div>
+    </div>
+    
     <div style="margin-top: 1.5rem;">
       <button type="button" class="btn btn-secondary" id="btn-print-bewerbung" onclick="printBewerbung()">
         📄 Bewerbung als PDF speichern
@@ -2157,6 +2173,56 @@ button:focus-visible, a:focus-visible {
 const SUPABASE_URL = 'https://gvzayggvtlychyjbnsgv.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd2emF5Z2d2dGx5Y2h5amJuc2d2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3ODEzMTIsImV4cCI6MjA4OTM1NzMxMn0.1L2e98IjFjF8z_-t0Fpm20wwVyrtWfkMdjGG79fJwMg';
 const STORAGE_KEY = 'csc_bewerbung_draft_v1';
+
+// ============================================================================
+// ERROR-LOGGING — JS-Fehler an csc_error_log via Edge-Function
+// ============================================================================
+(function setupErrorLogging() {
+  const SOURCE = 'bewerbungsbogen';
+  const ENDPOINT = `${SUPABASE_URL}/functions/v1/log-error`;
+  let lastErrorTime = 0;
+  const COOLDOWN_MS = 3000; // Spam-Schutz: max 1 Error / 3 Sek
+  
+  async function reportError(message, stack, context) {
+    const now = Date.now();
+    if (now - lastErrorTime < COOLDOWN_MS) return;
+    lastErrorTime = now;
+    try {
+      await fetch(ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          'apikey': SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify({
+          source: SOURCE,
+          message: String(message || 'unknown').slice(0, 1500),
+          stack: stack ? String(stack).slice(0, 4000) : null,
+          url: location.href,
+          context: context || null,
+        }),
+        keepalive: true,
+      });
+    } catch (_) { /* silent — kein Recursion-Risiko */ }
+  }
+  
+  window.addEventListener('error', (e) => {
+    reportError(e.message, e.error?.stack, { 
+      filename: e.filename, lineno: e.lineno, colno: e.colno,
+      section: window.state?.currentSection,
+    });
+  });
+  
+  window.addEventListener('unhandledrejection', (e) => {
+    const reason = e.reason;
+    reportError(
+      reason?.message || String(reason),
+      reason?.stack,
+      { type: 'unhandledrejection', section: window.state?.currentSection }
+    );
+  });
+})();
 
 // Rollen-Anstellungsformen-Mapping nach §17 KCanG
 // Unmittelbare Tätigkeiten am Pflanzen-/Produkt (Anbau, Ernte, Abgabe) = nur Minijob
@@ -5589,6 +5655,40 @@ function goBack() {
 }
 
 // ============================================================================
+// STATUS-URL kopieren (Success-Screen)
+// ============================================================================
+function copyStatusUrl() {
+  const inp = document.getElementById('status-url');
+  if (!inp || !inp.value) return;
+  try {
+    inp.select();
+    inp.setSelectionRange(0, 99999);
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(inp.value).then(() => {
+        showCopyToast();
+      }).catch(() => {
+        document.execCommand('copy');
+        showCopyToast();
+      });
+    } else {
+      document.execCommand('copy');
+      showCopyToast();
+    }
+  } catch (e) {
+    console.warn('Copy fehlgeschlagen', e);
+  }
+}
+
+function showCopyToast() {
+  // kurzer Visueller Hinweis
+  const inp = document.getElementById('status-url');
+  if (!inp) return;
+  const orig = inp.style.background;
+  inp.style.background = '#d6f0d8';
+  setTimeout(() => { inp.style.background = orig; }, 600);
+}
+
+// ============================================================================
 // PDF-EXPORT — nutzt window.print() mit print-spezifischem CSS
 // ============================================================================
 function printBewerbung() {
@@ -6057,6 +6157,19 @@ async function submitForm() {
     document.getElementById('screen-success').classList.add('active');
     document.getElementById('success-id').textContent = clientSideToken.substring(0, 8).toUpperCase();
     applyTranslations();
+    
+    // Status-Link aufbauen — Bewerber kann später per Token den Status sehen
+    const statusUrl = `${location.protocol}//${location.host}${location.pathname.replace(/\/$/, '').replace(/\/index\.html$/, '')}/../status/?token=${encodeURIComponent(clientSideToken)}`
+      .replace(/[^:\/]\/\//g, m => m[0] + '/');  // Doppel-Slashes außer Protocol bereinigen
+    const statusUrlNorm = new URL(statusUrl, location.href).href;
+    const statusInput = document.getElementById('status-url');
+    const statusLink = document.getElementById('status-url-link');
+    const statusBlock = document.getElementById('success-status-link');
+    if (statusInput && statusLink && statusBlock) {
+      statusInput.value = statusUrlNorm;
+      statusLink.href = statusUrlNorm;
+      statusBlock.style.display = 'block';
+    }
     
     // Draft-Indikator und Resume-Btn ausblenden
     document.getElementById('draft-indicator')?.classList.remove('show');

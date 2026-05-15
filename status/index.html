@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Bewerbung — Status · Mariana Cannabis</title>
-<!-- STATUS_BUILD: 2026-05-14T1142 (DSGVO-Selbstlöschung) -->
-<script>window.__STATUS_BUILD = '2026-05-14T1142';</script>
+<!-- STATUS_BUILD: 2026-05-15T2230 (Selbstlöschung via Edge Function statt RPC) -->
+<script>window.__STATUS_BUILD = '2026-05-15T2230';</script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -278,7 +278,15 @@
     btn.textContent = 'Lösche…';
     
     try {
-      const { data, error } = await sb.rpc('csc_withdraw_bewerbung', { p_token: token });
+      // ─── Edge Function statt RPC (2026-05-15) ────────────────────────────
+      // SQL-Function konnte storage.objects nicht mehr direkt löschen
+      // (Supabase-Plattform-Änderung). Edge Function macht jetzt:
+      //   1. Token-Validierung mit Service-Role
+      //   2. Storage-Files via Storage-API löschen
+      //   3. DB-Cleanup via csc_withdraw_bewerbung_db_only()
+      const { data, error } = await sb.functions.invoke('withdraw-bewerbung', {
+        body: { token: token }
+      });
       if (error) throw error;
       if (!data || !data.ok) throw new Error(data?.error || 'Unbekannter Fehler');
       

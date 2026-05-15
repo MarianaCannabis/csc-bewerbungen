@@ -9,8 +9,8 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="format-detection" content="telephone=yes">
 <meta name="robots" content="noindex,nofollow">
-<!-- BEWERBUNG_BUILD: 2026-05-14T1542 (Mobile-UX-Verbesserungen: Sticky-Nav, größere Touch-Targets, Tap-Feedback) -->
-<script>window.__BEWERBUNG_BUILD = '2026-05-14T1542';</script>
+<!-- BEWERBUNG_BUILD: 2026-05-15T0915 (Ehrenamt jetzt bei allen Rollen als Anstellungsform wählbar) -->
+<script>window.__BEWERBUNG_BUILD = '2026-05-15T0915';</script>
 <title>Bewerbung — Mariana Cannabis</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -2341,16 +2341,17 @@ const STORAGE_KEY = 'csc_bewerbung_draft_v1';
 // Vorstand = Minijob oder Ehrenamt
 // Head Grower = Leitungsfunktion (nicht selbst an Pflanzen) → TZ/VZ möglich
 // Sonstige (Reinigung, Sicherheit) = alle Anstellungsformen
+// Ehrenamt ist bei ALLEN Rollen möglich (Bewerber kann freiwillig ohne Bezahlung helfen)
 const ROLE_ANSTELLUNG_MAP = {
-  'grower':            ['minijob'],
-  'head_grower':       ['teilzeit', 'vollzeit', 'honorar'],
-  'ausgabe':           ['minijob'],
+  'grower':            ['minijob', 'ehrenamt'],
+  'head_grower':       ['teilzeit', 'vollzeit', 'honorar', 'ehrenamt'],
+  'ausgabe':           ['minijob', 'ehrenamt'],
   'vorstand':          ['minijob', 'ehrenamt'],
   'stellv_vorstand':   ['minijob', 'ehrenamt'],
   'praevention':       ['minijob', 'ehrenamt', 'honorar'],
-  'springer':          ['minijob'],
-  'reinigung':         ['minijob', 'teilzeit', 'vollzeit', 'honorar'],
-  'sicherheit':        ['minijob', 'teilzeit', 'vollzeit', 'honorar']
+  'springer':          ['minijob', 'ehrenamt'],
+  'reinigung':         ['minijob', 'teilzeit', 'vollzeit', 'honorar', 'ehrenamt'],
+  'sicherheit':        ['minijob', 'teilzeit', 'vollzeit', 'honorar', 'ehrenamt']
 };
 
 // Rollen-Standort-Mapping

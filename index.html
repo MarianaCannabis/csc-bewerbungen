@@ -9,8 +9,8 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="format-detection" content="telephone=yes">
 <meta name="robots" content="noindex,nofollow">
-<!-- BEWERBUNG_BUILD: 2026-05-15T0915 (Ehrenamt jetzt bei allen Rollen als Anstellungsform wählbar) -->
-<script>window.__BEWERBUNG_BUILD = '2026-05-15T0915';</script>
+<!-- BEWERBUNG_BUILD: 2026-05-15T0955 (Anstellungsformen offen für alle Rollen außer Grower) -->
+<script>window.__BEWERBUNG_BUILD = '2026-05-15T0955';</script>
 <title>Bewerbung — Mariana Cannabis</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -2337,19 +2337,17 @@ const STORAGE_KEY = 'csc_bewerbung_draft_v1';
 })();
 
 // Rollen-Anstellungsformen-Mapping nach §17 KCanG
-// Unmittelbare Tätigkeiten am Pflanzen-/Produkt (Anbau, Ernte, Abgabe) = nur Minijob
-// Vorstand = Minijob oder Ehrenamt
-// Head Grower = Leitungsfunktion (nicht selbst an Pflanzen) → TZ/VZ möglich
-// Sonstige (Reinigung, Sicherheit) = alle Anstellungsformen
+// NUR Grower (unmittelbare Pflanzen-/Anbau-Tätigkeit) ist auf Minijob + Ehrenamt beschränkt
+// Alle anderen Rollen können alle Anstellungsformen wählen
 // Ehrenamt ist bei ALLEN Rollen möglich (Bewerber kann freiwillig ohne Bezahlung helfen)
 const ROLE_ANSTELLUNG_MAP = {
   'grower':            ['minijob', 'ehrenamt'],
-  'head_grower':       ['teilzeit', 'vollzeit', 'honorar', 'ehrenamt'],
-  'ausgabe':           ['minijob', 'ehrenamt'],
-  'vorstand':          ['minijob', 'ehrenamt'],
-  'stellv_vorstand':   ['minijob', 'ehrenamt'],
-  'praevention':       ['minijob', 'ehrenamt', 'honorar'],
-  'springer':          ['minijob', 'ehrenamt'],
+  'head_grower':       ['minijob', 'teilzeit', 'vollzeit', 'honorar', 'ehrenamt'],
+  'ausgabe':           ['minijob', 'teilzeit', 'vollzeit', 'honorar', 'ehrenamt'],
+  'vorstand':          ['minijob', 'teilzeit', 'vollzeit', 'honorar', 'ehrenamt'],
+  'stellv_vorstand':   ['minijob', 'teilzeit', 'vollzeit', 'honorar', 'ehrenamt'],
+  'praevention':       ['minijob', 'teilzeit', 'vollzeit', 'honorar', 'ehrenamt'],
+  'springer':          ['minijob', 'teilzeit', 'vollzeit', 'honorar', 'ehrenamt'],
   'reinigung':         ['minijob', 'teilzeit', 'vollzeit', 'honorar', 'ehrenamt'],
   'sicherheit':        ['minijob', 'teilzeit', 'vollzeit', 'honorar', 'ehrenamt']
 };
@@ -3808,6 +3806,40 @@ function renderSection9() {
         <a href="https://cscsdeutschland.de/datenschutzerklarung" target="_blank" rel="noopener noreferrer" style="color: var(--olive-700);">cscsdeutschland.de/datenschutzerklarung</a>
         · Impressum: 
         <a href="https://cscsdeutschland.de/impressum" target="_blank" rel="noopener noreferrer" style="color: var(--olive-700);">cscsdeutschland.de/impressum</a>
+      </p>
+    </div>
+
+    <!-- KI-/Automatische-Bewertung-Hinweis (DSGVO Art. 22, EU AI Act) -->
+    <div class="privacy-block" style="background: #fef9e8; border-left: 4px solid #f9c74f; margin-top: 1.5rem;">
+      <h4 style="color: #5a4a1a;">🤖 Hinweis zur automatischen Bewertung</h4>
+      <p>
+        Um unseren Vereins-Vorständen die Sichtung zu erleichtern, berechnet unser System aus deinen Angaben 
+        automatisch einen <strong>Punktewert von 0 bis 100</strong> (so genannter "Score"). Dieser Wert wird 
+        aus folgenden objektiven Faktoren ermittelt:
+      </p>
+      <ul style="margin: 0.5rem 0 0.5rem 1.25rem; padding: 0; line-height: 1.6;">
+        <li>Verfügbarkeit (wann und wie oft du Zeit hast)</li>
+        <li>Erfahrung und Qualifikation (Vorerfahrung, Bildungsabschluss, Sprachen)</li>
+        <li>Mobilität (Anfahrtszeit, eigenes Fahrzeug)</li>
+        <li>Soft-Skills (deine Selbsteinschätzung)</li>
+        <li>Bereitschaft für Wochenende, Feiertag, Nacht</li>
+        <li>Sachkunde (z. B. Präventions-Sachkundenachweis)</li>
+      </ul>
+      <p style="margin-top: 0.75rem;">
+        <strong>Wichtig:</strong> Der Score ist <strong>nur ein Hinweis</strong> für unsere Vorstände. 
+        Die <strong>Entscheidung über deine Bewerbung wird immer von Menschen getroffen</strong> — 
+        konkret von deinem Vereinsvorstand und unserem Community-Management-Team (Vier-Augen-Prinzip). 
+        Es gibt <strong>keine vollständig automatisierte Entscheidung</strong> im Sinne von Art. 22 DSGVO.
+      </p>
+      <p style="margin-top: 0.5rem;">
+        Wir verwenden <strong>keine "echte" künstliche Intelligenz</strong> wie ChatGPT oder ähnliche 
+        Sprachmodelle für die Bewertung deiner Bewerbung. Die Berechnung ist eine einfache, 
+        nachvollziehbare Gewichtung der von dir angegebenen Daten.
+      </p>
+      <p style="margin-top: 0.5rem;">
+        Du hast jederzeit das <strong>Recht auf menschliche Überprüfung</strong>, das Recht, deinen 
+        Standpunkt darzulegen, und das Recht, die Entscheidung anzufechten. Wende dich dafür einfach 
+        an <a href="mailto:communityrecruiting@mariana-cannabis.de" style="color: #357a4a;">communityrecruiting@mariana-cannabis.de</a>.
       </p>
     </div>
 

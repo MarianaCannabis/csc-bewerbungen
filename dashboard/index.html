@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mariana Cannabis · Bewerbungs-Dashboard v2</title>
-  <!-- DASHBOARD_BUILD: 2026-05-14T1842 (Reaktivierungs-Mail-Vorlage hinzugefügt) -->
-  <script>window.__DASHBOARD_BUILD = '2026-05-14T1842';</script>
+  <!-- DASHBOARD_BUILD: 2026-05-15T2230 (RLS-Leak-Fix: Client-Filter auch beim Initial-Load) -->
+  <script>window.__DASHBOARD_BUILD = '2026-05-15T2230';</script>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -1686,12 +1686,18 @@ async function silentReloadBewerbungen() {
     if (!data) return;
     
     // Notiz-Verlauf-Counts mit nachladen (für 🗒-Indikator)
+    // Nur für die tatsächlich geladenen Bewerbungen — kein RLS-Leak möglich
     try {
-      const { data: notes } = await sb.from('csc_bewerbung_notizen').select('bewerbung_id');
-      if (notes) {
-        const counts = {};
-        notes.forEach(n => { counts[n.bewerbung_id] = (counts[n.bewerbung_id] || 0) + 1; });
-        data.forEach(b => { b.notiz_verlauf_count = counts[b.id] || 0; });
+      const ids = data.map(b => b.id);
+      if (ids.length > 0) {
+        const { data: notes } = await sb.from('csc_bewerbung_notizen')
+          .select('bewerbung_id')
+          .in('bewerbung_id', ids);
+        if (notes) {
+          const counts = {};
+          notes.forEach(n => { counts[n.bewerbung_id] = (counts[n.bewerbung_id] || 0) + 1; });
+          data.forEach(b => { b.notiz_verlauf_count = counts[b.id] || 0; });
+        }
       }
     } catch (_) {}
     
@@ -1767,19 +1773,46 @@ async function loadVereine() {
 }
 
 async function loadBewerbungen() {
-  const { data, error } = await sb.from('csc_bewerbungen').select('*').order('eingegangen_am', { ascending: false });
+  // ─── DEFENSE-IN-DEPTH RLS-FIX (2026-05-15) ─────────────────────────────────
+  // Beim Initial-Load nach Login/F5 ist es möglich, dass die RLS-Policy
+  // noch nicht 100% greift (JWT-Propagation, Magic-Link-Redirect, etc.).
+  // Deshalb filtern wir IMMER auch clientseitig — identisch zum Polling.
+  // Ohne userContext gar nichts laden (sicherer Default).
+  if (!userContext) {
+    console.warn('[loadBewerbungen] Kein userContext — Abbruch (sicherheits-default)');
+    document.getElementById('list-items').innerHTML = '<div class="list-empty">Lade Profil…</div>';
+    return;
+  }
+  
+  let q = sb.from('csc_bewerbungen').select('*').order('eingegangen_am', { ascending: false });
+  if (!userContext.ist_admin) {
+    if (!userContext.verein_id) {
+      // Vorstand ohne Verein-Zuordnung darf NICHTS sehen
+      console.warn('[loadBewerbungen] Vorstand ohne verein_id — zeige leer');
+      bewerbungen = [];
+      renderList();
+      return;
+    }
+    q = q.eq('verein_id', userContext.verein_id);
+  }
+  
+  const { data, error } = await q;
   if (error) { document.getElementById('list-items').innerHTML = '<div class="list-empty">Fehler beim Laden: ' + escapeHtml(error.message) + '</div>'; return; }
   bewerbungen = data || [];
   
   // Notiz-Verlauf-Counts pro Bewerbung nachladen (für Listen-Indikator 🗒)
-  // Wenn die Tabelle nicht existiert oder ein Fehler kommt: still ignorieren
+  // WICHTIG: Auch hier nur die Notizen für die geladenen Bewerbungen — sonst Leak
   try {
-    const { data: notes, error: notesErr } = await sb.from('csc_bewerbung_notizen')
-      .select('bewerbung_id');
-    if (!notesErr && notes) {
-      const counts = {};
-      notes.forEach(n => { counts[n.bewerbung_id] = (counts[n.bewerbung_id] || 0) + 1; });
-      bewerbungen.forEach(b => { b.notiz_verlauf_count = counts[b.id] || 0; });
+    const bewerbungIds = bewerbungen.map(b => b.id);
+    if (bewerbungIds.length > 0) {
+      const { data: notes, error: notesErr } = await sb.from('csc_bewerbung_notizen')
+        .select('bewerbung_id')
+        .in('bewerbung_id', bewerbungIds);
+      if (!notesErr && notes) {
+        const counts = {};
+        notes.forEach(n => { counts[n.bewerbung_id] = (counts[n.bewerbung_id] || 0) + 1; });
+        bewerbungen.forEach(b => { b.notiz_verlauf_count = counts[b.id] || 0; });
+      }
     }
   } catch (_) {}
   

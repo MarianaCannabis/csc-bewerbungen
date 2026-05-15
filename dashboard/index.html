@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mariana Cannabis · Bewerbungs-Dashboard v2</title>
-  <!-- DASHBOARD_BUILD: 2026-05-15T2230 (RLS-Leak-Fix: Client-Filter auch beim Initial-Load) -->
-  <script>window.__DASHBOARD_BUILD = '2026-05-15T2230';</script>
+  <!-- DASHBOARD_BUILD: 2026-05-15T2310 (Verfügbarkeits-Heatmap standardmäßig zugeklappt) -->
+  <script>window.__DASHBOARD_BUILD = '2026-05-15T2310';</script>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -2577,16 +2577,19 @@ async function selectBewerbung(id) {
       ` : ''}
       
       ${b.verfuegbarkeit && typeof b.verfuegbarkeit === 'object' ? `
-        <div class="verfueg-heatmap-wrap">
-          <div class="verfueg-heatmap-title-row">
+        <details class="verfueg-heatmap-wrap" style="padding:0;">
+          <summary style="cursor:pointer; padding:14px 16px; list-style:none; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
             <span class="verfueg-heatmap-headline">📅 Wann ist der Bewerber verfügbar?</span>
             <span class="verfueg-heatmap-legend">
               <span class="vlg-cell vlg-on"></span> verfügbar
               <span class="vlg-cell vlg-off"></span> nicht
+              <span style="margin-left:8px; font-size:11px; color:var(--tx-mute);">▾ Details</span>
             </span>
+          </summary>
+          <div style="padding: 0 16px 14px 16px;">
+            ${renderVerfuegbarkeitHeatmap(b.verfuegbarkeit)}
           </div>
-          ${renderVerfuegbarkeitHeatmap(b.verfuegbarkeit)}
-        </div>
+        </details>
       ` : ''}
     </div>
     ` : ''}

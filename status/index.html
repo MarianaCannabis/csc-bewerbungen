@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Bewerbung — Status · Mariana Cannabis</title>
-<!-- STATUS_BUILD: 2026-05-15T2230 (Selbstlöschung via Edge Function statt RPC) -->
-<script>window.__STATUS_BUILD = '2026-05-15T2230';</script>
+<!-- STATUS_BUILD: 2026-05-15T2245 (Selbst-Token-Leak gefixt: SELECT über Edge Function) -->
+<script>window.__STATUS_BUILD = '2026-05-15T2245';</script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -180,13 +180,24 @@
     }
     
     try {
-      const { data, error } = await sb.from('csc_bewerbungen')
-        .select('id, vorname, nachname, status, eingegangen_am, status_geaendert_am, email')
-        .eq('bewerber_token', token)
-        .maybeSingle();
+      // ─── KRITISCHER SICHERHEITS-FIX (2026-05-15) ─────────────────────────
+      // Vorher: direkter sb.from('csc_bewerbungen').select() mit anon-Key
+      // funktionierte nur weil eine RLS-Policy "bewerber_token IS NOT NULL"
+      // für anon+authenticated alle Bewerbungen mit Token offen ließ.
+      // Das war ein massives DSGVO-Leck — jeder Browser konnte ALLE
+      // Bewerbungen lesen, nicht nur die eigene.
+      // Jetzt: Edge Function "get-bewerbung-status" mit Service-Role
+      // filtert server-seitig auf das eine richtige Bewerber-Token und
+      // liefert NUR unsensible Status-Felder (kein E-Mail, keine Adresse,
+      // keine Telefonnummer etc.) zurück.
+      const { data: respData, error: invokeErr } = await sb.functions.invoke(
+        'get-bewerbung-status',
+        { body: { token: token } }
+      );
+      if (invokeErr) throw invokeErr;
       
-      if (error) throw error;
-      if (!data) {
+      // Edge Function gibt entweder Daten oder { error: "..." } zurück
+      if (!respData || respData.error) {
         document.getElementById('content').innerHTML = `
           <div class="card">
             <div class="error-box">
@@ -198,8 +209,8 @@
         return;
       }
       
-      bewerbungData = data;
-      renderStatus(data);
+      bewerbungData = respData;
+      renderStatus(respData);
     } catch (e) {
       console.error('[loadStatus]', e);
       document.getElementById('content').innerHTML = `

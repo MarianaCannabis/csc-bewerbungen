@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="color-scheme" content="dark">
   <title>Mariana Cannabis · Bewerbungs-Dashboard v2</title>
-  <!-- DASHBOARD_BUILD: 2026-05-16T0210 (Einstellung: EIN Vertrag für mehrere Rollen statt pro Rolle) -->
-  <script>window.__DASHBOARD_BUILD = '2026-05-16T0210';</script>
+  <!-- DASHBOARD_BUILD: 2026-05-16T0245 (Etappe 3: Personal-Soll/Ist-Übersicht pro Verein) -->
+  <script>window.__DASHBOARD_BUILD = '2026-05-16T0245';</script>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -198,6 +198,64 @@
     .stat-icon.warteliste { background: var(--gold); }
     .stat-icon.angenommen { background: #5fbe7d; }
     .stat-icon.abgelehnt { background: var(--red); }
+
+    /* ───────── PERSONAL-ÜBERSICHT ───────── */
+    .personal-bar { padding: 0 24px; background: var(--bg); }
+    .personal-bar:empty { display: none; }
+    .personal-panel {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 8px; margin-bottom: 10px;
+    }
+    .pp-summary {
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+      padding: 8px 14px; cursor: pointer; list-style: none;
+    }
+    .pp-summary::-webkit-details-marker { display: none; }
+    .pp-title { font-size: 12px; font-weight: 600; color: var(--tx); }
+    .pp-hint-inline { font-size: 11px; color: var(--tx-mute); }
+    .pp-summary-stats {
+      font-size: 11px; color: var(--tx-dim);
+      background: var(--bg-elev); padding: 2px 10px; border-radius: 999px;
+    }
+    .pp-summary-stats.pp-all-voll { color: var(--green); background: var(--green-glow); }
+    .pp-toggle { margin-left: auto; color: var(--tx-dim); transition: transform 0.15s; }
+    .personal-panel[open] .pp-toggle { transform: rotate(180deg); }
+    .pp-body { padding: 0 14px 12px 14px; }
+    .pp-hint { font-size: 11px; color: var(--tx-mute); margin-bottom: 10px; line-height: 1.4; }
+    .pp-empty { font-size: 12px; color: var(--tx-dim); padding: 8px 0; }
+    .pp-rows { display: flex; flex-direction: column; gap: 3px; }
+    .pp-row {
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+      padding: 6px 10px; border-radius: 6px; background: var(--bg);
+    }
+    .pp-row-leer { opacity: 0.5; }
+    .pp-rolle { font-size: 13px; color: var(--tx); font-weight: 500; min-width: 150px; flex-shrink: 0; }
+    .pp-soll-wrap { display: flex; align-items: center; gap: 5px; }
+    .pp-soll-label {
+      font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em;
+      color: var(--tx-mute); font-weight: 600;
+    }
+    .pp-soll-input {
+      width: 48px; padding: 4px 6px; font-size: 12px; text-align: center;
+      background: var(--bg-elev); border: 1px solid var(--border-strong);
+      border-radius: 5px; color: var(--tx);
+    }
+    .pp-ist {
+      font-size: 12px; font-weight: 600; padding: 2px 8px;
+      border-radius: 999px; white-space: nowrap;
+    }
+    .pp-ist-ang { background: var(--green-glow); color: var(--green); }
+    .pp-ist-wl  { background: var(--gold-bg); color: var(--gold); }
+    .pp-bar {
+      flex: 1; min-width: 80px; height: 7px;
+      background: var(--bg-elev2); border-radius: 999px; overflow: hidden;
+    }
+    .pp-bar-fill { height: 100%; background: var(--gold); transition: width 0.2s; border-radius: 999px; }
+    .pp-bar-fill.pp-bar-voll { background: var(--green); }
+    .pp-status { font-size: 11px; font-weight: 600; min-width: 92px; text-align: right; }
+    .pp-st-none  { color: var(--tx-mute); }
+    .pp-st-offen { color: var(--gold); }
+    .pp-st-voll  { color: var(--green); }
     .top-vereine-box { width: 100%; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 0; }
     .top-vereine-summary { font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--tx-mute); font-weight: 600; padding: 8px 14px; cursor: pointer; list-style: none; display: flex; align-items: center; gap: 8px; }
     .top-vereine-summary::-webkit-details-marker { display: none; }
@@ -1316,6 +1374,7 @@
   </header>
   
   <div class="stats-bar" id="stats-bar"></div>
+  <div class="personal-bar" id="personal-bar"></div>
   <div class="tag-cloud-bar" id="tag-cloud-bar" style="display:none"></div>
   
   <div class="main" id="main-content">
@@ -1356,7 +1415,7 @@
             <option value="abgelehnt">Abgelehnt</option>
           </select>
           <label for="filter-verein" class="sr-only">Nach Verein filtern</label>
-          <select id="filter-verein" onchange="renderList()" style="display:none" aria-label="Nach Verein filtern">
+          <select id="filter-verein" onchange="renderList(); renderPersonalPanel()" style="display:none" aria-label="Nach Verein filtern">
             <option value="">Alle Vereine</option>
           </select>
           <label for="filter-rolle" class="sr-only">Nach Rolle filtern</label>
@@ -1734,6 +1793,7 @@ async function loadDashboard() {
   await loadVereine();
   await loadBewerbungen();
   renderStats();
+  renderPersonalPanel();
   
   // Background-Polling alle 25 Sek starten
   startBackgroundPolling();
@@ -1907,7 +1967,7 @@ async function manualRefresh() {
 }
 
 async function loadVereine() {
-  const { data, error } = await sb.from('csc_vereine').select('id, name, ort, plz, bundesland').eq('aktiv', true);
+  const { data, error } = await sb.from('csc_vereine').select('id, name, ort, plz, bundesland, personal_soll').eq('aktiv', true);
   if (error) { console.error('Vereine:', error); return; }
   vereine = {}; data.forEach(v => { vereine[v.id] = v; });
   if (userContext.ist_admin) {
@@ -3042,6 +3102,7 @@ async function setStatus(id, newStatus) {
     // UI sofort und vollständig neu rendern
     renderStats();
     renderList();
+    renderPersonalPanel();   // Ist-Zahlen ändern sich bei warteliste/angenommen
     if (selectedId === id) selectBewerbung(id);
     toast('Status auf "' + STATUS_LABELS[newStatus] + '" gesetzt');
   } catch (e) { 
@@ -3267,9 +3328,157 @@ async function saveEinstellung(bewerbungId, einst) {
     if (idx !== -1) bewerbungen[idx] = data;
     if (selectedId === bewerbungId) selectBewerbung(bewerbungId);
     renderList();
+    renderPersonalPanel();   // Ist-Zahlen können sich geändert haben
   } catch (e) {
     console.error('[saveEinstellung]', e);
     toast('Fehler beim Speichern: ' + e.message, true);
+  }
+}
+
+// ============================================================================
+// PERSONAL-ÜBERSICHT — Soll/Ist pro Rolle, pro Verein
+// ----------------------------------------------------------------------------
+// Soll: csc_vereine.personal_soll {rolle: anzahl} — über csc_set_personal_soll
+// Ist:  gezählt aus bewerbungen mit Status warteliste / angenommen,
+//       deren eingestellt_details.rollen die Rolle enthält.
+// ============================================================================
+
+// Ist-Zahlen für einen Verein berechnen: {rolle: {warteliste, angenommen}}
+function computeIstZahlen(vereinId) {
+  const ist = {};
+  bewerbungen
+    .filter(b => b.verein_id === vereinId)
+    .forEach(b => {
+      const st = b.status;
+      if (st !== 'warteliste' && st !== 'angenommen') return;
+      const einst = getEinstellung(b);
+      einst.rollen.forEach(r => {
+        if (!ist[r]) ist[r] = { warteliste: 0, angenommen: 0 };
+        ist[r][st]++;
+      });
+    });
+  return ist;
+}
+
+// Welcher Verein wird im Panel angezeigt?
+//  - Vorstand: der eigene
+//  - Admin: der im Filter gewählte (sonst keiner)
+function getPersonalPanelVereinId() {
+  if (!userContext) return '';
+  if (userContext.ist_admin) {
+    return document.getElementById('filter-verein')?.value || '';
+  }
+  return userContext.verein_id || '';
+}
+
+function renderPersonalPanel() {
+  const bar = document.getElementById('personal-bar');
+  if (!bar || !userContext) return;
+
+  const vereinId = getPersonalPanelVereinId();
+
+  // Admin ohne Verein-Auswahl → Hinweis
+  if (!vereinId) {
+    bar.innerHTML = `
+      <details class="personal-panel">
+        <summary class="pp-summary">
+          <span class="pp-title">📊 Personal-Übersicht</span>
+          <span class="pp-hint-inline">— oben einen Verein wählen</span>
+          <span class="pp-toggle">▾</span>
+        </summary>
+        <div class="pp-body">
+          <div class="pp-empty">Wähle oben im Filter einen konkreten Verein, um Personal-Soll und -Ist zu sehen und zu pflegen.</div>
+        </div>
+      </details>`;
+    return;
+  }
+
+  const verein = vereine[vereinId];
+  if (!verein) { bar.innerHTML = ''; return; }
+
+  const soll = (verein.personal_soll && typeof verein.personal_soll === 'object') ? verein.personal_soll : {};
+  const ist  = computeIstZahlen(vereinId);
+
+  // Gesamt-Zusammenfassung für die Summary
+  let sumSoll = 0, sumAng = 0, sumWl = 0;
+  Object.keys(ROLE_LABELS).forEach(r => {
+    sumSoll += Number(soll[r]) || 0;
+    sumAng  += (ist[r]?.angenommen) || 0;
+    sumWl   += (ist[r]?.warteliste) || 0;
+  });
+  const alleBesetzt = sumSoll > 0 && sumAng >= sumSoll;
+
+  const rows = Object.keys(ROLE_LABELS).map(rolle => {
+    const sollN = Number(soll[rolle]) || 0;
+    const angN  = (ist[rolle]?.angenommen) || 0;
+    const wlN   = (ist[rolle]?.warteliste) || 0;
+    // Nichts gesucht und nichts da → Zeile gedimmt
+    const leer  = sollN === 0 && angN === 0 && wlN === 0;
+    const voll  = sollN > 0 && angN >= sollN;
+    const offen = sollN > 0 ? Math.max(0, sollN - angN) : 0;
+    const pct   = sollN > 0 ? Math.min(100, Math.round(angN / sollN * 100)) : 0;
+
+    let statusTxt, statusCls;
+    if (sollN === 0)      { statusTxt = 'kein Bedarf';        statusCls = 'pp-st-none'; }
+    else if (voll)        { statusTxt = '✓ voll besetzt';     statusCls = 'pp-st-voll'; }
+    else                  { statusTxt = `noch ${offen} offen`; statusCls = 'pp-st-offen'; }
+
+    return `
+      <div class="pp-row ${leer ? 'pp-row-leer' : ''}">
+        <span class="pp-rolle">${escapeHtml(ROLE_LABELS[rolle] || rolle)}</span>
+        <label class="pp-soll-wrap" title="Wie viele Mitarbeiter dieser Rolle der Verein sucht">
+          <span class="pp-soll-label">Soll</span>
+          <input type="number" min="0" max="99" class="pp-soll-input" value="${sollN || ''}" 
+                 placeholder="0"
+                 onchange="setPersonalSoll('${vereinId}', '${rolle}', this.value)">
+        </label>
+        <span class="pp-ist pp-ist-ang" title="Angenommen — fest eingestellt">✓ ${angN}</span>
+        <span class="pp-ist pp-ist-wl" title="Auf Warteliste — Reserve-Pool">⏳ ${wlN}</span>
+        <div class="pp-bar" title="${angN} von ${sollN} besetzt">
+          <div class="pp-bar-fill ${voll ? 'pp-bar-voll' : ''}" style="width:${pct}%"></div>
+        </div>
+        <span class="pp-status ${statusCls}">${statusTxt}</span>
+      </div>
+    `;
+  }).join('');
+
+  bar.innerHTML = `
+    <details class="personal-panel">
+      <summary class="pp-summary">
+        <span class="pp-title">📊 Personal-Übersicht — ${escapeHtml(verein.name)}</span>
+        <span class="pp-summary-stats ${alleBesetzt ? 'pp-all-voll' : ''}">
+          Soll ${sumSoll} · ✓ ${sumAng} angenommen · ⏳ ${sumWl} Warteliste
+        </span>
+        <span class="pp-toggle">▾</span>
+      </summary>
+      <div class="pp-body">
+        <div class="pp-hint">Trage bei „Soll" ein, wie viele Mitarbeiter pro Rolle gesucht werden. „✓" = angenommen, „⏳" = Warteliste.</div>
+        <div class="pp-rows">${rows}</div>
+      </div>
+    </details>`;
+}
+
+async function setPersonalSoll(vereinId, rolle, anzahl) {
+  const verein = vereine[vereinId];
+  if (!verein) return;
+  const soll = { ...((verein.personal_soll && typeof verein.personal_soll === 'object') ? verein.personal_soll : {}) };
+  const n = Math.max(0, Math.min(99, parseInt(anzahl, 10) || 0));
+  if (n === 0) { delete soll[rolle]; } else { soll[rolle] = n; }
+  try {
+    const { data, error } = await sb.rpc('csc_set_personal_soll', {
+      p_verein_id: vereinId, p_soll: soll
+    });
+    if (error) throw error;
+    if (!data || data.ok !== true) {
+      toast('Speichern fehlgeschlagen: ' + (data?.error || 'unbekannt'), true);
+      return;
+    }
+    verein.personal_soll = soll;
+    renderPersonalPanel();
+    toast(`Personal-Soll gespeichert: ${ROLE_LABELS[rolle] || rolle} = ${n}`);
+  } catch (e) {
+    console.error('[setPersonalSoll]', e);
+    toast('Fehler: ' + e.message, true);
   }
 }
 

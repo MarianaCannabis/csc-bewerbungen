@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mariana Cannabis · Bewerbungs-Dashboard v2</title>
-  <!-- DASHBOARD_BUILD: 2026-05-15T2310 (Verfügbarkeits-Heatmap standardmäßig zugeklappt) -->
-  <script>window.__DASHBOARD_BUILD = '2026-05-15T2310';</script>
+  <!-- DASHBOARD_BUILD: 2026-05-15T2355 (appConfirm/appPrompt: Custom Modals ersetzen native confirm/prompt — Firefox-Block-Bug behoben) -->
+  <script>window.__DASHBOARD_BUILD = '2026-05-15T2355';</script>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -714,6 +714,61 @@
     .toast { position: fixed; bottom: 24px; right: 24px; background: var(--bg-card); border: 1px solid var(--green-dim); color: var(--tx); padding: 14px 20px; border-radius: 10px; font-size: 13px; z-index: 100; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5); transform: translateY(100px); opacity: 0; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
     .toast.show { transform: translateY(0); opacity: 1; }
     .toast.error { border-color: var(--red); }
+
+    /* ───────── APP-CONFIRM / APP-PROMPT — Custom Modals ───────── */
+    /* Ersatz für native confirm()/prompt() die Firefox blocken kann */
+    .app-modal-overlay {
+      position: fixed; inset: 0; background: rgba(0, 0, 0, 0.72);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 9999; padding: 20px;
+      animation: appModalFadeIn 0.15s ease-out;
+    }
+    @keyframes appModalFadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .app-modal {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 24px;
+      max-width: 480px; width: 100%;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+      animation: appModalSlideIn 0.18s ease-out;
+    }
+    @keyframes appModalSlideIn { from { transform: translateY(-12px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .app-modal-title {
+      font-size: 16px; font-weight: 600; color: var(--tx);
+      margin-bottom: 12px;
+    }
+    .app-modal-body {
+      font-size: 14px; color: var(--tx); line-height: 1.5;
+      margin-bottom: 18px; white-space: pre-line;
+    }
+    .app-modal-input {
+      width: 100%; box-sizing: border-box;
+      background: var(--bg); border: 1px solid var(--border);
+      color: var(--tx); padding: 10px 12px; border-radius: 6px;
+      font-family: inherit; font-size: 14px;
+      margin-bottom: 16px;
+    }
+    .app-modal-input:focus { outline: none; border-color: var(--green); }
+    .app-modal-actions {
+      display: flex; gap: 10px; justify-content: flex-end;
+    }
+    .app-modal-btn {
+      padding: 9px 18px; border-radius: 6px;
+      font-family: inherit; font-size: 13px; font-weight: 600;
+      cursor: pointer; border: 1px solid var(--border);
+      background: var(--bg-elev); color: var(--tx);
+      transition: background 0.15s, opacity 0.15s;
+    }
+    .app-modal-btn:hover:not(:disabled) { background: var(--bg); }
+    .app-modal-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .app-modal-btn-ok {
+      background: var(--green); border-color: var(--green); color: #fff;
+    }
+    .app-modal-btn-ok:hover:not(:disabled) { background: var(--green-bright, var(--green)); filter: brightness(1.1); }
+    .app-modal-btn-danger {
+      background: var(--red); border-color: var(--red); color: #fff;
+    }
+    .app-modal-btn-danger:hover:not(:disabled) { filter: brightness(1.1); }
+
 
     /* Duplikat-Badge in der Liste */
     .dup-badge {
@@ -2747,7 +2802,7 @@ async function addNotiz(bewerbungId) {
 }
 
 async function deleteNotiz(notizId, bewerbungId) {
-  if (!confirm('Diese Notiz wirklich löschen?')) return;
+  if (!await appConfirm('Diese Notiz wirklich löschen?', { danger: true, okLabel: 'Löschen' })) return;
   try {
     const { error } = await sb.from('csc_bewerbung_notizen').delete().eq('id', notizId);
     if (error) throw error;
@@ -2847,7 +2902,10 @@ async function setStatus(id, newStatus) {
     return; 
   }
   
-  const confirmed = confirm(`Status auf "${STATUS_LABELS[newStatus]}" setzen?\n\n${b.vorname} ${b.nachname}`);
+  const confirmed = await appConfirm(
+    `${b.vorname} ${b.nachname}`,
+    { title: `Status auf "${STATUS_LABELS[newStatus]}" setzen?`, okLabel: 'Status setzen' }
+  );
   if (!confirmed) return;
   
   try {
@@ -3074,20 +3132,21 @@ async function deleteBewerbung(id) {
   // 1. Bestätigung: Bewerbungs-Daten
   const name = `${b.vorname || ''} ${b.nachname || ''}`.trim() || '(ohne Namen)';
   const eingegangenStr = b.eingegangen_am ? new Date(b.eingegangen_am).toLocaleDateString('de-DE') : '–';
-  const c1 = confirm(
-    `⚠️ Bewerbung dauerhaft löschen?\n\n` +
+  const c1 = await appConfirm(
     `${name}\n` +
     `Eingegangen: ${eingegangenStr}\n` +
     `Status: ${STATUS_LABELS[b.status] || b.status}\n\n` +
     `Diese Aktion ist NICHT rückgängig zu machen.\n` +
     `Alle Bewerbungsdaten und Anhänge werden aus dem System entfernt.\n\n` +
-    `Wirklich fortfahren?`
+    `Wirklich fortfahren?`,
+    { title: '⚠️ Bewerbung dauerhaft löschen?', okLabel: 'Weiter zum Bestätigen', danger: true }
   );
   if (!c1) return;
   
   // 2. Bestätigung: Tippen
-  const c2 = prompt(
-    `Letzte Bestätigung:\n\nTippe LÖSCHEN (in Großbuchstaben) und drücke OK, um die Bewerbung von ${name} endgültig zu löschen.`
+  const c2 = await appPrompt(
+    `Tippe LÖSCHEN (in Großbuchstaben), um die Bewerbung von ${name} endgültig zu löschen.`,
+    { title: 'Letzte Bestätigung', placeholder: 'LÖSCHEN', required: 'LÖSCHEN', okLabel: 'Endgültig löschen' }
   );
   if (c2 !== 'LÖSCHEN') {
     toast('Löschung abgebrochen', false);
@@ -3189,6 +3248,136 @@ function toast(msg, isError = false) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
 }
+
+// ============================================================================
+// APP-CONFIRM / APP-PROMPT — Ersatz für native confirm()/prompt()
+// ----------------------------------------------------------------------------
+// Firefox blockt native Dialoge wenn der User "Hindere diese Webseite daran, 
+// weitere Dialoge zu öffnen" anklickt (passiert leicht beim schnellen 
+// Hintereinander-Klicken). Folge: confirm() returns silent false, Buttons 
+// scheinen tot. Custom-Modals umgehen das komplett.
+// 
+// Verwendung:
+//   const ok = await appConfirm('Wirklich löschen?');
+//   if (!ok) return;
+// 
+//   const eingabe = await appPrompt('Tippe LÖSCHEN', { required: 'LÖSCHEN' });
+//   if (eingabe === null) return;  // Abbruch
+// ============================================================================
+
+function appConfirm(message, opts = {}) {
+  return new Promise((resolve) => {
+    const { 
+      title       = 'Bestätigung',
+      okLabel     = 'OK',
+      cancelLabel = 'Abbrechen',
+      danger      = false   // true → roter OK-Button für Lösch-Bestätigungen
+    } = opts;
+
+    const overlay = document.createElement('div');
+    overlay.className = 'app-modal-overlay';
+    overlay.innerHTML = `
+      <div class="app-modal" role="dialog" aria-modal="true" aria-labelledby="app-modal-title">
+        <div class="app-modal-title" id="app-modal-title">${escapeHtml(title)}</div>
+        <div class="app-modal-body">${escapeHtml(message).replace(/\n/g, '<br>')}</div>
+        <div class="app-modal-actions">
+          <button class="app-modal-btn app-modal-btn-cancel" type="button">${escapeHtml(cancelLabel)}</button>
+          <button class="app-modal-btn ${danger ? 'app-modal-btn-danger' : 'app-modal-btn-ok'}" type="button">${escapeHtml(okLabel)}</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+
+    const cleanup = (result) => {
+      overlay.remove();
+      document.removeEventListener('keydown', keyHandler);
+      resolve(result);
+    };
+
+    const okBtn     = overlay.querySelector('.app-modal-btn-ok, .app-modal-btn-danger');
+    const cancelBtn = overlay.querySelector('.app-modal-btn-cancel');
+    okBtn.addEventListener('click', () => cleanup(true));
+    cancelBtn.addEventListener('click', () => cleanup(false));
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) cleanup(false);
+    });
+
+    const keyHandler = (e) => {
+      if (e.key === 'Escape') cleanup(false);
+      else if (e.key === 'Enter') cleanup(true);
+    };
+    document.addEventListener('keydown', keyHandler);
+
+    // Focus auf OK-Button (Enter-zum-Bestätigen)
+    setTimeout(() => okBtn.focus(), 50);
+  });
+}
+
+function appPrompt(message, opts = {}) {
+  return new Promise((resolve) => {
+    const { 
+      title       = 'Eingabe',
+      okLabel     = 'OK',
+      cancelLabel = 'Abbrechen',
+      placeholder = '',
+      defaultValue = '',
+      required    = null     // wenn gesetzt: OK nur aktiv wenn Eingabe === required
+    } = opts;
+
+    const overlay = document.createElement('div');
+    overlay.className = 'app-modal-overlay';
+    overlay.innerHTML = `
+      <div class="app-modal" role="dialog" aria-modal="true" aria-labelledby="app-prompt-title">
+        <div class="app-modal-title" id="app-prompt-title">${escapeHtml(title)}</div>
+        <div class="app-modal-body">${escapeHtml(message).replace(/\n/g, '<br>')}</div>
+        <input type="text" class="app-modal-input" placeholder="${escapeHtml(placeholder)}" value="${escapeHtml(defaultValue)}" autocomplete="off" />
+        <div class="app-modal-actions">
+          <button class="app-modal-btn app-modal-btn-cancel" type="button">${escapeHtml(cancelLabel)}</button>
+          <button class="app-modal-btn app-modal-btn-danger" type="button" ${required ? 'disabled' : ''}>${escapeHtml(okLabel)}</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+
+    const input  = overlay.querySelector('.app-modal-input');
+    const okBtn  = overlay.querySelector('.app-modal-btn-danger');
+    const cancelBtn = overlay.querySelector('.app-modal-btn-cancel');
+
+    const cleanup = (result) => {
+      overlay.remove();
+      document.removeEventListener('keydown', keyHandler);
+      resolve(result);
+    };
+
+    // OK-Button: gibt den eingegebenen Wert zurück, nicht true/false
+    okBtn.addEventListener('click', () => {
+      if (required && input.value.trim() !== required) return;
+      cleanup(input.value);
+    });
+    cancelBtn.addEventListener('click', () => cleanup(null));
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) cleanup(null);
+    });
+
+    // Wenn ein required-Wert gesetzt ist: OK erst aktivieren wenn der Wert stimmt
+    if (required) {
+      input.addEventListener('input', () => {
+        okBtn.disabled = input.value.trim() !== required;
+      });
+    }
+
+    const keyHandler = (e) => {
+      if (e.key === 'Escape') cleanup(null);
+      else if (e.key === 'Enter' && !okBtn.disabled) {
+        cleanup(input.value);
+      }
+    };
+    document.addEventListener('keydown', keyHandler);
+
+    setTimeout(() => input.focus(), 50);
+  });
+}
+
 
 // ============================================================================
 // MULTI-USER-PRESENCE (Supabase Realtime)
@@ -3432,7 +3621,7 @@ async function saveTermin() {
 }
 
 async function deleteTermin(bewerbungId, terminId) {
-  if (!confirm('Diesen Termin wirklich löschen?')) return;
+  if (!await appConfirm('Diesen Termin wirklich löschen?', { danger: true, okLabel: 'Löschen' })) return;
   const b = bewerbungen.find(x => x.id === bewerbungId);
   if (!b) return;
   
@@ -4237,7 +4426,7 @@ async function sendMail() {
   if (tpl.auto) {
     confirmMsg += `\n\n⚠️ ACHTUNG: Diese Vorlage entspricht einer Auto-Mail beim Status-Wechsel. Bewerber bekommt sie ggf. doppelt!`;
   }
-  if (!confirm(confirmMsg)) return;
+  if (!await appConfirm(confirmMsg, { title: 'E-Mail senden?', okLabel: 'Senden' })) return;
 
   const bodyHtml = format === 'html' ? plainToHtml(bodyText, b, v) : null;
 
@@ -5026,7 +5215,7 @@ function closeErrorLogModal() {
 }
 
 async function clearOldErrors() {
-  if (!confirm('Errors älter als 30 Tage löschen? Dies kann nicht rückgängig gemacht werden.')) return;
+  if (!await appConfirm('Errors älter als 30 Tage löschen?\n\nDies kann nicht rückgängig gemacht werden.', { title: 'Error-Log aufräumen', danger: true, okLabel: 'Löschen' })) return;
   try {
     const cutoff = new Date(Date.now() - 30 * 86400000).toISOString();
     const { error } = await sb.from('csc_error_log').delete().lt('erstellt_am', cutoff);
@@ -5472,7 +5661,7 @@ async function bulkSetStatus(newStatus) {
   if (selectedIds.size === 0 || !newStatus) return;
   const count = selectedIds.size;
   const statusLabel = STATUS_LABELS[newStatus] || newStatus;
-  if (!confirm(`Status auf "${statusLabel}" setzen für ${count} Bewerbung${count !== 1 ? 'en' : ''}?\n\nDie Bewerber:innen erhalten KEINE automatische Mail.`)) return;
+  if (!await appConfirm(`Status auf "${statusLabel}" setzen für ${count} Bewerbung${count !== 1 ? 'en' : ''}?\n\nDie Bewerber:innen erhalten KEINE automatische Mail.`, { title: 'Bulk-Status setzen', okLabel: 'Setzen' })) return;
   const ids = Array.from(selectedIds);
   try {
     const { error } = await sb.from('csc_bewerbungen').update({ status: newStatus }).in('id', ids);

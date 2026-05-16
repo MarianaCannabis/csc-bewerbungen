@@ -90,6 +90,52 @@
     padding: 2px 8px; font-size: 10px; color: var(--text-dim); font-weight: 500; }
   .card-spacer { margin-top: 16px; }
 
+  /* ── Erklärungs-Tooltips ─────────────────────────────────── */
+  .info-i {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 16px; height: 16px; min-width: 16px; border-radius: 50%;
+    background: var(--bg-2); border: 1px solid var(--green-dim);
+    color: var(--green-soft); font-size: 10px; font-weight: 700;
+    font-style: normal; text-transform: none; letter-spacing: 0;
+    cursor: help; position: relative; vertical-align: middle;
+  }
+  .info-i:hover { background: var(--green-dim); }
+  .info-i::after {
+    content: attr(data-tip);
+    position: absolute; top: 140%; left: 50%; transform: translateX(-50%);
+    background: #142019; color: var(--text);
+    padding: 9px 12px; border-radius: 8px; border: 1px solid var(--green-dim);
+    font-size: 12px; font-weight: 400; line-height: 1.5; letter-spacing: 0;
+    text-transform: none; text-align: left; width: 250px;
+    opacity: 0; pointer-events: none; transition: opacity .14s;
+    z-index: 200; box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+  }
+  .info-i:hover::after { opacity: 1; }
+  /* Tooltip am rechten Rand: nach links ausrichten */
+  .info-i.tip-left::after { left: auto; right: 0; transform: none; }
+  .card h2 .info-i { margin-left: 2px; }
+  label .info-i { margin-left: 5px; }
+
+  /* ── Einführungs-Banner ──────────────────────────────────── */
+  .intro-banner {
+    background: linear-gradient(135deg, var(--panel) 0%, var(--panel-2) 100%);
+    border: 1px solid var(--green-dim); border-radius: 12px;
+    padding: 16px 20px; margin-bottom: 16px;
+  }
+  .intro-banner-title {
+    font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--green); font-weight: 700; margin-bottom: 10px;
+  }
+  .intro-banner-steps {
+    display: flex; flex-wrap: wrap; gap: 10px 22px; margin-bottom: 10px;
+  }
+  .intro-banner-steps span { font-size: 13px; color: var(--text); }
+  .intro-banner-steps strong { color: var(--green-soft); }
+  .intro-banner-hint {
+    font-size: 12px; color: var(--text-dim); line-height: 1.6;
+    border-top: 1px solid var(--line); padding-top: 9px;
+  }
+
   .field { margin-bottom: 14px; }
   .field:last-child { margin-bottom: 0; }
   .field label { display: flex; justify-content: space-between; align-items: baseline;
@@ -513,10 +559,19 @@
   <!-- ============ EXPERTE ============ -->
   <div class="view active" id="view-expert">
 
-    <!-- 1. TEAM ZUERST -->
+    <div class="intro-banner">
+      <div class="intro-banner-title">So funktioniert der Rechner</div>
+      <div class="intro-banner-steps">
+        <span><strong>1.</strong> Team eintragen oder aus Bewerbungen übernehmen</span>
+        <span><strong>2.</strong> Mitglieder, Öffnungszeiten &amp; Betrieb einstellen</span>
+        <span><strong>3.</strong> Ergebnis ablesen — empfohlene Mitarbeiterzahl, Kosten &amp; Deckung</span>
+      </div>
+      <div class="intro-banner-hint">Bei jeder Funktion zeigt das Symbol <span class="info-i" data-tip="Genau so ein Symbol — überall im Rechner. Fahr mit der Maus drüber für eine Erklärung.">i</span> eine Erklärung, wenn du mit der Maus darüber fährst. Die Übersicht oben fasst alles zusammen.</div>
+    </div>
+
     <!-- 0. IMPORT AUS BEWERBUNGEN -->
     <div class="card" id="importKarte" style="display:none;border-color:#5b8def">
-      <h2>📥 Aus Bewerbungen übernehmen</h2>
+      <h2>📥 Aus Bewerbungen übernehmen<span class="info-i" data-tip="Übernimmt die im Bewerbungs-Dashboard ausgewählten Bewerber samt Verfügbarkeit und Anstellungsart direkt ins Team.">i</span></h2>
       <p style="color:var(--text-dim);font-size:13px;margin:-8px 0 12px;" id="importInfo"></p>
       <div id="importListe" style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px;"></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
@@ -526,7 +581,7 @@
     </div>
 
     <div class="card">
-      <h2>👥 Schritt 1 · Team aufbauen
+      <h2>👥 Schritt 1 · Team aufbauen<span class="info-i" data-tip="Trag hier alle Mitarbeiter ein: Name, Anstellungsart, Soll-Stunden und stündlich, wann sie verfügbar sind. Diese Liste ist die Basis aller Berechnungen.">i</span>
         <span class="h2-right">
           <button class="btn-ghost" onclick="resetTeam()">Reset</button>
           <button class="btn-primary" onclick="addMember()">+ Mitarbeiter</button>
@@ -540,7 +595,7 @@
 
     <!-- 2. MÖGLICHE ÖFFNUNGSZEITEN -->
     <div class="card card-spacer">
-      <h2>🗓 Schritt 2 · Mögliche Öffnungszeiten</h2>
+      <h2>🗓 Schritt 2 · Mögliche Öffnungszeiten<span class="info-i" data-tip="Zeigt, zu welchen Zeiten dein Team eine Ausgabe besetzen könnte — abgeleitet aus der eingetragenen Verfügbarkeit.">i</span></h2>
       <p style="color:var(--text-dim);font-size:13px;margin:-8px 0 14px;">
         Stunde für Stunde: wie viele Mitarbeiter sind verfügbar? Daraus leiten sich öffenbare Zeitblöcke ab.
       </p>
@@ -576,7 +631,7 @@
 
     <!-- 2b. SCHICHTPLAN-VORSCHLAG -->
     <div class="card card-spacer">
-      <h2>📋 Schritt 2b · Schichtplan-Vorschlag
+      <h2>📋 Schritt 2b · Schichtplan-Vorschlag<span class="info-i" data-tip="Erstellt automatisch einen Dienstplan-Vorschlag, der die Verfügbarkeiten des Teams möglichst gut abdeckt.">i</span>
         <span class="h2-right">
           <button class="btn-ghost" onclick="regenerateShiftPlan()">↻ Neu berechnen</button>
         </span>
@@ -601,13 +656,13 @@
     <div class="grid-main card-spacer">
       <div class="col-stack">
         <div class="card">
-          <h2>Schritt 3 · Mitglieder & Nutzung<span class="num-pill" id="pillMitglieder">500</span></h2>
+          <h2>Schritt 3 · Mitglieder & Nutzung<span class="info-i" data-tip="Wie viele Mitglieder der Verein hat und wie oft sie im Schnitt abholen. Daraus ergeben sich die Ausgabe-Vorgänge pro Monat.">i</span><span class="num-pill" id="pillMitglieder">500</span></h2>
           <div class="field">
-            <label>Mitglieder<span class="val"><span id="lblMitglieder">500</span></span></label>
+            <label>Mitglieder<span class="info-i" data-tip="Gesamtzahl der Vereinsmitglieder.">i</span><span class="val"><span id="lblMitglieder">500</span></span></label>
             <input type="range" id="mitglieder" min="50" max="2000" step="10" value="500">
           </div>
           <div class="field">
-            <label>U21-Anteil<span class="val"><span id="lblU21">5</span> %</span></label>
+            <label>U21-Anteil<span class="info-i" data-tip="Anteil der Mitglieder unter 21 Jahren — für sie gelten strengere THC-Mengengrenzen.">i</span><span class="val"><span id="lblU21">5</span> %</span></label>
             <input type="range" id="u21" min="0" max="30" step="1" value="5">
             <div class="hint">U21: max. 30 g/Monat statt 50 g</div>
           </div>
@@ -620,19 +675,19 @@
             <button class="preset-btn" data-preset="vielnutzer">Vielnutzer</button>
           </div>
           <div class="field" style="margin-bottom:8px;">
-            <label>… 1×/Monat<span class="val"><span id="lblP1">40</span> %</span></label>
+            <label>… 1×/Monat<span class="info-i" data-tip="Anteil der Mitglieder, die rund einmal im Monat abholen. Die vier Anteile zusammen beschreiben das Nutzungsverhalten.">i</span><span class="val"><span id="lblP1">40</span> %</span></label>
             <input type="range" id="p1" min="0" max="100" step="5" value="40">
           </div>
           <div class="field" style="margin-bottom:8px;">
-            <label>… 2×/Monat<span class="val"><span id="lblP2">25</span> %</span></label>
+            <label>… 2×/Monat<span class="info-i" data-tip="Anteil der Mitglieder, die rund zweimal im Monat abholen.">i</span><span class="val"><span id="lblP2">25</span> %</span></label>
             <input type="range" id="p2" min="0" max="100" step="5" value="25">
           </div>
           <div class="field" style="margin-bottom:8px;">
-            <label>… 3×/Monat<span class="val"><span id="lblP3">10</span> %</span></label>
+            <label>… 3×/Monat<span class="info-i" data-tip="Anteil der Mitglieder, die rund dreimal im Monat abholen.">i</span><span class="val"><span id="lblP3">10</span> %</span></label>
             <input type="range" id="p3" min="0" max="100" step="5" value="10">
           </div>
           <div class="field">
-            <label>… 4×/Monat<span class="val"><span id="lblP4">5</span> %</span></label>
+            <label>… 4×/Monat<span class="info-i" data-tip="Anteil der Mitglieder, die viermal oder öfter im Monat abholen.">i</span><span class="val"><span id="lblP4">5</span> %</span></label>
             <input type="range" id="p4" min="0" max="100" step="5" value="5">
           </div>
           <div class="verteilung-summary">
@@ -649,39 +704,39 @@
         </div>
 
         <div class="card">
-          <h2>Betrieb</h2>
+          <h2>Betrieb<span class="info-i" data-tip="Öffnungszeiten und Ablauf. Diese Werte bestimmen, wie viel Personalzeit pro Monat nötig ist.">i</span></h2>
           <div class="field">
-            <label>Minuten pro Abgabe<span class="val"><span id="lblMin">5</span> min</span></label>
+            <label>Minuten pro Abgabe<span class="info-i" data-tip="Durchschnittliche Bearbeitungszeit eines Ausgabe-Vorgangs an der Theke.">i</span><span class="val"><span id="lblMin">5</span> min</span></label>
             <input type="range" id="minProAbgabe" min="2" max="20" step="1" value="5">
           </div>
           <div class="field">
-            <label>Öffnungstage / Woche<span class="val"><span id="lblTage">6</span></span></label>
+            <label>Öffnungstage / Woche<span class="info-i" data-tip="An wie vielen Tagen pro Woche die Ausgabe geöffnet ist.">i</span><span class="val"><span id="lblTage">6</span></span></label>
             <input type="range" id="tage" min="1" max="7" step="1" value="6">
           </div>
           <div class="field">
-            <label>Öffnungsstunden / Tag<span class="val"><span id="lblStunden">5</span> h</span></label>
+            <label>Öffnungsstunden / Tag<span class="info-i" data-tip="Wie viele Stunden die Ausgabe pro Tag geöffnet ist.">i</span><span class="val"><span id="lblStunden">5</span> h</span></label>
             <input type="range" id="stunden" min="2" max="10" step="1" value="5">
           </div>
           <div class="field">
-            <label>Pufferzeit Vor-/Nachbereitung<span class="val"><span id="lblPuffer">60</span> min/Tag</span></label>
+            <label>Pufferzeit Vor-/Nachbereitung<span class="info-i" data-tip="Zeit für Auf- und Abbau, Kasse und Reinigung pro Öffnungstag — zählt zur bezahlten Arbeitszeit.">i</span><span class="val"><span id="lblPuffer">60</span> min/Tag</span></label>
             <input type="range" id="puffer" min="0" max="120" step="15" value="60">
           </div>
           <div class="toggle-row">
-            <div><label for="zweiPersonen">2-Personen-Prinzip<span class="desc">min. 2 anwesend</span></label></div>
+            <div><label for="zweiPersonen">2-Personen-Prinzip<span class="desc">min. 2 anwesend</span><span class="info-i" data-tip="Wenn aktiv: immer mindestens 2 Personen gleichzeitig anwesend (Sicherheit, Vier-Augen-Prinzip).">i</span></label></div>
             <label class="switch"><input type="checkbox" id="zweiPersonen"><span class="slider-sw"></span></label>
           </div>
           <div class="toggle-row">
-            <div><label for="terminModus">Termin-Modus<span class="desc">−30 % Personal vs. Walk-in</span></label></div>
+            <div><label for="terminModus">Termin-Modus<span class="desc">−30 % Personal vs. Walk-in</span><span class="info-i" data-tip="Ausgabe nur mit Terminvergabe statt Laufkundschaft — verteilt den Andrang und spart rund 30 % Personal.">i</span></label></div>
             <label class="switch"><input type="checkbox" id="terminModus" checked><span class="slider-sw"></span></label>
           </div>
           <div class="field">
-            <label>Urlaubs- / Krankheitspuffer<span class="val">+<span id="lblKrank">20</span> %</span></label>
+            <label>Urlaubs- / Krankheitspuffer<span class="info-i" data-tip="Aufschlag auf die Mitarbeiterzahl als Reserve für Urlaub und Krankheit.">i</span><span class="val">+<span id="lblKrank">20</span> %</span></label>
             <input type="range" id="krank" min="0" max="40" step="5" value="20">
           </div>
         </div>
 
         <div class="card">
-          <h2>Lohn-Basis
+          <h2>Lohn-Basis<span class="info-i" data-tip="Stundenlohn, mit dem alle Kosten gerechnet werden. Der Mindestlohn ist gesetzlich vorgegeben.">i</span>
             <span class="h2-right">
               <span class="seg" id="lohnJahrSeg">
                 <button data-jahr="2026" class="active">2026</button>
@@ -690,7 +745,7 @@
             </span>
           </h2>
           <div class="field">
-            <label>Standard-Stundenlohn<span class="val"><span id="lblLohn">13,90</span> €</span></label>
+            <label>Standard-Stundenlohn<span class="info-i" data-tip="Stundenlohn für die Kostenrechnung. Neue Mitarbeiter bekommen diesen Wert vorgeschlagen.">i</span><span class="val"><span id="lblLohn">13,90</span> €</span></label>
             <input type="range" id="lohn" min="13.90" max="25" step="0.10" value="13.90">
             <div class="hint" id="lohnHint">Mindestlohn 2026: 13,90 € · Minijob-Grenze 603 €</div>
           </div>
@@ -699,7 +754,7 @@
 
       <div class="col-stack">
         <div class="card">
-          <h2>Ausgabe-Volumen</h2>
+          <h2>Ausgabe-Volumen<span class="info-i" data-tip="Wie viel Cannabis pro Vorgang im Schnitt abgegeben wird — Grundlage für die KCanG-Mengenprüfung.">i</span></h2>
           <div class="stat-grid cols-4">
             <div class="stat">
               <div class="lbl">Vorgänge / Monat</div>
@@ -724,7 +779,7 @@
         </div>
 
         <div class="card">
-          <h2>KCanG-Mengen</h2>
+          <h2>KCanG-Mengen<span class="info-i" data-tip="Prüft die gesetzlichen Höchstmengen nach dem Konsumcannabisgesetz: max. 25 g pro Tag und 50 g pro Monat je Mitglied (für unter 21-Jährige strenger).">i</span></h2>
           <div class="stat-grid cols-4">
             <div class="stat">
               <div class="lbl">Max. Vol. / Monat</div>
@@ -747,7 +802,7 @@
         </div>
 
         <div class="card">
-          <h2>Schicht-Anforderung</h2>
+          <h2>Schicht-Anforderung<span class="info-i" data-tip="Wie viele Personen gleichzeitig an der Ausgabe arbeiten müssen, um den Andrang zu bewältigen.">i</span></h2>
           <div class="stat-grid cols-3">
             <div class="stat">
               <div class="lbl">Bedien-Personen</div>
@@ -770,7 +825,7 @@
         </div>
 
         <div class="card">
-          <h2>Empfehlung (Schätzung)</h2>
+          <h2>Empfehlung (Schätzung)<span class="info-i" data-tip="Geschätzte Zahl der benötigten Mitarbeiter, damit der Betrieb mit Reserve für Urlaub und Krankheit läuft.">i</span></h2>
           <div class="stat-grid cols-4">
             <div class="stat">
               <div class="lbl">Minijobber-Basis</div>
@@ -799,7 +854,7 @@
 
     <!-- TEAM-AUSWERTUNG -->
     <div class="card card-spacer">
-      <h2>Team-Auswertung · Deckt das Team den Bedarf?</h2>
+      <h2>Team-Auswertung · Deckt das Team den Bedarf?<span class="info-i tip-left" data-tip="Vergleicht die Stunden, die dein eingetragenes Team leisten kann, mit dem berechneten Personalbedarf.">i</span></h2>
       <div class="team-summary">
         <div class="stat-grid cols-4">
           <div class="stat">
@@ -835,12 +890,12 @@
 
     <!-- BEITRAGS-DECKUNG -->
     <div class="card card-spacer">
-      <h2>💰 Beitrags-Deckung</h2>
+      <h2>💰 Beitrags-Deckung<span class="info-i" data-tip="Prüft, ob die Mitgliedsbeiträge die Personalkosten tragen.">i</span></h2>
       <p style="color:var(--text-dim);font-size:13px;margin:-8px 0 14px;">
         Wie viel % des Beitrags verschlingt das Personal? Wieviel bleibt für Anbau, Räume, Verwaltung?
       </p>
       <div class="field" style="max-width:400px;">
-        <label>Monatsbeitrag pro Mitglied<span class="val"><span id="lblBeitrag">25</span> €</span></label>
+        <label>Monatsbeitrag pro Mitglied<span class="info-i" data-tip="Was jedes Mitglied monatlich an den Verein zahlt.">i</span><span class="val"><span id="lblBeitrag">25</span> €</span></label>
         <input type="range" id="beitrag" min="0" max="100" step="1" value="25">
       </div>
       <div class="stat-grid cols-4" style="margin-bottom:14px;">
@@ -879,7 +934,7 @@
 
     <!-- ANSTELLUNGSFORMEN -->
     <div class="card card-spacer">
-      <h2>Anstellungsformen-Vergleich</h2>
+      <h2>Anstellungsformen-Vergleich<span class="info-i" data-tip="Zeigt, wie viele Personen man je nach Anstellungsart (Minijob, Teilzeit, Vollzeit) für denselben Bedarf bräuchte.">i</span></h2>
       <p style="color:var(--text-dim);font-size:13px;margin:-8px 0 12px;">
         Wie viele Köpfe brauchst du je nach Beschäftigungsart für die aktuellen Soll-Stunden?
       </p>
@@ -907,15 +962,15 @@
 
     <!-- SPITZENTAG -->
     <div class="card card-spacer">
-      <h2>⚡ Spitzentag-Simulation</h2>
+      <h2>⚡ Spitzentag-Simulation<span class="info-i" data-tip="Rechnet durch, wie viel Personal an besonders vollen Tagen nötig ist.">i</span></h2>
       <div class="peak-content">
         <div>
           <div class="field">
-            <label>Anteil Vorgänge an Spitzentagen<span class="val"><span id="lblSpitze">40</span> %</span></label>
+            <label>Anteil Vorgänge an Spitzentagen<span class="info-i" data-tip="Welcher Anteil aller Monats-Vorgänge sich auf die wenigen besonders vollen Tage konzentriert.">i</span><span class="val"><span id="lblSpitze">40</span> %</span></label>
             <input type="range" id="spitzenAnteil" min="10" max="80" step="5" value="40">
           </div>
           <div class="field">
-            <label>Anzahl Spitzentage / Monat<span class="val"><span id="lblSpitzeAnz">3</span></span></label>
+            <label>Anzahl Spitzentage / Monat<span class="info-i" data-tip="Wie viele besonders stark frequentierte Tage es pro Monat gibt (z. B. nach Lieferung).">i</span><span class="val"><span id="lblSpitzeAnz">3</span></span></label>
             <input type="range" id="spitzenAnzahl" min="1" max="8" step="1" value="3">
           </div>
           <div class="stat-grid cols-2" style="margin-top:14px;">
@@ -954,7 +1009,7 @@
 
     <!-- VERGLEICHSTABELLE -->
     <div class="card card-spacer">
-      <h2>Vergleich: Minuten pro Abgabe</h2>
+      <h2>Vergleich: Minuten pro Abgabe<span class="info-i tip-left" data-tip="Zeigt, wie sich eine kürzere oder längere Bearbeitungszeit pro Vorgang auf den Personalbedarf auswirkt.">i</span></h2>
       <div class="table-wrap">
         <table class="cmp">
           <thead>

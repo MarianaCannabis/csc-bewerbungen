@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="color-scheme" content="dark">
   <title>Mariana Cannabis · Bewerbungs-Dashboard v2</title>
-  <!-- DASHBOARD_BUILD: 2026-05-16T0745 (Anhang-Loeschen, Bewerber-Auswahlliste im Planungsmodal, 404-Erkennung) -->
-  <script>window.__DASHBOARD_BUILD = '2026-05-16T0745';</script>
+  <!-- DASHBOARD_BUILD: 2026-05-16T0820 (KK-Mitgliedsnr-Key-Fix, Probearbeit-Labels) -->
+  <script>window.__DASHBOARD_BUILD = '2026-05-16T0820';</script>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -1754,6 +1754,8 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 const STATUS_LABELS = { eingegangen: 'Eingegangen', in_pruefung: 'In Prüfung', eingeladen: 'Eingeladen', warteliste: 'Warteliste', angenommen: 'Angenommen', abgelehnt: 'Abgelehnt' };
 const ROLE_LABELS = { vorstand: 'Vorstand', stellv_vorstand: 'Stellv. Vorstand', grower: 'Grower', head_grower: 'Head Grower', ausgabe: 'Ausgabe', springer: 'Springer', praevention: 'Präventionsbeauftragte:r', sicherheit: 'Sicherheit', reinigung: 'Reinigung' };
+const PROBEARBEIT_DAUER_LABELS = { '1_tag': '1 Tag', '2_3_tage': '2-3 Tage', '1_woche': '1 Woche', 'mehr_als_woche': 'Mehr als 1 Woche', 'flexibel': 'Flexibel' };
+const PROBEARBEIT_ORT_LABELS = { eigener_verein: 'Eigener Verein', goettingen: 'Göttingen', andere_standorte: 'Andere Standorte' };
 const ANFAHRT_LABELS_AUSGABE = { '15': '≤ 15 min', '30': '≤ 30 min', '45': '≤ 45 min', '60': '≤ 1 h', '90': '≤ 1,5 h', '120': '≤ 2 h', '999': 'auch weiter' };
 const ANFAHRT_LABELS_ANBAU = { '100': '≤ 100 km', '200': '≤ 200 km', '400': '≤ 400 km', '999': 'auch weiter' };
 const SOFT_SKILL_LABELS = { stress: 'Stress-Resistenz', kunde: 'Kunden-Umgang', verschwiegenheit: 'Verschwiegenheit', team: 'Team-Arbeit', genauigkeit: 'Genauigkeit' };
@@ -2805,8 +2807,8 @@ async function selectBewerbung(id) {
       <div class="section-title">Probearbeit<button class="edit-btn" onclick="openEditModal('probearbeit')">Bearbeiten</button></div>
       <div class="field-grid">
         <div class="field"><div class="field-label">Bereit für Probearbeit</div><div class="field-value">${fmtBool(b.probearbeit_bereit)}</div></div>
-        ${b.probearbeit_dauer ? `<div class="field"><div class="field-label">Dauer</div><div class="field-value">${fmt(b.probearbeit_dauer)}</div></div>` : ''}
-        ${Array.isArray(b.probearbeit_orte) && b.probearbeit_orte.length ? `<div class="field" style="grid-column:1/-1"><div class="field-label">Mögliche Orte für Probearbeit</div><div class="tag-list">${b.probearbeit_orte.map(o => `<span class="tag">${escapeHtml(o)}</span>`).join('')}</div></div>` : ''}
+        ${b.probearbeit_dauer ? `<div class="field"><div class="field-label">Dauer</div><div class="field-value">${escapeHtml(PROBEARBEIT_DAUER_LABELS[b.probearbeit_dauer] || b.probearbeit_dauer)}</div></div>` : ''}
+        ${Array.isArray(b.probearbeit_orte) && b.probearbeit_orte.length ? `<div class="field" style="grid-column:1/-1"><div class="field-label">Mögliche Orte für Probearbeit</div><div class="tag-list">${b.probearbeit_orte.map(o => `<span class="tag">${escapeHtml(PROBEARBEIT_ORT_LABELS[o] || o)}</span>`).join('')}</div></div>` : ''}
         ${b.probearbeit_anmerkung ? `<div class="field" style="grid-column:1/-1"><div class="field-label">Anmerkung Probearbeit</div><div class="field-value" style="white-space:pre-wrap">${escapeHtml(b.probearbeit_anmerkung)}</div></div>` : ''}
       </div>
     </div>
@@ -2856,7 +2858,7 @@ async function selectBewerbung(id) {
       <div class="field-grid">
         <div class="field"><div class="field-label">Steuer-ID</div><div class="field-value mono">${fmt(b.steuer_id)}</div></div>
         <div class="field"><div class="field-label">Sozialversicherungs-Nr.</div><div class="field-value mono">${fmt(b.sv_nummer)}</div></div>
-        <div class="field"><div class="field-label">Krankenkasse</div><div class="field-value">${b.krankenkasse?.name ? escapeHtml(b.krankenkasse.name) + (b.krankenkasse.mitglied_nr ? ' <span class="mono" style="color:var(--tx-mute)">(Mitgl.-Nr. ' + escapeHtml(b.krankenkasse.mitglied_nr) + ')</span>' : '') : '–'}</div></div>
+        <div class="field"><div class="field-label">Krankenkasse</div><div class="field-value">${b.krankenkasse?.name ? escapeHtml(b.krankenkasse.name) + ((b.krankenkasse.mitgliedsnummer || b.krankenkasse.mitglied_nr) ? ' <span class="mono" style="color:var(--tx-mute)">(Mitgl.-Nr. ' + escapeHtml(b.krankenkasse.mitgliedsnummer || b.krankenkasse.mitglied_nr) + ')</span>' : '') : '–'}</div></div>
         <div class="field"><div class="field-label">IBAN</div><div class="field-value mono">${fmt(b.iban)}</div></div>
       </div>
     </div>
@@ -4221,7 +4223,7 @@ function exportCsv() {
       b.schwerbehinderung || '', b.schwerbehinderung_gdb || '',
       b.schwerbehinderung_einschr || '', b.schwerbehinderung_anpassungen || '',
       b.steuer_id || '', b.sv_nummer || '', 
-      (b.krankenkasse?.name || '') + (b.krankenkasse?.mitglied_nr ? ' (' + b.krankenkasse.mitglied_nr + ')' : ''),
+      (b.krankenkasse?.name || '') + ((b.krankenkasse?.mitgliedsnummer || b.krankenkasse?.mitglied_nr) ? ' (' + (b.krankenkasse.mitgliedsnummer || b.krankenkasse.mitglied_nr) + ')' : ''),
       b.iban || '',
       b.dsgvo_zustimmung === true ? 'Ja' : '',
       b.dsgvo_zeitstempel ? new Date(b.dsgvo_zeitstempel).toLocaleString('de-DE') : '',
@@ -5929,7 +5931,7 @@ function generatePrintHtml(b, v) {
     <tr><td>Steuer-ID</td><td>${fmt(b.steuer_id)}</td></tr>
     <tr><td>Sozialversicherungs-Nr.</td><td>${fmt(b.sv_nummer)}</td></tr>
     <tr><td>IBAN</td><td>${fmt(b.iban)}</td></tr>
-    <tr><td>Krankenkasse</td><td>${fmt(b.krankenkasse?.name)}${b.krankenkasse?.mitglied_nr ? ' (Mitgl.-Nr. ' + E(b.krankenkasse.mitglied_nr) + ')' : ''}</td></tr>
+    <tr><td>Krankenkasse</td><td>${fmt(b.krankenkasse?.name)}${(b.krankenkasse?.mitgliedsnummer || b.krankenkasse?.mitglied_nr) ? ' (Mitgl.-Nr. ' + E(b.krankenkasse.mitgliedsnummer || b.krankenkasse.mitglied_nr) + ')' : ''}</td></tr>
   </table>
 
   ${b.vorstand_notiz ? `
@@ -7371,7 +7373,7 @@ const EDIT_SECTIONS = {
         { k:'sv_nummer', l:'Sozialversicherungs-Nr.', t:'text', maxlength:12 },
         { k:'iban', l:'IBAN', t:'text' },
         { k:'krankenkasse.name', l:'Krankenkasse', t:'text', row:'kk' },
-        { k:'krankenkasse.mitglied_nr', l:'Mitgliedsnummer KK', t:'text', row:'kk' },
+        { k:'krankenkasse.mitgliedsnummer', l:'Mitgliedsnummer KK', t:'text', row:'kk' },
       ]}
     ]
   }

@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="color-scheme" content="dark">
   <title>Mariana Cannabis · Bewerbungs-Dashboard v2</title>
-  <!-- DASHBOARD_BUILD: 2026-05-16T0710 (5c: Ausgabe-Filter, Rechner-Autostart, gefuehrter Planungs-Knopf) -->
-  <script>window.__DASHBOARD_BUILD = '2026-05-16T0710';</script>
+  <!-- DASHBOARD_BUILD: 2026-05-16T0745 (Anhang-Loeschen, Bewerber-Auswahlliste im Planungsmodal, 404-Erkennung) -->
+  <script>window.__DASHBOARD_BUILD = '2026-05-16T0745';</script>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -615,6 +615,8 @@
     .anhang-actions { display: flex; gap: 6px; flex-shrink: 0; }
     .anhang-link { color: var(--green); text-decoration: none; font-size: 12px; font-weight: 600; padding: 5px 10px; border: 1px solid var(--green-dim); border-radius: 6px; background: transparent; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
     .anhang-link:hover { background: var(--green-glow); }
+    .anhang-del { color: var(--red); border-color: var(--red); }
+    .anhang-del:hover { background: rgba(220,80,80,0.12); }
     
     /* Anhang-Thumbnails (inline-Vorschau) */
     .anhang-thumb-wrap { width: 60px; height: 60px; flex-shrink: 0; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: border-color 0.15s, transform 0.15s; }
@@ -973,6 +975,40 @@
       background: var(--bg-elev); font-size: 13px; line-height: 1.4;
     }
     .ap-actions { flex-wrap: wrap; }
+    .ap-listtools {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 20px 4px; 
+    }
+    .ap-mini {
+      font-size: 11px; padding: 4px 10px; border-radius: 5px;
+      background: var(--bg-elev); border: 1px solid var(--border-strong);
+      color: var(--tx-dim); cursor: pointer;
+    }
+    .ap-mini:hover { color: var(--green); border-color: var(--green-dim); }
+    .ap-counter { font-size: 12px; color: var(--tx-mute); margin-left: auto; }
+    .ap-list {
+      max-height: 320px; overflow-y: auto;
+      margin: 4px 20px 8px; padding: 4px;
+      border: 1px solid var(--border); border-radius: 8px;
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .ap-row {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 9px 10px; border-radius: 6px; cursor: pointer;
+    }
+    .ap-row:hover { background: var(--bg-elev); }
+    .ap-row input { margin-top: 2px; flex-shrink: 0; }
+    .ap-row-main { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+    .ap-row-name { font-size: 13px; font-weight: 600; color: var(--tx); }
+    .ap-row-meta { display: flex; flex-wrap: wrap; gap: 5px; }
+    .ap-tag {
+      font-size: 10px; padding: 1px 7px; border-radius: 999px;
+      background: var(--bg-elev2); color: var(--tx-dim);
+      border: 1px solid var(--border);
+    }
+    .ap-tag-status { background: var(--bg-card); color: var(--tx-mute); }
+    .ap-tag-ok { background: var(--green-glow); color: var(--green); border-color: var(--green-dim); }
+    .ap-tag-warn { background: #2a2418; color: var(--gold); border-color: var(--gold); }
     .bulk-btn-clear:hover { color: var(--red); border-color: var(--red); }
 
     /* ===== EINSTELLUNG ===== */
@@ -2927,9 +2963,10 @@ async function selectBewerbung(id) {
           const icon = isImage ? '🖼️' : isPdf ? '📄' : '📎';
           const typ = a.typ || '';
           const previewId = `anhang-preview-${idx}`;
+          const anhangId = a.id;
           
           return `
-          <div class="anhang-item">
+          <div class="anhang-item" id="anhang-row-${escapeHtml(String(anhangId))}">
             ${previewable ? `<div class="anhang-thumb-wrap" id="${previewId}" data-storage="${escapeHtml(storagePath)}" data-type="${isPdf ? 'pdf' : 'image'}" data-filename="${escapeHtml(filename)}" onclick="previewAnhang('${escapeHtml(storagePath)}', '${escapeHtml(filename)}', '${isPdf ? 'pdf' : 'image'}')">
               <div class="anhang-thumb-loading">⏳</div>
             </div>` : `<div class="anhang-thumb-wrap no-preview"><span>${icon}</span></div>`}
@@ -2940,6 +2977,7 @@ async function selectBewerbung(id) {
             <div class="anhang-actions">
               ${previewable ? `<button class="anhang-link" onclick="previewAnhang('${escapeHtml(storagePath)}', '${escapeHtml(filename)}', '${isPdf ? 'pdf' : 'image'}')">👁 Groß</button>` : ''}
               <button class="anhang-link" onclick="downloadAnhang('${escapeHtml(storagePath)}', '${escapeHtml(filename)}')">⬇ Download</button>
+              <button class="anhang-link anhang-del" onclick="deleteAnhang('${escapeHtml(String(anhangId))}', '${escapeHtml(storagePath)}', '${escapeHtml(filename)}', '${id}')" title="Anhang dauerhaft löschen">🗑 Löschen</button>
             </div>
           </div>
         `;}).join('')}
@@ -4292,6 +4330,52 @@ async function downloadAnhang(storagePfad, filename) {
     if (error) throw error;
     const a = document.createElement('a'); a.href = data.signedUrl; a.download = filename; a.click();
   } catch (e) { toast('Download-Fehler: ' + e.message, true); }
+}
+
+// Anhang dauerhaft löschen — erst Storage-Datei, dann DB-Eintrag.
+// Reihenfolge bewusst: scheitert die Storage-Berechtigung, bleibt der
+// DB-Eintrag erhalten (kein verwaister Listeneintrag ohne Datei).
+async function deleteAnhang(anhangId, storagePfad, filename, bewerbungId) {
+  if (!anhangId) { toast('Anhang-ID fehlt', true); return; }
+  const ok = await appConfirm(
+    `Anhang „${filename}" dauerhaft löschen?\n\nDie Datei wird aus dem Speicher entfernt und kann nicht wiederhergestellt werden.`,
+    { title: 'Anhang löschen', okLabel: 'Löschen', danger: true }
+  );
+  if (!ok) return;
+
+  try {
+    // 1) Datei aus dem Storage-Bucket entfernen
+    if (storagePfad) {
+      const { error: stErr } = await sb.storage.from('bewerbung-anhaenge').remove([storagePfad]);
+      if (stErr) {
+        console.error('[deleteAnhang] Storage:', stErr);
+        toast('Speicher-Datei konnte nicht gelöscht werden: ' + stErr.message + ' — evtl. fehlende Berechtigung.', true);
+        return;
+      }
+    }
+    // 2) DB-Eintrag entfernen
+    const { error: dbErr } = await sb.from('csc_bewerbung_anhaenge').delete().eq('id', anhangId);
+    if (dbErr) throw dbErr;
+
+    // Zeile aus dem DOM entfernen
+    const row = document.getElementById(`anhang-row-${anhangId}`);
+    if (row) {
+      const liste = row.parentElement;
+      row.remove();
+      // Anhänge-Zähler / leere Sektion aktualisieren
+      if (liste && liste.children.length === 0) {
+        const section = liste.closest('.section');
+        if (section) section.remove();
+      } else {
+        const titel = liste?.closest('.section')?.querySelector('.section-title');
+        if (titel) titel.textContent = `Anhänge (${liste.children.length})`;
+      }
+    }
+    toast('Anhang gelöscht');
+  } catch (e) {
+    console.error('[deleteAnhang]', e);
+    toast('Fehler beim Löschen: ' + (e.message || e), true);
+  }
 }
 
 async function previewAnhang(storagePfad, filename, type) {
@@ -6871,9 +6955,9 @@ function vertragZuRechnerType(vertrag) {
   return 'minijob';   // minijob, ehrenamt, leer → minijob
 }
 
-async function uebergebeAnRechner() {
-  if (selectedIds.size === 0) { toast('Keine Bewerber ausgewählt', true); return; }
-  const ids = Array.from(selectedIds);
+async function uebergebeAnRechner(idsOverride) {
+  const ids = Array.isArray(idsOverride) ? idsOverride : Array.from(selectedIds);
+  if (ids.length === 0) { toast('Keine Bewerber ausgewählt', true); return; }
   const alleAusgewaehlt = bewerbungen.filter(b => ids.includes(b.id));
 
   // NUR Ausgabe-relevante Bewerber übergeben
@@ -6915,30 +6999,65 @@ async function uebergebeAnRechner() {
     return;
   }
 
-  // Rechner direkt öffnen (neuer Tab) — user-initiiert, kein Popup-Block
-  window.open(RECHNER_URL, '_blank');
+  // Prüfen, ob die Rechner-Datei überhaupt erreichbar ist (404 vermeiden)
+  let rechnerDa = true;
+  try {
+    const resp = await fetch(RECHNER_URL, { method: 'HEAD', cache: 'no-store' });
+    rechnerDa = resp.ok;
+  } catch (e) {
+    rechnerDa = false;
+  }
 
-  // Kurze Bestätigung
+  // Bei vorhandener Datei direkt öffnen
+  if (rechnerDa) window.open(RECHNER_URL, '_blank');
+
+  const rechnerAbsURL = new URL(RECHNER_URL, location.href).href;
+
   const overlay = document.createElement('div');
   overlay.className = 'app-modal-overlay';
-  overlay.innerHTML = `
-    <div class="app-modal" role="dialog" aria-modal="true" style="max-width:480px">
-      <div class="app-modal-title">📥 ${team.length} Ausgabe-Bewerber übergeben</div>
-      <div class="app-modal-body">
-        Der Ausgabe-Rechner öffnet sich in einem neuen Tab. Dort oben auf
-        „Ins Team übernehmen" klicken — dann rechnet er Öffnungszeiten und Dienstpläne.
-        ${verworfen > 0 ? `<br><br>ℹ️ ${verworfen} ausgewählte${verworfen === 1 ? 'r Bewerber war' : ' Bewerber waren'} nicht für die Ausgabe vorgesehen und ${verworfen === 1 ? 'wurde' : 'wurden'} nicht übergeben.` : ''}
-        ${ohneVerf > 0 ? `<br><br>⚠️ ${ohneVerf} ${ohneVerf === 1 ? 'hat' : 'haben'} keine Verfügbarkeits-Angabe — im Rechner bitte manuell ergänzen.` : ''}
-        <br><br><span style="color:var(--tx-mute);font-size:12px">Kein neuer Tab? Popup-Blocker prüfen — der Rechner ist „Ausgabe-Rechner.html" im selben Ordner.</span>
+  if (rechnerDa) {
+    overlay.innerHTML = `
+      <div class="app-modal" role="dialog" aria-modal="true" style="max-width:480px">
+        <div class="app-modal-title">📥 ${team.length} Ausgabe-Bewerber übergeben</div>
+        <div class="app-modal-body">
+          Der Ausgabe-Rechner öffnet sich in einem neuen Tab. Dort oben auf
+          „Ins Team übernehmen" klicken — dann rechnet er Öffnungszeiten und Dienstpläne.
+          ${verworfen > 0 ? `<br><br>ℹ️ ${verworfen} ausgewählte${verworfen === 1 ? 'r Bewerber war' : ' Bewerber waren'} nicht für die Ausgabe vorgesehen und ${verworfen === 1 ? 'wurde' : 'wurden'} nicht übergeben.` : ''}
+          ${ohneVerf > 0 ? `<br><br>⚠️ ${ohneVerf} ${ohneVerf === 1 ? 'hat' : 'haben'} keine Verfügbarkeits-Angabe — im Rechner bitte manuell ergänzen.` : ''}
+        </div>
+        <div class="app-modal-actions">
+          <a class="app-modal-btn" href="${escapeHtml(RECHNER_URL)}" target="_blank" rel="noopener">Rechner erneut öffnen</a>
+          <button class="app-modal-btn app-modal-btn-ok" type="button" onclick="this.closest('.app-modal-overlay').remove()">OK</button>
+        </div>
       </div>
-      <div class="app-modal-actions">
-        <button class="app-modal-btn app-modal-btn-ok" type="button" onclick="this.closest('.app-modal-overlay').remove()">OK</button>
+    `;
+  } else {
+    overlay.innerHTML = `
+      <div class="app-modal" role="dialog" aria-modal="true" style="max-width:520px">
+        <div class="app-modal-title">⚠️ Rechner-Datei nicht gefunden</div>
+        <div class="app-modal-body">
+          Die ${team.length} Bewerber wurden vorbereitet — aber der Ausgabe-Rechner ist
+          unter dieser Adresse nicht erreichbar:
+          <br><br>
+          <code style="font-size:12px;word-break:break-all;color:var(--gold)">${escapeHtml(rechnerAbsURL)}</code>
+          <br><br>
+          <strong>So behebst du das:</strong> Lade die Datei <strong>Ausgabe-Rechner.html</strong>
+          in denselben GitHub-Ordner wie das Dashboard (<code>csc-bewerbungen</code>).
+          <br><br>
+          Achte auf die <strong>exakte Schreibweise</strong> — GitHub Pages unterscheidet
+          Groß- und Kleinbuchstaben: großes „A", großes „R", Bindestrich, klein „.html".
+          <br><br>
+          <span style="color:var(--tx-mute);font-size:12px">Die Auswahl bleibt gespeichert — sobald die Datei online ist, einfach erneut „Übernehmen" klicken.</span>
+        </div>
+        <div class="app-modal-actions">
+          <button class="app-modal-btn app-modal-btn-ok" type="button" onclick="this.closest('.app-modal-overlay').remove()">Verstanden</button>
+        </div>
       </div>
-    </div>
-  `;
+    `;
+  }
   overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
   document.body.appendChild(overlay);
-  toast(`${team.length} Ausgabe-Bewerber an den Rechner übergeben`);
+  toast(rechnerDa ? `${team.length} Ausgabe-Bewerber an den Rechner übergeben` : `${team.length} Bewerber vorbereitet — Rechner-Datei fehlt`, !rechnerDa);
 }
 
 // Markiert automatisch alle Ausgabe-relevanten Bewerber der aktuellen
@@ -6955,56 +7074,103 @@ function waehleAlleAusgabeBewerber() {
   return n;
 }
 
-// Geführter Einstieg: Planungs-Modal
+// Geführter Einstieg: Planungs-Modal mit Bewerber-Auswahlliste
+let apSelected = new Set();
+
 function openAusgabePlanung() {
-  // aktuelle Auswahl auswerten
-  const idsNow = Array.from(selectedIds);
-  const ausgewaehltAusgabe = bewerbungen.filter(b => idsNow.includes(b.id) && istAusgabeBewerber(b)).length;
-  const verfuegbarAusgabe = lastFilteredList.filter(b => b.status !== 'abgelehnt' && istAusgabeBewerber(b)).length;
+  // Ausgabe-relevante Bewerber aus der aktuellen Liste (außer abgelehnte)
+  const kandidaten = lastFilteredList.filter(b => b.status !== 'abgelehnt' && istAusgabeBewerber(b));
+  // Standard: alle vorgewählt (Bewerber, die schon in der Listen-Auswahl sind, bleiben es)
+  apSelected = new Set(kandidaten.map(b => b.id));
+
+  const mehrereVereine = new Set(kandidaten.map(b => b.verein_id)).size > 1;
 
   const overlay = document.createElement('div');
   overlay.className = 'app-modal-overlay';
   overlay.id = 'ausgabe-planung-overlay';
   overlay.innerHTML = `
-    <div class="app-modal" role="dialog" aria-modal="true" style="max-width:520px">
+    <div class="app-modal" role="dialog" aria-modal="true" style="max-width:560px">
       <div class="app-modal-title">🗓 Ausgabe-Personalplanung</div>
-      <div class="app-modal-body">
-        Übergib deine Ausgabe-Mitarbeiter an den Ausgabe-Rechner — er berechnet daraus
-        mögliche Öffnungszeiten, Einsatzzeiten und Dienstpläne.
-        <br><br>
-        <strong>1.</strong> Bewerber für die Ausgabe auswählen (Häkchen in der Liste links).<br>
-        <strong>2.</strong> „Übernehmen & Rechner öffnen" — fertig.
-        <div class="ap-status">
-          ${ausgewaehltAusgabe > 0
-            ? `✓ <strong>${ausgewaehltAusgabe}</strong> Ausgabe-Bewerber aktuell ausgewählt`
-            : `Noch keine Ausgabe-Bewerber ausgewählt — ${verfuegbarAusgabe > 0
-                ? `es gibt <strong>${verfuegbarAusgabe}</strong> passende in der aktuellen Liste.`
-                : 'in der aktuellen Liste sind keine.'}`}
-        </div>
+      <div class="app-modal-body" style="padding-bottom:4px">
+        Wähle die Mitarbeiter für die Ausgabe-Schichtplanung. Der Rechner berechnet
+        daraus Öffnungszeiten und Dienstpläne.
+        ${kandidaten.length === 0 ? `
+          <div class="ap-status" style="margin-top:12px">
+            Keine Ausgabe-Bewerber in der aktuellen Ansicht.<br>
+            <span style="color:var(--tx-mute);font-size:12px">Tipp: oben die Filter zurücksetzen oder auf Rolle „Ausgabe" filtern.</span>
+          </div>` : ''}
       </div>
-      <div class="app-modal-actions ap-actions">
-        ${verfuegbarAusgabe > 0
-          ? `<button class="app-modal-btn" type="button" onclick="apAutoAuswahl()">Alle ${verfuegbarAusgabe} Ausgabe-Bewerber auswählen</button>`
-          : ''}
+      ${kandidaten.length > 0 ? `
+        <div class="ap-listtools">
+          <button class="ap-mini" type="button" onclick="apSetAll(true)">Alle</button>
+          <button class="ap-mini" type="button" onclick="apSetAll(false)">Keine</button>
+          <span class="ap-counter" id="ap-counter"></span>
+        </div>
+        <div class="ap-list" id="ap-list">
+          ${kandidaten.map(b => {
+            const name = `${b.vorname || ''} ${b.nachname || ''}`.trim() || 'Bewerber';
+            const verf = verfuegbareWochenstunden(b);
+            const stLabel = STATUS_LABELS[b.status] || b.status || '';
+            const vName = mehrereVereine ? (vereine[b.verein_id]?.name || '') : '';
+            const einst = getEinstellung(b);
+            const eingestellt = einst.rollen.includes('ausgabe');
+            return `
+              <label class="ap-row">
+                <input type="checkbox" checked onchange="apToggle('${b.id}', this.checked)">
+                <span class="ap-row-main">
+                  <span class="ap-row-name">${escapeHtml(name)}</span>
+                  <span class="ap-row-meta">
+                    <span class="ap-tag ap-tag-status">${escapeHtml(stLabel)}</span>
+                    ${eingestellt ? '<span class="ap-tag ap-tag-ok">für Ausgabe eingestellt</span>' : '<span class="ap-tag">auf Ausgabe beworben</span>'}
+                    ${vName ? `<span class="ap-tag">${escapeHtml(vName)}</span>` : ''}
+                    <span class="ap-tag ${verf > 0 ? '' : 'ap-tag-warn'}">${verf > 0 ? verf + ' h/Woche' : 'keine Verfügbarkeit'}</span>
+                  </span>
+                </span>
+              </label>
+            `;
+          }).join('')}
+        </div>
+      ` : ''}
+      <div class="app-modal-actions">
         <button class="app-modal-btn app-modal-btn-cancel" type="button" onclick="this.closest('.app-modal-overlay').remove()">Abbrechen</button>
-        <button class="app-modal-btn app-modal-btn-ok" type="button" ${ausgewaehltAusgabe === 0 ? 'disabled' : ''} onclick="apUebernehmen()">Übernehmen &amp; Rechner öffnen</button>
+        ${kandidaten.length > 0 ? `<button class="app-modal-btn app-modal-btn-ok" id="ap-ok" type="button" onclick="apUebernehmen()">Übernehmen &amp; Rechner öffnen</button>` : ''}
       </div>
     </div>
   `;
   overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
   document.body.appendChild(overlay);
+  apUpdateCounter();
 }
 
-function apAutoAuswahl() {
-  const n = waehleAlleAusgabeBewerber();
-  document.getElementById('ausgabe-planung-overlay')?.remove();
-  if (n === 0) { toast('Keine Ausgabe-Bewerber in der aktuellen Liste', true); return; }
-  openAusgabePlanung();  // Modal neu mit aktualisiertem Stand
+function apToggle(id, checked) {
+  if (checked) apSelected.add(id); else apSelected.delete(id);
+  apUpdateCounter();
+}
+
+function apSetAll(on) {
+  const list = document.getElementById('ap-list');
+  if (!list) return;
+  list.querySelectorAll('.ap-row').forEach(row => {
+    const cb = row.querySelector('input[type=checkbox]');
+    const id = cb.getAttribute('onchange').match(/'([^']+)'/)[1];
+    cb.checked = on;
+    if (on) apSelected.add(id); else apSelected.delete(id);
+  });
+  apUpdateCounter();
+}
+
+function apUpdateCounter() {
+  const el = document.getElementById('ap-counter');
+  if (el) el.textContent = `${apSelected.size} ausgewählt`;
+  const ok = document.getElementById('ap-ok');
+  if (ok) ok.disabled = apSelected.size === 0;
 }
 
 function apUebernehmen() {
+  const ids = Array.from(apSelected);
+  if (ids.length === 0) { toast('Keine Bewerber ausgewählt', true); return; }
   document.getElementById('ausgabe-planung-overlay')?.remove();
-  uebergebeAnRechner();
+  uebergebeAnRechner(ids);
 }
 
 // ============================================================================

@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="color-scheme" content="dark">
   <title>Mariana Cannabis · Bewerbungs-Dashboard v2</title>
-  <!-- DASHBOARD_BUILD: 2026-05-16T0245 (Etappe 3: Personal-Soll/Ist-Übersicht pro Verein) -->
-  <script>window.__DASHBOARD_BUILD = '2026-05-16T0245';</script>
+  <!-- DASHBOARD_BUILD: 2026-05-16T0320 (Etappe 4: Mail-Platzhalter positionen/vertrag, Warteliste-Mail mit Positionen) -->
+  <script>window.__DASHBOARD_BUILD = '2026-05-16T0320';</script>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -4733,11 +4733,14 @@ Grüne Grüße
     id: 'warteliste',
     label: 'ℹ️ Warteliste (läuft auto bei Status-Wechsel)',
     auto: true,
-    subject: 'Aktuell keine freie Stelle – Warteliste',
+    subject: 'Deine Bewerbung – Warteliste',
     plain: `Hallo {vorname},
 
-aktuell haben wir leider keine passende Stelle frei.
-Wir setzen dich auf unsere Warteliste und melden uns, sobald etwas Passendes frei wird.
+vielen Dank für deine Bewerbung bei {verein_name}.
+
+Wir haben dich für folgende Position(en) vorgemerkt: {positionen}.
+
+Aktuell ist dort leider keine Stelle frei. Wir setzen dich auf unsere Warteliste und melden uns, sobald etwas Passendes frei wird.
 
 Grüne Grüße
 {verein_name}`,
@@ -4750,7 +4753,10 @@ Grüne Grüße
     plain: `Hallo {vorname},
 
 herzlich willkommen bei {verein_name}!
-Die nächsten Schritte besprechen wir in Kürze.
+
+Wir freuen uns, dich für folgende Position(en) an Bord zu holen: {positionen}.
+
+Die nächsten Schritte – Vertrag und Onboarding – besprechen wir in Kürze mit dir.
 
 Grüne Grüße
 {verein_name}`,
@@ -4784,12 +4790,29 @@ function applyMailPlaceholders(text, b, v) {
   const rolleArr = Array.isArray(b.rollen) ? b.rollen : [];
   const rolle = rolleArr.length ? (ROLE_LABELS[rolleArr[0]] || rolleArr[0]) : 'Mitarbeiter:in';
   const datum = new Date().toLocaleDateString('de-DE');
+
+  // {positionen} + {vertrag}: aus der Einstellungs-Entscheidung
+  const einst = getEinstellung(b);
+  const rollenLabels = einst.rollen.map(r => ROLE_LABELS[r] || r);
+  const vertragLabel = einst.vertrag ? (VERTRAG_LABELS[einst.vertrag] || einst.vertrag) : '';
+  let positionen;
+  if (rollenLabels.length === 0) {
+    positionen = '(Position noch offen)';
+  } else if (rollenLabels.length === 1) {
+    positionen = rollenLabels[0] + (vertragLabel ? ` (${vertragLabel})` : '');
+  } else {
+    const liste = rollenLabels.slice(0, -1).join(', ') + ' und ' + rollenLabels[rollenLabels.length - 1];
+    positionen = liste + (vertragLabel ? ` (jeweils ${vertragLabel})` : '');
+  }
+
   return text
     .replaceAll('{vorname}', vorname)
     .replaceAll('{nachname}', nachname)
     .replaceAll('{verein_name}', vereinName)
     .replaceAll('{rolle}', rolle)
-    .replaceAll('{datum}', datum);
+    .replaceAll('{datum}', datum)
+    .replaceAll('{positionen}', positionen)
+    .replaceAll('{vertrag}', vertragLabel || '(Vertrag noch offen)');
 }
 
 function plainToHtml(text, b, v) {
@@ -4900,7 +4923,7 @@ function openMailModal(id) {
       <div class="em-group-title">Nachricht (bearbeitbar)</div>
       <textarea class="nb-textarea" id="mail-body-text" style="min-height:240px;font-family:'Courier New',monospace;font-size:12.5px" oninput="renderMailPreview()" aria-label="Nachrichtentext"></textarea>
       <div style="font-size:11px;color:var(--tx-mute);margin-top:4px">
-        Platzhalter werden automatisch ersetzt: {vorname}, {nachname}, {verein_name}, {rolle}, {datum}
+        Platzhalter werden automatisch ersetzt: {vorname}, {nachname}, {verein_name}, {rolle}, {datum}, {positionen}, {vertrag}
       </div>
     </div>
 

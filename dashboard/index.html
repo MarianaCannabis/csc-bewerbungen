@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="color-scheme" content="dark">
   <title>Mariana Cannabis · Bewerbungs-Dashboard v2</title>
-  <!-- DASHBOARD_BUILD: 2026-05-16T0640 (Etappe 5c-A: Uebergabe an Ausgabe-Rechner via localStorage) -->
-  <script>window.__DASHBOARD_BUILD = '2026-05-16T0640';</script>
+  <!-- DASHBOARD_BUILD: 2026-05-16T0710 (5c: Ausgabe-Filter, Rechner-Autostart, gefuehrter Planungs-Knopf) -->
+  <script>window.__DASHBOARD_BUILD = '2026-05-16T0710';</script>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -968,6 +968,11 @@
     .bulk-btn-clear { color: var(--tx-dim); }
     .bulk-btn-rechner { color: var(--blue); border-color: var(--blue); }
     .bulk-btn-rechner:hover { background: var(--blue-bg); }
+    .ap-status {
+      margin-top: 14px; padding: 10px 12px; border-radius: 6px;
+      background: var(--bg-elev); font-size: 13px; line-height: 1.4;
+    }
+    .ap-actions { flex-wrap: wrap; }
     .bulk-btn-clear:hover { color: var(--red); border-color: var(--red); }
 
     /* ===== EINSTELLUNG ===== */
@@ -1461,6 +1466,7 @@
       <button class="btn-ghost stats-btn-header" onclick="openStatsModal()" title="Statistik-Übersicht" style="display:none" aria-label="Statistik-Übersicht öffnen"><span aria-hidden="true">📊</span> Statistik</button>
       <button class="btn-ghost errorlog-btn-header" onclick="openErrorLogModal()" title="Error-Log (technische Fehler)" style="display:none" aria-label="Error-Log öffnen"><span aria-hidden="true">⚠️</span> Errors</button>
       <button class="btn-ghost verein-btn-header" onclick="openVereinsStammdaten()" title="Vereins-Stammdaten & Personalbedarf" style="display:none" aria-label="Verein einrichten"><span aria-hidden="true">⚙️</span> Verein</button>
+      <button class="btn-ghost" onclick="openAusgabePlanung()" title="Ausgabe-Mitarbeiter an den Ausgabe-Rechner übergeben — Öffnungszeiten & Dienstpläne planen" aria-label="Ausgabe-Personalplanung"><span aria-hidden="true">🗓</span> Ausgabe planen</button>
       <button class="btn-ghost" id="btn-refresh" onclick="manualRefresh()" title="Daten neu laden (passiert auch automatisch alle 25 Sek)" aria-label="Daten neu laden"><span class="refresh-icon" aria-hidden="true">🔄</span></button>
       <button class="btn-ghost" onclick="exportCsv()" title="Aktuell sichtbare Bewerbungen als CSV/Excel exportieren" aria-label="Aktuell sichtbare Bewerbungen als CSV exportieren"><span aria-hidden="true">⬇</span> Export</button>
       <button class="btn-ghost" onclick="logout()" aria-label="Abmelden">Abmelden</button>
@@ -6815,6 +6821,17 @@ async function bulkSetStatus(newStatus) {
 // ============================================================================
 
 const RECHNER_IMPORT_KEY = 'mariana_rechner_import';
+const RECHNER_URL = 'Ausgabe-Rechner.html';   // gleicher Ordner wie das Dashboard
+
+// Ist der Bewerber für die AUSGABE relevant?
+// → 'ausgabe' in den eingestellten Rollen, oder (ohne Einstellung)
+//   'ausgabe' in den beworbenen Rollen.
+function istAusgabeBewerber(b) {
+  const einst = getEinstellung(b);
+  if (einst.rollen.includes('ausgabe')) return true;
+  if (einst.rollen.length === 0 && Array.isArray(b.rollen) && b.rollen.includes('ausgabe')) return true;
+  return false;
+}
 
 // 5-Slot-Verfügbarkeit → Stunden-Arrays des Rechners (Anzeige-Range 9–21 Uhr).
 // Slots: Früh 6-10, Vormittag 10-13, Nachmittag 13-17, Abend 17-22, Nacht 22-6.
@@ -6831,7 +6848,6 @@ const RECHNER_TAGE = { Mo: 'mo', Di: 'di', Mi: 'mi', Do: 'do', Fr: 'fr', Sa: 'sa
 function verfuegbarkeitZuRechnerAvail(verf) {
   const avail = { mo: [], di: [], mi: [], do: [], fr: [], sa: [], so: [] };
   if (!verf || typeof verf !== 'object') return avail;
-  // pro Wochentag die belegten Slot-Stunden sammeln (über Standorte vereinigt)
   Object.values(verf).forEach(tagData => {
     if (!tagData || typeof tagData !== 'object') return;
     Object.entries(RECHNER_TAGE).forEach(([gross, klein]) => {
@@ -6858,25 +6874,29 @@ function vertragZuRechnerType(vertrag) {
 async function uebergebeAnRechner() {
   if (selectedIds.size === 0) { toast('Keine Bewerber ausgewählt', true); return; }
   const ids = Array.from(selectedIds);
-  const ausgewaehlt = bewerbungen.filter(b => ids.includes(b.id));
+  const alleAusgewaehlt = bewerbungen.filter(b => ids.includes(b.id));
+
+  // NUR Ausgabe-relevante Bewerber übergeben
+  const ausgabeBewerber = alleAusgewaehlt.filter(istAusgabeBewerber);
+  const verworfen = alleAusgewaehlt.length - ausgabeBewerber.length;
+
+  if (ausgabeBewerber.length === 0) {
+    await appConfirm(
+      'In deiner Auswahl ist kein Bewerber für die Ausgabe dabei.\n\nDer Ausgabe-Rechner plant nur Ausgabe-Schichten — wähle bitte Bewerber aus, die für die Rolle „Ausgabe" vorgesehen sind oder sich darauf beworben haben.',
+      { title: 'Keine Ausgabe-Bewerber', okLabel: 'Verstanden', cancelLabel: '' }
+    );
+    return;
+  }
 
   // Team-Member im Rechner-Format aufbauen
-  const team = ausgewaehlt.map(b => {
+  const team = ausgabeBewerber.map(b => {
     const einst = getEinstellung(b);
-    // Vertrag: Nicht-Grow-Vertrag, sonst minijob (Grow-only / unentschieden)
-    const type = vertragZuRechnerType(einst.vertrag);
+    const type  = vertragZuRechnerType(einst.vertrag);
     const avail = verfuegbarkeitZuRechnerAvail(b.verfuegbarkeit);
     const availStd = Object.values(avail).reduce((s, arr) => s + arr.length, 0);
-    return {
-      name:  `${b.vorname || ''} ${b.nachname || ''}`.trim() || 'Bewerber',
-      type:  type,
-      avail: avail,
-      _availStd: availStd,
-      _rollen: einst.rollen
-    };
+    return { name: `${b.vorname || ''} ${b.nachname || ''}`.trim() || 'Bewerber',
+             type, avail, _availStd: availStd };
   });
-
-  // Warnung wenn Bewerber ohne Verfügbarkeitsdaten dabei
   const ohneVerf = team.filter(m => m._availStd === 0).length;
 
   const verein = vereine[getPersonalPanelVereinId()] || {};
@@ -6895,25 +6915,96 @@ async function uebergebeAnRechner() {
     return;
   }
 
-  // Bestätigungs-Modal
+  // Rechner direkt öffnen (neuer Tab) — user-initiiert, kein Popup-Block
+  window.open(RECHNER_URL, '_blank');
+
+  // Kurze Bestätigung
   const overlay = document.createElement('div');
   overlay.className = 'app-modal-overlay';
   overlay.innerHTML = `
     <div class="app-modal" role="dialog" aria-modal="true" style="max-width:480px">
-      <div class="app-modal-title">📥 ${team.length} Bewerber für den Rechner bereit</div>
+      <div class="app-modal-title">📥 ${team.length} Ausgabe-Bewerber übergeben</div>
       <div class="app-modal-body">
-        Die Auswahl wurde mit Verfügbarkeit und vorgeschlagener Vertragsart vorbereitet.
-        ${ohneVerf > 0 ? `<br><br>⚠️ ${ohneVerf} davon ${ohneVerf === 1 ? 'hat' : 'haben'} keine Verfügbarkeits-Angabe — im Rechner bitte manuell ergänzen.` : ''}
-        <br><br><strong>So geht's weiter:</strong> Öffne den Ausgabe-Rechner. Dort erscheint oben die Karte „📥 Aus Bewerbungen übernehmen" — ein Klick fügt die Bewerber ins Team ein.
+        Der Ausgabe-Rechner öffnet sich in einem neuen Tab. Dort oben auf
+        „Ins Team übernehmen" klicken — dann rechnet er Öffnungszeiten und Dienstpläne.
+        ${verworfen > 0 ? `<br><br>ℹ️ ${verworfen} ausgewählte${verworfen === 1 ? 'r Bewerber war' : ' Bewerber waren'} nicht für die Ausgabe vorgesehen und ${verworfen === 1 ? 'wurde' : 'wurden'} nicht übergeben.` : ''}
+        ${ohneVerf > 0 ? `<br><br>⚠️ ${ohneVerf} ${ohneVerf === 1 ? 'hat' : 'haben'} keine Verfügbarkeits-Angabe — im Rechner bitte manuell ergänzen.` : ''}
+        <br><br><span style="color:var(--tx-mute);font-size:12px">Kein neuer Tab? Popup-Blocker prüfen — der Rechner ist „Ausgabe-Rechner.html" im selben Ordner.</span>
       </div>
       <div class="app-modal-actions">
-        <button class="app-modal-btn app-modal-btn-ok" type="button" onclick="this.closest('.app-modal-overlay').remove()">Verstanden</button>
+        <button class="app-modal-btn app-modal-btn-ok" type="button" onclick="this.closest('.app-modal-overlay').remove()">OK</button>
       </div>
     </div>
   `;
   overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
   document.body.appendChild(overlay);
-  toast(`${team.length} Bewerber an den Rechner übergeben`);
+  toast(`${team.length} Ausgabe-Bewerber an den Rechner übergeben`);
+}
+
+// Markiert automatisch alle Ausgabe-relevanten Bewerber der aktuellen
+// Liste (außer abgelehnte) — für den geführten Planungs-Flow.
+function waehleAlleAusgabeBewerber() {
+  let n = 0;
+  lastFilteredList.forEach(b => {
+    if (b.status !== 'abgelehnt' && istAusgabeBewerber(b)) {
+      selectedIds.add(b.id);
+      n++;
+    }
+  });
+  renderList();
+  return n;
+}
+
+// Geführter Einstieg: Planungs-Modal
+function openAusgabePlanung() {
+  // aktuelle Auswahl auswerten
+  const idsNow = Array.from(selectedIds);
+  const ausgewaehltAusgabe = bewerbungen.filter(b => idsNow.includes(b.id) && istAusgabeBewerber(b)).length;
+  const verfuegbarAusgabe = lastFilteredList.filter(b => b.status !== 'abgelehnt' && istAusgabeBewerber(b)).length;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'app-modal-overlay';
+  overlay.id = 'ausgabe-planung-overlay';
+  overlay.innerHTML = `
+    <div class="app-modal" role="dialog" aria-modal="true" style="max-width:520px">
+      <div class="app-modal-title">🗓 Ausgabe-Personalplanung</div>
+      <div class="app-modal-body">
+        Übergib deine Ausgabe-Mitarbeiter an den Ausgabe-Rechner — er berechnet daraus
+        mögliche Öffnungszeiten, Einsatzzeiten und Dienstpläne.
+        <br><br>
+        <strong>1.</strong> Bewerber für die Ausgabe auswählen (Häkchen in der Liste links).<br>
+        <strong>2.</strong> „Übernehmen & Rechner öffnen" — fertig.
+        <div class="ap-status">
+          ${ausgewaehltAusgabe > 0
+            ? `✓ <strong>${ausgewaehltAusgabe}</strong> Ausgabe-Bewerber aktuell ausgewählt`
+            : `Noch keine Ausgabe-Bewerber ausgewählt — ${verfuegbarAusgabe > 0
+                ? `es gibt <strong>${verfuegbarAusgabe}</strong> passende in der aktuellen Liste.`
+                : 'in der aktuellen Liste sind keine.'}`}
+        </div>
+      </div>
+      <div class="app-modal-actions ap-actions">
+        ${verfuegbarAusgabe > 0
+          ? `<button class="app-modal-btn" type="button" onclick="apAutoAuswahl()">Alle ${verfuegbarAusgabe} Ausgabe-Bewerber auswählen</button>`
+          : ''}
+        <button class="app-modal-btn app-modal-btn-cancel" type="button" onclick="this.closest('.app-modal-overlay').remove()">Abbrechen</button>
+        <button class="app-modal-btn app-modal-btn-ok" type="button" ${ausgewaehltAusgabe === 0 ? 'disabled' : ''} onclick="apUebernehmen()">Übernehmen &amp; Rechner öffnen</button>
+      </div>
+    </div>
+  `;
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+}
+
+function apAutoAuswahl() {
+  const n = waehleAlleAusgabeBewerber();
+  document.getElementById('ausgabe-planung-overlay')?.remove();
+  if (n === 0) { toast('Keine Ausgabe-Bewerber in der aktuellen Liste', true); return; }
+  openAusgabePlanung();  // Modal neu mit aktualisiertem Stand
+}
+
+function apUebernehmen() {
+  document.getElementById('ausgabe-planung-overlay')?.remove();
+  uebergebeAnRechner();
 }
 
 // ============================================================================

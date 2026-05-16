@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="color-scheme" content="dark">
   <title>Mariana Cannabis · Bewerbungs-Dashboard v2</title>
-  <!-- DASHBOARD_BUILD: 2026-05-16T0850 (HeadGrow ohne KCanG, Stammdaten-Uebergabe an Rechner) -->
-  <script>window.__DASHBOARD_BUILD = '2026-05-16T0850';</script>
+  <!-- DASHBOARD_BUILD: 2026-05-16T2130 (Interaktive Hilfe + Schritt-fuer-Schritt-Tutorial) -->
+  <script>window.__DASHBOARD_BUILD = '2026-05-16T2130';</script>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -827,6 +827,131 @@
     }
     .app-modal-btn:hover:not(:disabled) { background: var(--bg); }
     .app-modal-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* ═══ HILFE & ANLEITUNG ═══ */
+    .help-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.78);
+      display: none; align-items: center; justify-content: center;
+      z-index: 10000; padding: 24px;
+    }
+    .help-overlay.open { display: flex; animation: appModalFadeIn 0.15s ease-out; }
+    .help-window {
+      background: var(--bg-card); border: 1px solid var(--border-strong);
+      border-radius: 14px; width: 100%; max-width: 1080px; height: 86vh;
+      display: flex; flex-direction: column; overflow: hidden;
+      box-shadow: 0 24px 70px rgba(0,0,0,0.75);
+      animation: appModalSlideIn 0.18s ease-out;
+    }
+    .help-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 20px; border-bottom: 1px solid var(--border);
+      background: var(--bg-elev); flex-shrink: 0;
+    }
+    .help-head-title { font-size: 16px; font-weight: 700; color: var(--tx); }
+    .help-head-title .accent { color: var(--green); }
+    .help-close {
+      background: var(--bg-elev2); border: 1px solid var(--border);
+      color: var(--tx-dim); width: 32px; height: 32px; border-radius: 8px;
+      font-size: 18px; cursor: pointer; line-height: 1;
+    }
+    .help-close:hover { background: var(--bg); color: var(--tx); }
+    .help-body { display: flex; flex: 1; min-height: 0; }
+    .help-sidebar {
+      width: 270px; flex-shrink: 0; border-right: 1px solid var(--border);
+      background: var(--bg); display: flex; flex-direction: column;
+      overflow-y: auto;
+    }
+    .help-search-wrap { padding: 12px; border-bottom: 1px solid var(--border); }
+    .help-search {
+      width: 100%; box-sizing: border-box; background: var(--bg-elev);
+      border: 1px solid var(--border); color: var(--tx);
+      padding: 8px 11px; border-radius: 7px; font-family: inherit; font-size: 13px;
+    }
+    .help-search:focus { outline: none; border-color: var(--green); }
+    .help-nav { padding: 8px; }
+    .help-nav-section {
+      font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
+      color: var(--tx-mute); font-weight: 700; padding: 10px 10px 5px;
+    }
+    .help-nav-item {
+      display: flex; align-items: center; gap: 9px;
+      padding: 8px 10px; border-radius: 7px; cursor: pointer;
+      font-size: 13px; color: var(--tx-dim); line-height: 1.3;
+    }
+    .help-nav-item:hover { background: var(--bg-elev); color: var(--tx); }
+    .help-nav-item.active {
+      background: var(--green-glow); color: var(--green-soft, #6ed089);
+      font-weight: 600;
+    }
+    .help-nav-item .hni-icon { font-size: 15px; flex-shrink: 0; }
+    .help-nav-item.tutorial {
+      border: 1px solid var(--green-dim); margin: 4px 4px 8px;
+      background: rgba(76,175,106,0.08);
+    }
+    .help-nav-item.hidden { display: none; }
+    .help-content {
+      flex: 1; overflow-y: auto; padding: 26px 32px;
+      min-width: 0;
+    }
+    .help-content h2 {
+      font-size: 20px; color: var(--tx); margin: 0 0 4px; font-weight: 700;
+    }
+    .help-content .help-sub {
+      font-size: 13px; color: var(--tx-mute); margin-bottom: 18px;
+    }
+    .help-content h3 {
+      font-size: 14px; color: var(--green); margin: 20px 0 7px;
+      font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+    }
+    .help-content p { font-size: 14px; color: var(--tx); line-height: 1.6; margin: 8px 0; }
+    .help-content ul, .help-content ol { margin: 8px 0; padding-left: 22px; }
+    .help-content li { font-size: 14px; color: var(--tx); line-height: 1.6; margin: 5px 0; }
+    .help-content b, .help-content strong { color: var(--tx); font-weight: 700; }
+    .help-content code {
+      background: var(--bg-elev2); padding: 1px 6px; border-radius: 4px;
+      font-size: 13px; color: var(--gold);
+    }
+    .help-callout {
+      border-radius: 9px; padding: 12px 15px; margin: 14px 0;
+      font-size: 13px; line-height: 1.55; border: 1px solid;
+    }
+    .help-callout.info { background: var(--green-glow); border-color: var(--green-dim); }
+    .help-callout.warn { background: var(--gold-bg); border-color: var(--gold); }
+    .help-callout.tip  { background: var(--blue-bg); border-color: var(--blue); }
+    .help-callout b { display: block; margin-bottom: 3px; }
+    .help-empty {
+      text-align: center; color: var(--tx-mute); font-size: 13px; padding: 40px 20px;
+    }
+    /* Tutorial */
+    .help-tut-progress {
+      display: flex; gap: 5px; margin-bottom: 18px;
+    }
+    .help-tut-dot {
+      flex: 1; height: 5px; border-radius: 3px; background: var(--bg-elev2);
+    }
+    .help-tut-dot.done { background: var(--green); }
+    .help-tut-dot.current { background: var(--gold); }
+    .help-tut-step-num {
+      font-size: 12px; color: var(--gold); font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;
+    }
+    .help-tut-nav {
+      display: flex; justify-content: space-between; gap: 12px;
+      margin-top: 26px; padding-top: 18px; border-top: 1px solid var(--border);
+    }
+    .help-tut-btn {
+      padding: 9px 20px; border-radius: 7px; font-family: inherit;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      border: 1px solid var(--border); background: var(--bg-elev); color: var(--tx);
+    }
+    .help-tut-btn:hover:not(:disabled) { background: var(--bg); }
+    .help-tut-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+    .help-tut-btn.primary { background: var(--green-dim); border-color: var(--green); color: #fff; }
+    .help-tut-btn.primary:hover { background: var(--green); }
+    @media (max-width: 720px) {
+      .help-sidebar { width: 180px; }
+      .help-content { padding: 20px 18px; }
+    }
     .app-modal-btn-ok {
       background: var(--green); border-color: var(--green); color: #fff;
     }
@@ -1503,6 +1628,7 @@
       <button class="btn-ghost errorlog-btn-header" onclick="openErrorLogModal()" title="Error-Log (technische Fehler)" style="display:none" aria-label="Error-Log öffnen"><span aria-hidden="true">⚠️</span> Errors</button>
       <button class="btn-ghost verein-btn-header" onclick="openVereinsStammdaten()" title="Vereins-Stammdaten & Personalbedarf" style="display:none" aria-label="Verein einrichten"><span aria-hidden="true">⚙️</span> Verein</button>
       <button class="btn-ghost" onclick="openAusgabePlanung()" title="Ausgabe-Mitarbeiter an den Ausgabe-Rechner übergeben — Öffnungszeiten & Dienstpläne planen" aria-label="Ausgabe-Personalplanung"><span aria-hidden="true">🗓</span> Ausgabe planen</button>
+      <button class="btn-ghost" onclick="openHelp()" title="Hilfe, Anleitung & Schritt-für-Schritt-Tutorial" aria-label="Hilfe öffnen"><span aria-hidden="true">❓</span> Hilfe</button>
       <button class="btn-ghost" id="btn-refresh" onclick="manualRefresh()" title="Daten neu laden (passiert auch automatisch alle 25 Sek)" aria-label="Daten neu laden"><span class="refresh-icon" aria-hidden="true">🔄</span></button>
       <button class="btn-ghost" onclick="exportCsv()" title="Aktuell sichtbare Bewerbungen als CSV/Excel exportieren" aria-label="Aktuell sichtbare Bewerbungen als CSV exportieren"><span aria-hidden="true">⬇</span> Export</button>
       <button class="btn-ghost" onclick="logout()" aria-label="Abmelden">Abmelden</button>
@@ -7887,6 +8013,386 @@ document.addEventListener('DOMContentLoaded', () => {
     </div>
   </div>
 </div>
+
+<!-- ═══════════ HILFE & ANLEITUNG ═══════════ -->
+<div class="help-overlay" id="help-overlay" onclick="if(event.target===this)closeHelp()">
+  <div class="help-window" role="dialog" aria-modal="true" aria-label="Hilfe und Anleitung">
+    <div class="help-head">
+      <div class="help-head-title">❓ Hilfe <span class="accent">·</span> Anleitung &amp; Tutorial</div>
+      <button class="help-close" onclick="closeHelp()" aria-label="Hilfe schließen">✕</button>
+    </div>
+    <div class="help-body">
+      <div class="help-sidebar">
+        <div class="help-search-wrap">
+          <input class="help-search" id="help-search" type="search"
+                 placeholder="🔍 Hilfe durchsuchen…" oninput="helpSearch(this.value)"
+                 aria-label="Hilfe durchsuchen">
+        </div>
+        <div class="help-nav" id="help-nav"></div>
+      </div>
+      <div class="help-content" id="help-content"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ── Schritt-für-Schritt-Tutorial ──────────────────────────────
+  const TUTORIAL_STEPS = [
+    { title: "Worum es geht",
+      body: `<p>Dieses Tutorial führt dich einmal komplett durch den Ablauf — von der neuen
+      Bewerbung bis zum eingestellten Mitarbeiter. Es dauert ca. 5 Minuten zu lesen.</p>
+      <p>Wichtig vorab: Du als Vorstand machst <b>nicht alles allein</b>. Es gilt das
+      <b>Vier-Augen-Prinzip</b> — Vorstand und Community Management (CM) entscheiden gemeinsam.
+      Du triffst die erste Entscheidung, das CM die zweite.</p>
+      <div class="help-callout tip"><b>Tipp</b>Klick dich mit „Weiter" durch. Du kannst
+      jederzeit über die Themen-Liste links zu einem Nachschlage-Thema springen.</div>` },
+
+    { title: "Neue Bewerbung öffnen",
+      body: `<p>Du bekommst eine E-Mail „Neue Bewerbung in deinem Verein". Öffne das Dashboard.</p>
+      <ol>
+        <li>Die neue Bewerbung steht in der <b>Liste links</b> mit Status <b>„Eingegangen"</b>.</li>
+        <li>Klick auf die Zeile — rechts öffnet sich die <b>Detail-Ansicht</b>.</li>
+        <li>Schau zuerst auf <b>Score</b> und <b>Verfügbarkeits-Heatmap</b>: passt das grundsätzlich?</li>
+        <li>Öffne die <b>Anhänge</b> (Klick auf das Vorschau-Bild).</li>
+      </ol>` },
+
+    { title: "In Prüfung setzen",
+      body: `<p>Sobald du anfängst zu arbeiten, setz den Status auf <b>„In Prüfung"</b>
+      (Status-Button oben in der Detail-Ansicht).</p>
+      <div class="help-callout info"><b>Gut zu wissen</b>„In Prüfung" ist der einzige Status,
+      bei dem <b>keine</b> automatische Mail rausgeht — damit Bewerber nicht denken, sie wären
+      schon fast durch.</div>
+      <p>Optional darfst du selbst mit dem Bewerber sprechen. Halte deine Eindrücke im
+      <b>Notiz-Verlauf</b> fest.</p>` },
+
+    { title: "Erste Entscheidung treffen",
+      body: `<p>Jetzt deine <b>erste Entscheidung</b>: Passt der Bewerber grundsätzlich
+      zu eurem Verein?</p>
+      <ul>
+        <li><b>Ja</b> → Status auf <b>„Eingeladen"</b>. Damit übernimmt das CM.</li>
+        <li><b>Nein</b> → Status auf <b>„Abgelehnt"</b>. Eine höfliche Auto-Absage geht raus.</li>
+      </ul>
+      <p>Schreib bei einer Übergabe einen kurzen Notiz-Verlauf-Eintrag, z. B.:
+      <i>„Passt für unseren Verein, Score 73, gute Verfügbarkeit. An CM übergeben."</i>
+      Möchtest du beim Gespräch dabei sein, vermerk das ebenfalls — das CM stimmt sich dann ab.</p>` },
+
+    { title: "Das Gespräch (CM)",
+      body: `<p>Das Community Management sichtet die Bewerbung ebenfalls, plant das
+      Vorstellungsgespräch und führt es — auf deinen Wunsch auch gemeinsam mit dir.</p>
+      <p>Termine legst du im <b>Termine-Block</b> an: Titel, Datum, Typ (vor Ort / Video / Telefon).
+      Über das ICS-Symbol exportierst du den Termin in deinen Kalender.</p>
+      <p>Nach dem Gespräch trifft das CM die <b>zweite Entscheidung</b>.</p>` },
+
+    { title: "Einstellung festlegen",
+      body: `<p>Sind beide — Vorstand und CM — für den Bewerber, wird die <b>Einstellung</b>
+      festgelegt. Öffne in der Detail-Ansicht den Block <b>„Einstellung — für welche Position(en)?"</b>.</p>
+      <ol>
+        <li>Wähle eine oder mehrere <b>Rollen</b> (beworbene Rollen stehen oben).</li>
+        <li>Prüfe die <b>Verfügbarkeits-Box</b> — sie schlägt eine passende Vertragsart vor.</li>
+        <li>Wähle die <b>Vertragsart</b> (Minijob / Teilzeit / Vollzeit / Ehrenamt).</li>
+      </ol>
+      <div class="help-callout warn"><b>Sonderfall Anbau</b>Die Grower-Rolle ist laut §17 KCanG
+      immer ein Minijob — das System vergibt ihn automatisch. Der Head Grower fällt nicht
+      darunter.</div>` },
+
+    { title: "Warteliste & Annahme",
+      body: `<p>Die Einstellung ist <b>Pflicht</b>, bevor der Status weiterwandert:</p>
+      <ul>
+        <li><b>Warteliste</b> — Standard nach erfolgreichem Gespräch. Der Bewerber ist geeignet,
+        wird aber „geparkt", bis klar ist, wann er anfangen kann.</li>
+        <li><b>Angenommen</b> — erst kurz vor der konkreten Einstellung. Jetzt übernimmt die
+        HR-Abteilung den Arbeitsvertrag.</li>
+      </ul>
+      <p>In der Praxis setzt das CM diese beiden Status. Du als Vorstand musst die
+      Unterscheidung nur kennen.</p>` },
+
+    { title: "Personalbedarf im Blick",
+      body: `<p>Damit du weißt, wie viele Leute ihr noch braucht, helfen zwei Werkzeuge oben
+      im Dashboard:</p>
+      <ul>
+        <li><b>⚙️ Verein</b> — trägt Eckdaten ein und berechnet den Personalbedarf (das Soll).</li>
+        <li><b>📊 Statistik / Personal-Übersicht</b> — zeigt Soll und Ist pro Rolle.</li>
+      </ul>
+      <p>Für die Ausgabe-Planung gibt es zusätzlich den <b>🗓 Ausgabe-Rechner</b>: Er prüft,
+      ob euer Team die geplanten Öffnungszeiten wirtschaftlich abdeckt.</p>` },
+
+    { title: "Fertig!",
+      body: `<p>Das war der komplette Ablauf. Zur Erinnerung die goldene Regel:</p>
+      <div class="help-callout info"><b>Status setzen = Auto-Mail</b>Bei jedem Status-Wechsel
+      (außer „In Prüfung") geht automatisch eine Mail an den Bewerber. Du musst keine
+      Status-Mails von Hand schreiben.</div>
+      <p>Eine eigene Mail (Probearbeit, Rückfrage, persönliche Absage) schickst du über das
+      ✉-Symbol mit einer der Vorlagen.</p>
+      <p>Alles Weitere findest du in den Themen links — oder frag bei
+      <b>communityrecruiting@mariana-cannabis.de</b>.</p>` },
+  ];
+
+  // ── Nachschlage-Themen ────────────────────────────────────────
+  const HELP_TOPICS = [
+    { id:"start", icon:"🚪", title:"Erste Schritte & Login", sub:"Anmelden ohne Passwort",
+      body:`<h3>Login per Magic-Link</h3>
+      <p>Das Dashboard nutzt <b>Magic-Link-Login</b> — kein Passwort. Du gibst deine
+      <b>Vereins-Mailadresse</b> ein (nicht deine private), bekommst einen Link per Mail
+      und bist eingeloggt.</p>
+      <ol>
+        <li>Vereins-Mailadresse eintragen (z. B. <code>marburg@mariana-cannabis.de</code>).</li>
+        <li>Auf „Login-Link senden" klicken.</li>
+        <li>Mail-Postfach prüfen — auch den <b>Spam-Ordner</b>.</li>
+        <li>Link anklicken — du landest direkt im Dashboard.</li>
+      </ol>
+      <div class="help-callout warn"><b>Keine Mail bekommen?</b>Erst Spam prüfen. Dann: Ist es
+      wirklich die Vereins-Adresse? Nur freigeschaltete Adressen können sich anmelden — sonst
+      kurz an communityrecruiting@mariana-cannabis.de schreiben.</div>` },
+
+    { id:"dashboard", icon:"🗂", title:"Das Dashboard verstehen", sub:"Drei Bereiche",
+      body:`<h3>Aufbau</h3>
+      <p>Das Dashboard hat drei Bereiche: <b>Statistik-Leiste oben</b>, <b>Bewerber-Liste links</b>
+      und <b>Detail-Ansicht rechts</b>.</p>
+      <h3>Statistik-Leiste</h3>
+      <p>Farbige Kacheln, eine pro Status, mit Anzahl. Ein Klick filtert die Liste auf diesen
+      Status, ein zweiter Klick hebt den Filter auf.</p>
+      <h3>Werkzeuge in der Kopfzeile</h3>
+      <ul>
+        <li><b>⚙️ Verein</b> — Vereins-Eckdaten & Personalbedarf einrichten.</li>
+        <li><b>📊 Statistik</b> — Soll/Ist-Personalübersicht pro Rolle.</li>
+        <li><b>🗓 Ausgabe planen</b> — Bewerber an den Ausgabe-Rechner übergeben.</li>
+        <li><b>🔄</b> — Daten neu laden (passiert auch alle 25 Sek automatisch).</li>
+      </ul>` },
+
+    { id:"liste", icon:"📋", title:"Bewerber-Liste & Sortierung", sub:"Den Überblick behalten",
+      body:`<h3>Was jede Zeile zeigt</h3>
+      <ul>
+        <li>Name + Bewerbungsdatum</li>
+        <li><b>Score-Pille</b> in Ampelfarbe (grün / gelb / rot)</li>
+        <li><b>(N)</b> = Schnell-Notiz vorhanden · <b>(V)</b> = Notiz-Verlauf hat Einträge</li>
+        <li><b>„in 2T"</b> = nächster Termin in 2 Tagen · <b>„x2"</b> = Mehrfach-Bewerbung</li>
+        <li>Status-Badge, Rolle(n), Wunsch-Stunden, Tag-Emojis</li>
+      </ul>
+      <h3>Sortierung</h3>
+      <p>Über das Dropdown sortierst du die Liste. Besonders nützlich:</p>
+      <ul>
+        <li><b>Score (hoch → niedrig)</b> — die besten Kandidaten oben</li>
+        <li><b>Wartet am längsten</b> — überfällige Bewerbungen zuerst</li>
+        <li><b>Nächster Termin zuerst</b> — was heute / morgen ansteht</li>
+      </ul>` },
+
+    { id:"status", icon:"🚦", title:"Die sechs Status-Stufen", sub:"Wer macht wann was",
+      body:`<h3>Der Ablauf</h3>
+      <ul>
+        <li><b>Eingegangen</b> — neu im System. Vorstand sichtet innerhalb 3–5 Tagen.</li>
+        <li><b>In Prüfung</b> — Vorstand prüft, trifft die erste Entscheidung.</li>
+        <li><b>Eingeladen</b> — CM übernimmt, führt das Gespräch.</li>
+        <li><b>Warteliste</b> — Standard nach erfolgreichem Gespräch, Bewerber wird „geparkt".</li>
+        <li><b>Angenommen</b> — kurz vor Einstellung, HR übernimmt den Vertrag.</li>
+        <li><b>Abgelehnt</b> — passt nicht. Daten werden nach 6 Monaten gelöscht.</li>
+      </ul>
+      <div class="help-callout info"><b>Status setzen = Auto-Mail</b>Jeder Status-Wechsel
+      löst automatisch eine Mail an den Bewerber aus — außer „In Prüfung".</div>` },
+
+    { id:"score", icon:"⭐", title:"Der Score", sub:"Automatische Bewertung 0–100",
+      body:`<h3>Wie er entsteht</h3>
+      <p>Jede Bewerbung bekommt pro beworbener Rolle einen Score aus sechs Faktoren:
+      Verfügbarkeit, Erfahrung, Mobilität, Soft-Skills, Bereitschaft und Sachkunde.
+      Die Gewichtung ist <b>rollenabhängig</b> — bei Prävention zählt die Sachkunde mehr,
+      beim Grower die Erfahrung.</p>
+      <div class="help-callout tip"><b>Der Score ist ein Hinweis, kein Urteil</b>Ein Score von
+      45 kann den perfekten Kandidaten zeigen, wenn die Verfügbarkeit nur knapp ausgefüllt
+      wurde. Im Detail-View kannst du die Faktoren einzeln aufklappen.</div>` },
+
+    { id:"notizen", icon:"📝", title:"Tags, Notizen & Verlauf", sub:"Markieren und festhalten",
+      body:`<h3>Tags</h3>
+      <p>Mit Tags markierst du Bewerbungen (heiß, Top, qualifiziert, telefonieren,
+      Wunschkandidat). Sie erscheinen als Emoji in der Listen-Zeile.</p>
+      <h3>Zwei Sorten Notizen</h3>
+      <ul>
+        <li><b>Schnell-Notiz</b> — ein einzelnes Feld für „der aktuelle Stand in einem Satz".
+        Wird beim nächsten Mal überschrieben.</li>
+        <li><b>Notiz-Verlauf</b> — chronologische Einträge mit Zeitstempel und Autor. Wird
+        <b>nicht</b> überschrieben — eine echte Historie. Ideal, wenn Vorstand und CM
+        gemeinsam an einer Bewerbung arbeiten.</li>
+      </ul>
+      <p>Über dem Verlauf-Feld gibt es Vorlagen („Vorgespräch geplant", „Telefonisch
+      kontaktiert" usw.) — sie setzen das heutige Datum automatisch ein.</p>` },
+
+    { id:"termine", icon:"📅", title:"Termine & Kalender", sub:"Interviews und Probearbeit",
+      body:`<h3>Termine anlegen</h3>
+      <p>Im Termine-Block legst du beliebig viele Termine pro Bewerbung an: Vorgespräch,
+      Probearbeit, Follow-up. Pro Termin: Titel, Datum mit Uhrzeit, Dauer, Typ
+      (vor Ort / Video / Telefon), Ort oder Link, Status.</p>
+      <h3>In den Kalender exportieren</h3>
+      <p>Über das ICS-Symbol exportierst du einen Termin als Datei für deinen Kalender
+      (Apple, Google, Outlook, Thunderbird). Der Reminder ist auf 1 Stunde vorher gesetzt.</p>
+      <p>In der Liste links siehst du anstehende Termine als „in 2T" oder „morgen" — rot,
+      wenn überfällig.</p>` },
+
+    { id:"mails", icon:"✉️", title:"E-Mails an Bewerber", sub:"Automatisch & manuell",
+      body:`<h3>Automatische Mails</h3>
+      <p>Sechs Mails gehen automatisch raus, sobald du den Status setzt — Eingangsbestätigung,
+      Eingeladen, Warteliste, Angenommen, Abgelehnt. „In Prüfung" löst bewusst keine Mail aus.</p>
+      <h3>Manuelle Mails</h3>
+      <p>Über das ✉-Symbol öffnest du das Mail-Modal mit Vorlagen (Probearbeit einladen,
+      Rückfrage, Termin-Vorschlag, Höfliche Absage u. a.). Standardmäßig als Branded HTML.</p>
+      <div class="help-callout tip"><b>Wann manuell?</b>Nur, wenn du etwas Spezifisches
+      mitteilen willst, das die Auto-Mail nicht abdeckt. Für eine persönliche Absage nutze
+      die Vorlage „Höfliche Absage" <i>vor</i> dem Status-Wechsel — sonst gehen zwei Mails raus.</div>` },
+
+    { id:"anhaenge", icon:"📎", title:"Anhänge", sub:"Lebenslauf, Zeugnisse & Co.",
+      body:`<h3>Hochgeladene Dateien</h3>
+      <p>Bewerber können bis zu 10 Dateien hochladen (max. 10 MB pro Datei). In der
+      Detail-Ansicht siehst du für jeden Anhang ein <b>Vorschau-Bild</b> — bei Bildern direkt
+      das Bild, bei PDFs die erste Seite. Klick öffnet die Datei groß.</p>
+      <h3>Anhang löschen</h3>
+      <p>Über den roten <b>🗑 Löschen</b>-Button entfernst du einen einzelnen Anhang — etwa
+      bei einer doppelten oder falschen Datei. Es folgt eine Sicherheitsabfrage; danach ist
+      die Datei endgültig weg.</p>` },
+
+    { id:"einstellung", icon:"🤝", title:"Von der Bewerbung zum Mitarbeiter", sub:"Stellenbesetzung",
+      body:`<h3>Der Einstellungs-Block</h3>
+      <p>In der Detail-Ansicht findest du den Block <b>„Einstellung — für welche Position(en)?"</b>
+      mit drei Teilen:</p>
+      <ul>
+        <li><b>Rollen-Auswahl</b> — beworbene Rollen stehen oben; mehrere kombinierbar.</li>
+        <li><b>Verfügbarkeits-Box</b> — schlägt aus der Verfügbarkeit eine Vertragsart vor.</li>
+        <li><b>Vertrag</b> — Minijob, Teilzeit, Vollzeit oder Ehrenamt.</li>
+      </ul>
+      <p>Die Einstellung ist <b>Pflicht</b>, bevor der Status auf „Warteliste" oder
+      „Angenommen" wechseln kann.</p>
+      <div class="help-callout warn"><b>§17 KCanG</b>Die Grower-Rolle darf nur als Minijob
+      ausgeübt werden — das System vergibt ihn automatisch. Der Head Grower fällt nicht
+      unter diese Beschränkung.</div>` },
+
+    { id:"verein", icon:"⚙️", title:"Vereins-Einrichtung & Personalbedarf", sub:"Soll und Ist",
+      body:`<h3>Vereins-Einrichtung (⚙️)</h3>
+      <p>Beim ersten Login erscheint ein kurzer Einrichtungs-Dialog; später erreichst du ihn
+      über den ⚙️-Button. Du trägst Eckdaten ein — Mitgliederzahl, Zeit pro Ausgabe,
+      Öffnungszeiten — und das System berechnet den Personalbedarf.</p>
+      <h3>Personal-Übersicht</h3>
+      <p>Zeigt pro Rolle drei Zahlen: <b>Soll</b> (wie viele gebraucht werden),
+      <b>Ist — angenommen</b> (fest eingestellt) und <b>Ist — Warteliste</b> (in Reserve).
+      Ein Fortschrittsbalken zeigt, welche Rollen noch unterbesetzt sind.</p>` },
+
+    { id:"rechner", icon:"🧮", title:"Der Ausgabe-Rechner", sub:"Personalplanung für die Ausgabe",
+      body:`<h3>Wozu</h3>
+      <p>Der Ausgabe-Rechner beantwortet die Frage: <b>Reicht unser Team, um die Ausgabe
+      zuverlässig und wirtschaftlich zu betreiben?</b> Er rechnet Öffnungszeiten,
+      Personalbedarf, Kosten und die KCanG-Mengengrenzen zusammen.</p>
+      <h3>So kommst du hin</h3>
+      <ol>
+        <li>Im Dashboard auf <b>🗓 Ausgabe planen</b> klicken.</li>
+        <li>Die Ausgabe-Bewerber auswählen.</li>
+        <li>„Übernehmen und Rechner öffnen" — der Rechner startet mit dem Team.</li>
+      </ol>
+      <p>Der Rechner zeigt u. a. die empfohlene Mitarbeiterzahl, die Personalkosten und den
+      <b>Deckungsgrad</b> (wie viel Prozent des Bedarfs euer Team abdeckt).</p>` },
+
+    { id:"dsgvo", icon:"🔒", title:"Datenschutz & DSGVO", sub:"Was du darfst",
+      body:`<h3>Die wichtigsten Regeln</h3>
+      <ul>
+        <li>Du siehst nur Bewerbungen <b>deines</b> Vereins (auf Datenbank-Ebene erzwungen).</li>
+        <li>Abgelehnte Bewerbungen werden nach <b>6 Monaten</b> automatisch gelöscht.</li>
+        <li>Bewerber können ihre Daten jederzeit selbst über ihre Status-Seite löschen.</li>
+        <li>Jede Aktion wird im Audit-Log protokolliert.</li>
+      </ul>
+      <div class="help-callout warn"><b>Was du NICHT darfst</b>Bewerber-Daten in eigene
+      Excel-Listen kopieren, per Messenger weiterleiten oder mit Personen außerhalb von
+      Vorstand und CM teilen. Das Dashboard ist der einzige autorisierte Ort für diese Daten.</div>` },
+  ];
+
+  // ── Zustand & Rendering ───────────────────────────────────────
+  let helpView = "tutorial"; // "tutorial" | topic-id
+  let tutStep = 0;
+
+  function renderHelpNav(filter){
+    filter = (filter || "").trim().toLowerCase();
+    const nav = document.getElementById("help-nav");
+    let html = "";
+    // Tutorial-Eintrag (nur ohne aktiven Filter)
+    if (!filter) {
+      html += `<div class="help-nav-item tutorial ${helpView==='tutorial'?'active':''}"
+        onclick="helpShowTutorial()">
+        <span class="hni-icon">🎓</span><span>Schritt-für-Schritt-Tutorial</span></div>`;
+    }
+    html += `<div class="help-nav-section">Themen zum Nachschlagen</div>`;
+    let any = false;
+    HELP_TOPICS.forEach(t => {
+      const hay = (t.title + " " + t.sub + " " + t.body).toLowerCase();
+      if (filter && hay.indexOf(filter) === -1) return;
+      any = true;
+      html += `<div class="help-nav-item ${helpView===t.id?'active':''}"
+        onclick="helpShowTopic('${t.id}')">
+        <span class="hni-icon">${t.icon}</span><span>${t.title}</span></div>`;
+    });
+    if (filter && !any) html += `<div class="help-empty">Nichts gefunden für „${filter}".</div>`;
+    nav.innerHTML = html;
+  }
+
+  function renderTopic(id){
+    const t = HELP_TOPICS.find(x => x.id === id);
+    if (!t) return;
+    helpView = id;
+    document.getElementById("help-content").innerHTML =
+      `<h2>${t.icon} ${t.title}</h2><div class="help-sub">${t.sub}</div>${t.body}`;
+    renderHelpNav(document.getElementById("help-search").value);
+    document.getElementById("help-content").scrollTop = 0;
+  }
+
+  function renderTutorial(){
+    helpView = "tutorial";
+    const s = TUTORIAL_STEPS[tutStep];
+    const total = TUTORIAL_STEPS.length;
+    let dots = "";
+    for (let i=0;i<total;i++){
+      dots += `<div class="help-tut-dot ${i<tutStep?'done':(i===tutStep?'current':'')}"></div>`;
+    }
+    const c = document.getElementById("help-content");
+    c.innerHTML =
+      `<div class="help-tut-progress">${dots}</div>
+       <div class="help-tut-step-num">Schritt ${tutStep+1} von ${total}</div>
+       <h2>${s.title}</h2>
+       ${s.body}
+       <div class="help-tut-nav">
+         <button class="help-tut-btn" ${tutStep===0?'disabled':''} onclick="helpTutPrev()">← Zurück</button>
+         <button class="help-tut-btn primary" onclick="helpTutNext()">
+           ${tutStep===total-1?'Tutorial abschließen ✓':'Weiter →'}</button>
+       </div>`;
+    renderHelpNav(document.getElementById("help-search").value);
+    c.scrollTop = 0;
+  }
+
+  // ── Globale Funktionen ────────────────────────────────────────
+  window.openHelp = function(){
+    document.getElementById("help-overlay").classList.add("open");
+    document.getElementById("help-search").value = "";
+    if (helpView === "tutorial") renderTutorial(); else renderTopic(helpView);
+    renderHelpNav("");
+  };
+  window.closeHelp = function(){
+    document.getElementById("help-overlay").classList.remove("open");
+  };
+  window.helpShowTopic = function(id){ renderTopic(id); };
+  window.helpShowTutorial = function(){ tutStep = 0; renderTutorial(); };
+  window.helpTutNext = function(){
+    if (tutStep < TUTORIAL_STEPS.length-1){ tutStep++; renderTutorial(); }
+    else { closeHelp(); }
+  };
+  window.helpTutPrev = function(){
+    if (tutStep > 0){ tutStep--; renderTutorial(); }
+  };
+  window.helpSearch = function(v){
+    renderHelpNav(v);
+  };
+
+  // Escape schließt die Hilfe
+  document.addEventListener("keydown", function(e){
+    if (e.key === "Escape" && document.getElementById("help-overlay").classList.contains("open")){
+      closeHelp();
+    }
+  });
+})();
+</script>
 
 </body>
 </html>

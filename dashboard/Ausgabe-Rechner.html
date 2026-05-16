@@ -495,127 +495,12 @@
   </div>
 
   <div class="tabs">
-    <button class="tab active" data-tab="simple"><span class="icon">●</span>Einsteiger</button>
-    <button class="tab" data-tab="expert"><span class="icon">◐</span>Experte</button>
+    <button class="tab active" data-tab="expert"><span class="icon">◐</span>Experte</button>
     <button class="tab" data-tab="overview"><span class="icon">◯</span>Übersicht</button>
   </div>
 
-  <!-- ============ EINSTEIGER ============ -->
-  <div class="view active" id="view-simple">
-    <div class="grid-main">
-      <div class="col-stack">
-        <div class="card">
-          <h2>Schnell-Eingaben</h2>
-          <div class="field">
-            <label>Mitglieder im Verein<span class="val"><span id="s_lblMitglieder">500</span></span></label>
-            <input type="range" id="s_mitglieder" min="50" max="500" step="10" value="500">
-            <div class="hint">CSC-Obergrenze: 500/Verein</div>
-          </div>
-          <div class="field">
-            <label>Nutzungs-Verhalten</label>
-            <div class="preset-row">
-              <button class="preset-btn" data-preset="konservativ">Wenig</button>
-              <button class="preset-btn active" data-preset="realistisch">Normal</button>
-              <button class="preset-btn" data-preset="pareto">Pareto</button>
-              <button class="preset-btn" data-preset="vielnutzer">Viel</button>
-            </div>
-            <div class="hint" id="s_presetHint">Ø 1,7× pro aktivem Mitglied, ~680 Vorgänge/Monat</div>
-          </div>
-          <div class="field">
-            <label>Minuten pro Abgabe<span class="val"><span id="s_lblMin">5</span> min</span></label>
-            <input type="range" id="s_minProAbgabe" min="2" max="20" step="1" value="5">
-          </div>
-          <div class="field">
-            <label>Öffnungstage / Woche<span class="val"><span id="s_lblTage">6</span></span></label>
-            <input type="range" id="s_tage" min="3" max="7" step="1" value="6">
-          </div>
-          <div class="field">
-            <label>Öffnungsstunden / Tag<span class="val"><span id="s_lblStunden">5</span> h</span></label>
-            <input type="range" id="s_stunden" min="2" max="10" step="1" value="5">
-          </div>
-          <div class="toggle-row">
-            <div><label for="s_zweiPersonen">2-Personen-Prinzip<span class="desc">Vier-Augen-Pflicht</span></label></div>
-            <label class="switch"><input type="checkbox" id="s_zweiPersonen" checked><span class="slider-sw"></span></label>
-          </div>
-          <div class="toggle-row">
-            <div><label for="s_terminModus">Termin-Modus<span class="desc">Statt Walk-in: ~30 % weniger Personal</span></label></div>
-            <label class="switch"><input type="checkbox" id="s_terminModus"><span class="slider-sw"></span></label>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-stack">
-        <div class="card">
-          <h2>Was du brauchst</h2>
-          <div class="stat-grid cols-2">
-            <div class="stat big highlight">
-              <div class="lbl">Arbeit pro Monat</div>
-              <div class="num"><span id="s_persStd">311</span><span class="u">h</span></div>
-              <div class="sub" id="s_persStdSub">Öffnung + Vor-/Nachbereitung</div>
-              <div class="delta-mini" data-delta="s_persStd"></div>
-            </div>
-            <div class="stat big accent">
-              <div class="lbl">Minijobber empfohlen</div>
-              <div class="num"><span id="s_minijobber">10</span></div>
-              <div class="sub" id="s_minijobberSub">inkl. Reserve</div>
-              <div class="delta-mini" data-delta="s_minijobber"></div>
-            </div>
-            <div class="stat big">
-              <div class="lbl">Kosten / Monat</div>
-              <div class="num"><span id="s_kosten">5.620</span><span class="u">€</span></div>
-              <div class="sub" id="s_kostenSub">brutto + AG-Pauschale</div>
-              <div class="delta-mini" data-delta="s_kosten"></div>
-            </div>
-            <div class="stat big">
-              <div class="lbl">Pro Mitglied / Monat</div>
-              <div class="num"><span id="s_proMember">11,24</span><span class="u">€</span></div>
-              <div class="sub">Personalanteil</div>
-              <div class="delta-mini" data-delta="s_proMember"></div>
-            </div>
-          </div>
-          <div class="notes" id="s_note">
-            <strong>Empfehlung</strong><br>
-            <span id="s_noteText">…</span>
-          </div>
-        </div>
-
-        <div class="card">
-          <h2>KCanG-Mengenrahmen</h2>
-          <div class="stat-grid cols-3">
-            <div class="stat">
-              <div class="lbl">Max. Volumen / Monat</div>
-              <div class="num"><span id="s_kcangKg">24,4</span><span class="u">kg</span></div>
-              <div class="sub" id="s_kcangKgSub">bei 500 Mitgliedern</div>
-            </div>
-            <div class="stat">
-              <div class="lbl">Pro Tag (gesamt)</div>
-              <div class="num"><span id="s_kcangTag">12,2</span><span class="u">kg</span></div>
-              <div class="sub">Cap 25 g/Person/Tag</div>
-            </div>
-            <div class="stat">
-              <div class="lbl">Pro Vorgang Ø</div>
-              <div class="num"><span id="s_kcangVorgang">36</span><span class="u">g</span></div>
-              <div class="sub">bei aktueller Verteilung</div>
-            </div>
-          </div>
-          <div class="hint" style="margin-top:10px;">KCanG: 50 g/Monat (Ü21) bzw. 30 g/Monat (U21), 25 g/Tag.</div>
-        </div>
-
-        <div class="card">
-          <h2>Tipp: Experten-Modus für …</h2>
-          <ul style="color:var(--text-dim);font-size:13px;line-height:1.7;margin:0;padding-left:18px;">
-            <li>Team eingeben (Namen, Anstellung, stündliche Verfügbarkeit)</li>
-            <li>Mögliche Öffnungszeiten + konkrete <strong>Schichtplan-Vorschläge</strong></li>
-            <li>Beitrags-Anteil sehen, den das Personal verschlingt</li>
-            <li>Anstellungs-Vergleich, Spitzentag, U21-Anteil</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- ============ EXPERTE ============ -->
-  <div class="view" id="view-expert">
+  <div class="view active" id="view-expert">
 
     <!-- 1. TEAM ZUERST -->
     <!-- 0. IMPORT AUS BEWERBUNGEN -->
@@ -1503,10 +1388,6 @@ function renderDiff() {
 
   // Mini-Pills an einzelnen Stats
   const map = [
-    { sel: 's_persStd', key: 'persStdTotal', unit: 'h', dec: 0 },
-    { sel: 's_minijobber', key: 'minijobberFinal', unit: '', dec: 0 },
-    { sel: 's_kosten', key: 'gesamtKosten', unit: '€', dec: 0 },
-    { sel: 's_proMember', key: 'proMember', unit: '€', dec: 2 },
     { sel: 'rVorgaenge', key: 'vorgaenge', unit: '', dec: 0 },
     { sel: 'rParallel', key: 'parallel', unit: '', dec: 0 },
     { sel: 'rPersStd', key: 'persStdTotal', unit: 'h', dec: 0 },
@@ -1538,18 +1419,12 @@ document.querySelectorAll('.tab').forEach(t => {
   });
 });
 
-// ============ SYNC EINSTEIGER ↔ EXPERTE ============
-const SIMPLE_FIELDS = ['mitglieder','minProAbgabe','tage','stunden'];
-const SIMPLE_BOOLS = ['zweiPersonen','terminModus'];
-
-function syncSimpleToExpert() {
-  SIMPLE_FIELDS.forEach(f => { $(f).value = $('s_' + f).value; });
-  SIMPLE_BOOLS.forEach(f => { $(f).checked = $('s_' + f).checked; });
-}
-function syncExpertToSimple() {
-  SIMPLE_FIELDS.forEach(f => { $('s_' + f).value = $(f).value; });
-  SIMPLE_BOOLS.forEach(f => { $('s_' + f).checked = $(f).checked; });
-}
+// ============ EINSTEIGER-MODUS ENTFERNT ============
+// Der Rechner läuft nur noch im Experten-Modus + Übersicht.
+// Die Sync-Funktionen bleiben als leere Platzhalter, damit bestehende
+// Aufrufe nicht ins Leere greifen.
+function syncSimpleToExpert() {}
+function syncExpertToSimple() {}
 
 function setPreset(name) {
   const p = PRESETS[name];
@@ -2001,7 +1876,6 @@ function calc() {
   $('lblP1').textContent = p1; $('lblP2').textContent = p2;
   $('lblP3').textContent = p3; $('lblP4').textContent = p4;
   $('lblMitglieder').textContent = mitglieder;
-  $('s_lblMitglieder').textContent = mitglieder;
   $('lblU21').textContent = V('u21');
   $('pillMitglieder').textContent = mitglieder + ' Mitglieder';
 
@@ -2015,9 +1889,9 @@ function calc() {
   const terminModus = $('terminModus').checked;
   const beitrag = V('beitrag');
 
-  $('lblMin').textContent = minProAbgabe; $('s_lblMin').textContent = minProAbgabe;
-  $('lblTage').textContent = tage; $('s_lblTage').textContent = tage;
-  $('lblStunden').textContent = stunden; $('s_lblStunden').textContent = stunden;
+  $('lblMin').textContent = minProAbgabe;
+  $('lblTage').textContent = tage;
+  $('lblStunden').textContent = stunden;
   $('lblPuffer').textContent = puffer;
   $('lblKrank').textContent = V('krank');
   $('lblLohn').textContent = lohn.toFixed(2).replace('.', ',');
@@ -2036,7 +1910,6 @@ function calc() {
   $('vsBar3').style.width = p3 + '%'; $('vsBar4').style.width = p4 + '%';
   $('vsBar0').style.width = Math.max(0, 100-(p1+p2+p3+p4)) + '%';
   const matchedPreset = checkPresetMatch();
-  if (matchedPreset) $('s_presetHint').textContent = `Ø ${fmt(avgProAktive,1)}× pro aktivem Mitglied, ~${fmtInt(vorgaenge)} Vorgänge/Monat`;
 
   const oeffnungstageMonat = tage * 4.33;
   const oeffnungszeitMonat = oeffnungstageMonat * stunden;
@@ -2147,30 +2020,7 @@ function calc() {
     bar.innerHTML = `<div class="bb-fill-deficit" style="width:100%;">Personal ${fmt(persAnteilPct,0)} % — Defizit!</div>`;
   }
 
-  // Einsteiger
-  $('s_persStd').textContent = fmtInt(persStdTotal);
-  $('s_persStdSub').textContent = `${tage}d × ${stunden}h + Puffer${terminModus ? ' · Termin' : ''}`;
-  $('s_minijobber').textContent = minijobberFinal;
-  $('s_minijobberSub').textContent = `${minijobberBasis} Basis + ${minijobberFinal - minijobberBasis} Reserve`;
-  $('s_kosten').textContent = fmtInt(gesamtKosten);
-  $('s_kostenSub').textContent = `bei ${fmt(lohn,2).replace('.', ',')} €/h`;
-  $('s_proMember').textContent = fmt(proMember, 2).replace('.', ',');
-  $('s_kcangKg').textContent = fmt(kcangKgMax, 1).replace('.', ',');
-  $('s_kcangKgSub').textContent = `bei ${mitglieder} Mitgliedern`;
-  $('s_kcangTag').textContent = fmt(kcangTagLimit, 1).replace('.', ',');
-  $('s_kcangVorgang').textContent = fmtInt(kcangProVorgang);
-
-  const sNote = $('s_note');
-  if (minijobberFinal <= 5) {
-    sNote.className = 'notes';
-    $('s_noteText').textContent = `Überschaubarer Bedarf: ${minijobberFinal} Minijobber decken den Betrieb mit Reserve.`;
-  } else if (minijobberFinal <= 12) {
-    sNote.className = 'notes';
-    $('s_noteText').textContent = `${minijobberFinal} Minijobber sind machbar. Alternativ 2-3 Midijobber für mehr Stabilität.`;
-  } else {
-    sNote.className = 'notes warn';
-    $('s_noteText').textContent = `${minijobberFinal} Minijobber sind viel zu koordinieren. Überleg 2-3 Midijobber plus einige Minijobber.`;
-  }
+  // (Einsteiger-Ansicht entfernt — Rechner läuft nur im Experten-Modus)
 
   renderCompare(persStdTotal, lohn);
 
@@ -2448,18 +2298,10 @@ function renderOverview() {
 
 // ============ EVENT-LISTENERS ============
 document.querySelectorAll('input[type="range"]').forEach(el => {
-  if (el.id.startsWith('s_')) {
-    el.addEventListener('input', () => { syncSimpleToExpert(); calc(); });
-  } else {
-    el.addEventListener('input', () => { calc(); });
-  }
+  el.addEventListener('input', () => { calc(); });
 });
 document.querySelectorAll('input[type="checkbox"]').forEach(el => {
-  if (el.id.startsWith('s_')) {
-    el.addEventListener('change', () => { syncSimpleToExpert(); calc(); });
-  } else {
-    el.addEventListener('change', () => { calc(); });
-  }
+  el.addEventListener('change', () => { calc(); });
 });
 
 function openModal(id) { $(id).classList.add('open'); }

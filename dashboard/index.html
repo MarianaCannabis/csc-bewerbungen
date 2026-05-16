@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="color-scheme" content="dark">
   <title>Mariana Cannabis · Bewerbungs-Dashboard v2</title>
-  <!-- DASHBOARD_BUILD: 2026-05-16T0320 (Etappe 4: Mail-Platzhalter positionen/vertrag, Warteliste-Mail mit Positionen) -->
-  <script>window.__DASHBOARD_BUILD = '2026-05-16T0320';</script>
+  <!-- DASHBOARD_BUILD: 2026-05-16T0410 (Etappe 5a: Vorstand-Onboarding + Personalbedarfs-Berechnung) -->
+  <script>window.__DASHBOARD_BUILD = '2026-05-16T0410';</script>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -834,6 +834,54 @@
     }
     .app-modal-btn-danger:hover:not(:disabled) { filter: brightness(1.1); }
 
+    /* ───────── ONBOARDING-MODAL ───────── */
+    .onboarding-modal { max-width: 540px; }
+    .onb-intro {
+      font-size: 13px; color: var(--tx-dim); line-height: 1.5;
+      margin-bottom: 18px;
+    }
+    .onb-fields {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+      margin-bottom: 16px;
+    }
+    .onb-field { display: flex; flex-direction: column; gap: 5px; }
+    .onb-field:first-child { grid-column: 1 / -1; }
+    .onb-label {
+      font-size: 11px; color: var(--tx-mute); text-transform: uppercase;
+      letter-spacing: 0.04em; font-weight: 600;
+    }
+    .onb-field input, .onb-field select {
+      padding: 8px 10px; font-size: 13px;
+      background: var(--bg-elev); border: 1px solid var(--border-strong);
+      border-radius: 6px; color: var(--tx);
+    }
+    .onb-vorschau {
+      background: var(--bg); border: 1px solid var(--green-dim);
+      border-radius: 8px; padding: 14px; margin-bottom: 18px;
+    }
+    .onb-vorschau-title {
+      font-size: 12px; font-weight: 600; color: var(--tx); margin-bottom: 12px;
+    }
+    .onb-vorschau-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+    }
+    .onb-stat {
+      display: flex; flex-direction: column; gap: 3px;
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 6px; padding: 10px;
+    }
+    .onb-stat-hi { border-color: var(--green); background: var(--green-glow); }
+    .onb-stat-num { font-size: 19px; font-weight: 700; color: var(--tx); line-height: 1; }
+    .onb-stat-hi .onb-stat-num { color: var(--green); }
+    .onb-stat-lbl { font-size: 10px; color: var(--tx-dim); line-height: 1.3; }
+    .onb-vorschau-hint {
+      font-size: 11px; color: var(--tx-mute); margin-top: 10px; line-height: 1.4;
+    }
+    @media (max-width: 560px) {
+      .onb-fields { grid-template-columns: 1fr; }
+      .onb-vorschau-grid { grid-template-columns: 1fr; }
+    }
+
 
     /* Duplikat-Badge in der Liste */
     .dup-badge {
@@ -1367,6 +1415,7 @@
       <span class="user-email" id="user-email"></span>
       <button class="btn-ghost stats-btn-header" onclick="openStatsModal()" title="Statistik-Übersicht" style="display:none" aria-label="Statistik-Übersicht öffnen"><span aria-hidden="true">📊</span> Statistik</button>
       <button class="btn-ghost errorlog-btn-header" onclick="openErrorLogModal()" title="Error-Log (technische Fehler)" style="display:none" aria-label="Error-Log öffnen"><span aria-hidden="true">⚠️</span> Errors</button>
+      <button class="btn-ghost verein-btn-header" onclick="openVereinsStammdaten()" title="Vereins-Stammdaten & Personalbedarf" style="display:none" aria-label="Verein einrichten"><span aria-hidden="true">⚙️</span> Verein</button>
       <button class="btn-ghost" id="btn-refresh" onclick="manualRefresh()" title="Daten neu laden (passiert auch automatisch alle 25 Sek)" aria-label="Daten neu laden"><span class="refresh-icon" aria-hidden="true">🔄</span></button>
       <button class="btn-ghost" onclick="exportCsv()" title="Aktuell sichtbare Bewerbungen als CSV/Excel exportieren" aria-label="Aktuell sichtbare Bewerbungen als CSV exportieren"><span aria-hidden="true">⬇</span> Export</button>
       <button class="btn-ghost" onclick="logout()" aria-label="Abmelden">Abmelden</button>
@@ -1788,12 +1837,17 @@ async function loadDashboard() {
     document.querySelector('.stats-btn-header').style.display = '';
     document.querySelector('.errorlog-btn-header').style.display = '';
   }
-  else { pill.textContent = 'Vorstand'; pill.className = 'role-pill vorstand'; }
+  else { 
+    pill.textContent = 'Vorstand'; pill.className = 'role-pill vorstand';
+    const vBtn = document.querySelector('.verein-btn-header');
+    if (vBtn) vBtn.style.display = '';
+  }
   
   await loadVereine();
   await loadBewerbungen();
   renderStats();
   renderPersonalPanel();
+  checkOnboarding();
   
   // Background-Polling alle 25 Sek starten
   startBackgroundPolling();
@@ -1967,7 +2021,7 @@ async function manualRefresh() {
 }
 
 async function loadVereine() {
-  const { data, error } = await sb.from('csc_vereine').select('id, name, ort, plz, bundesland, personal_soll').eq('aktiv', true);
+  const { data, error } = await sb.from('csc_vereine').select('id, name, ort, plz, bundesland, personal_soll, stammdaten, onboarding_erledigt').eq('aktiv', true);
   if (error) { console.error('Vereine:', error); return; }
   vereine = {}; data.forEach(v => { vereine[v.id] = v; });
   if (userContext.ist_admin) {
@@ -3480,6 +3534,208 @@ async function setPersonalSoll(vereinId, rolle, anzahl) {
     console.error('[setPersonalSoll]', e);
     toast('Fehler: ' + e.message, true);
   }
+}
+
+// ============================================================================
+// VORSTAND-ONBOARDING — Vereins-Stammdaten + Personalbedarfs-Berechnung
+// ----------------------------------------------------------------------------
+// Bei erster Anmeldung eines Vorstands werden Betriebsdaten abgefragt.
+// Daraus wird der Personalbedarf der Ausgabe berechnet (Formel aus dem
+// Ausgabe-Rechner portiert) und das Personal-Soll vorausgefüllt.
+// ============================================================================
+
+// Bedarfsformel — kompakt aus dem Ausgabe-Rechner (calc()) portiert.
+// Feste Annahmen (Rechner-Defaults): Aktivitätsmix 40/25/10/5 %,
+// 5 Min pro Abgabe, 20 % Krankheitspuffer, Mindestlohn 2026.
+function berechnePersonalbedarf(sd) {
+  const mitglieder    = Number(sd.mitglieder)       || 500;
+  const tage          = Number(sd.oeffnungstage)    || 4;
+  const stunden       = Number(sd.oeffnungsstunden) || 5;
+  const vorbereitungH = sd.vorbereitung != null ? Number(sd.vorbereitung) : 1;
+  const zweiPunkte    = (Number(sd.ausgabe_punkte) || 1) >= 2;
+
+  // Feste Annahmen
+  const P = { p1: 40, p2: 25, p3: 10, p4: 5 };  // Aktivitäts-Anteile %
+  const MIN_PRO_ABGABE = 5;
+  const KRANK = 0.20;
+  const LOHN = 13.90;       // Mindestlohn 2026
+  const MJ_GRENZE = 603;    // Minijob-Grenze 2026
+
+  const vorgaenge = mitglieder * (P.p1/100*1 + P.p2/100*2 + P.p3/100*3 + P.p4/100*4);
+  const oeffnungstageMonat = tage * 4.33;
+  const oeffnungszeitMonat = oeffnungstageMonat * stunden;
+  const vorgaengeProStunde = oeffnungszeitMonat > 0 ? vorgaenge / oeffnungszeitMonat : 0;
+  const kapazitaetProPersonStunde = 60 / MIN_PRO_ABGABE;
+  const bedienPersonen = Math.max(1, Math.ceil(vorgaengeProStunde / kapazitaetProPersonStunde));
+  const parallel = zweiPunkte ? Math.max(2, bedienPersonen) : bedienPersonen;
+
+  const persStdOeffnung = parallel * oeffnungszeitMonat;
+  const persStdPuffer   = parallel * oeffnungstageMonat * vorbereitungH;
+  const persStdTotal    = persStdOeffnung + persStdPuffer;
+
+  const maxHMinijob = MJ_GRENZE / LOHN;   // ~43 h/Monat
+  const minijobberBasis = Math.max(parallel, Math.ceil(persStdTotal / maxHMinijob));
+  const ausgabeMitarbeiter = Math.ceil(minijobberBasis * (1 + KRANK));
+
+  return {
+    persStdMonat:       Math.round(persStdTotal),
+    wochenstunden:      Math.round(persStdTotal / 4.33),
+    ausgabeMitarbeiter: ausgabeMitarbeiter,
+    vorgaengeMonat:     Math.round(vorgaenge),
+    parallel:           parallel
+  };
+}
+
+// Prüft nach dem Login ob das Onboarding-Modal gezeigt werden muss
+function checkOnboarding() {
+  if (!userContext) return;
+  // Nur Vorstand (nicht Admin, nicht Nur-Lese-Zugang)
+  if (userContext.rolle !== 'zweigverein_vorstand') return;
+  const verein = vereine[userContext.verein_id];
+  if (!verein) return;
+  if (verein.onboarding_erledigt === true) return;
+  openOnboardingModal();
+}
+
+// Stammdaten-Defaults
+const ONBOARDING_DEFAULTS = {
+  mitglieder: 500, oeffnungstage: 4, oeffnungsstunden: 5,
+  vorbereitung: 1, ausgabe_punkte: 1
+};
+
+function openOnboardingModal() {
+  const verein = vereine[userContext.verein_id];
+  const sd = (verein?.stammdaten && typeof verein.stammdaten === 'object' && Object.keys(verein.stammdaten).length)
+    ? verein.stammdaten : ONBOARDING_DEFAULTS;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'app-modal-overlay';
+  overlay.id = 'onboarding-overlay';
+  overlay.innerHTML = `
+    <div class="app-modal onboarding-modal" role="dialog" aria-modal="true" aria-labelledby="onb-title">
+      <div class="app-modal-title" id="onb-title">👋 Willkommen — kurze Einrichtung</div>
+      <div class="onb-intro">
+        Damit das Dashboard deinen Personalbedarf vorausfüllen kann, brauchen wir ein paar
+        Eckdaten zu deinem Verein. Du kannst alles später jederzeit anpassen.
+      </div>
+      <div class="onb-fields">
+        <label class="onb-field">
+          <span class="onb-label">Mitgliederzahl</span>
+          <input type="number" id="onb-mitglieder" min="1" max="2000" value="${sd.mitglieder ?? 500}" oninput="updateOnboardingVorschau()">
+        </label>
+        <label class="onb-field">
+          <span class="onb-label">Ausgabe-Tage pro Woche</span>
+          <input type="number" id="onb-tage" min="1" max="7" value="${sd.oeffnungstage ?? 4}" oninput="updateOnboardingVorschau()">
+        </label>
+        <label class="onb-field">
+          <span class="onb-label">Öffnungsstunden pro Tag</span>
+          <input type="number" id="onb-stunden" min="1" max="14" step="0.5" value="${sd.oeffnungsstunden ?? 5}" oninput="updateOnboardingVorschau()">
+        </label>
+        <label class="onb-field">
+          <span class="onb-label">Vor-/Nachbereitung pro Tag (Std.)</span>
+          <input type="number" id="onb-vorbereitung" min="0" max="6" step="0.5" value="${sd.vorbereitung ?? 1}" oninput="updateOnboardingVorschau()">
+        </label>
+        <label class="onb-field">
+          <span class="onb-label">Ausgabe-Punkte parallel</span>
+          <select id="onb-punkte" onchange="updateOnboardingVorschau()">
+            <option value="1" ${(sd.ausgabe_punkte ?? 1) == 1 ? 'selected' : ''}>1 Theke</option>
+            <option value="2" ${(sd.ausgabe_punkte ?? 1) == 2 ? 'selected' : ''}>2 Theken (parallel)</option>
+          </select>
+        </label>
+      </div>
+      <div class="onb-vorschau" id="onb-vorschau"></div>
+      <div class="app-modal-actions">
+        <button class="app-modal-btn app-modal-btn-cancel" type="button" onclick="skipOnboarding()">Später</button>
+        <button class="app-modal-btn app-modal-btn-ok" type="button" onclick="saveOnboarding()">Speichern &amp; übernehmen</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  updateOnboardingVorschau();
+}
+
+function readOnboardingFelder() {
+  return {
+    mitglieder:       Math.max(1, parseInt(document.getElementById('onb-mitglieder').value, 10) || 500),
+    oeffnungstage:    Math.max(1, parseInt(document.getElementById('onb-tage').value, 10) || 4),
+    oeffnungsstunden: Math.max(0.5, parseFloat(document.getElementById('onb-stunden').value) || 5),
+    vorbereitung:     Math.max(0, parseFloat(document.getElementById('onb-vorbereitung').value) || 0),
+    ausgabe_punkte:   parseInt(document.getElementById('onb-punkte').value, 10) || 1
+  };
+}
+
+function updateOnboardingVorschau() {
+  const el = document.getElementById('onb-vorschau');
+  if (!el) return;
+  const sd = readOnboardingFelder();
+  const b = berechnePersonalbedarf(sd);
+  el.innerHTML = `
+    <div class="onb-vorschau-title">📊 Daraus berechneter Bedarf</div>
+    <div class="onb-vorschau-grid">
+      <div class="onb-stat"><span class="onb-stat-num">${b.vorgaengeMonat}</span><span class="onb-stat-lbl">Ausgabe-Vorgänge / Monat</span></div>
+      <div class="onb-stat"><span class="onb-stat-num">${b.persStdMonat} h</span><span class="onb-stat-lbl">Personalstunden / Monat</span></div>
+      <div class="onb-stat onb-stat-hi"><span class="onb-stat-num">${b.ausgabeMitarbeiter}</span><span class="onb-stat-lbl">Ausgabe-Mitarbeiter benötigt</span></div>
+    </div>
+    <div class="onb-vorschau-hint">Der Wert „Ausgabe-Mitarbeiter" wird ins Personal-Soll übernommen — dort jederzeit anpassbar.</div>
+  `;
+}
+
+async function saveOnboarding() {
+  const sd = readOnboardingFelder();
+  const bedarf = berechnePersonalbedarf(sd);
+  const vereinId = userContext.verein_id;
+  const okBtn = document.querySelector('#onboarding-overlay .app-modal-btn-ok');
+  if (okBtn) { okBtn.disabled = true; okBtn.textContent = 'Speichere…'; }
+
+  try {
+    // 1) Stammdaten speichern (setzt zugleich onboarding_erledigt = true)
+    const { data: sdRes, error: sdErr } = await sb.rpc('csc_set_vereins_stammdaten', {
+      p_verein_id: vereinId, p_stammdaten: sd
+    });
+    if (sdErr) throw sdErr;
+    if (!sdRes || sdRes.ok !== true) throw new Error(sdRes?.error || 'Stammdaten-Speichern fehlgeschlagen');
+
+    // 2) Personal-Soll: Ausgabe-Wert aus dem Bedarf übernehmen, Rest behalten
+    const verein = vereine[vereinId];
+    const soll = { ...((verein?.personal_soll && typeof verein.personal_soll === 'object') ? verein.personal_soll : {}) };
+    soll.ausgabe = bedarf.ausgabeMitarbeiter;
+    const { data: psRes, error: psErr } = await sb.rpc('csc_set_personal_soll', {
+      p_verein_id: vereinId, p_soll: soll
+    });
+    if (psErr) throw psErr;
+    if (!psRes || psRes.ok !== true) throw new Error(psRes?.error || 'Personal-Soll-Speichern fehlgeschlagen');
+
+    // Lokalen Cache aktualisieren
+    if (verein) {
+      verein.stammdaten = sd;
+      verein.onboarding_erledigt = true;
+      verein.personal_soll = soll;
+    }
+    document.getElementById('onboarding-overlay')?.remove();
+    renderPersonalPanel();
+    toast(`Einrichtung gespeichert — Ausgabe-Soll auf ${bedarf.ausgabeMitarbeiter} gesetzt`);
+  } catch (e) {
+    console.error('[saveOnboarding]', e);
+    toast('Fehler: ' + e.message, true);
+    if (okBtn) { okBtn.disabled = false; okBtn.textContent = 'Speichern & übernehmen'; }
+  }
+}
+
+function skipOnboarding() {
+  // Modal schließen ohne zu speichern — onboarding_erledigt bleibt false,
+  // beim nächsten Login erscheint es erneut.
+  document.getElementById('onboarding-overlay')?.remove();
+  toast('Einrichtung übersprungen — du findest sie später unter „Verein einrichten"');
+}
+
+// Manueller Aufruf (z.B. später per Button) — zeigt das Modal auch
+// wenn das Onboarding schon erledigt wurde.
+function openVereinsStammdaten() {
+  if (!userContext || userContext.rolle !== 'zweigverein_vorstand') {
+    toast('Nur der Vorstand kann die Vereins-Stammdaten bearbeiten', true);
+    return;
+  }
+  openOnboardingModal();
 }
 
 // Notiz speichern (onblur)

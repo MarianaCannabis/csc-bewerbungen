@@ -363,7 +363,17 @@
     letter-spacing: 0.05em; margin-bottom: 2px; }
   .assumption .a-val { color: var(--text); font-weight: 500; }
   .team-list-compact { background: var(--bg-2); border: 1px solid var(--line); border-radius: 6px; padding: 12px; }
-  .team-list-compact-row { display: grid; grid-template-columns: 1fr 80px 80px 80px 100px;
+  .ov-sec-hint { color: var(--text-dim); font-size: 12px; margin: -4px 0 12px; }
+  .ov-weekbars { display: flex; flex-direction: column; gap: 7px; }
+  .ov-weekbar { display: grid; grid-template-columns: 40px 1fr 56px; align-items: center; gap: 10px; }
+  .ov-wb-day { font-size: 12px; font-weight: 600; color: var(--text-dim); }
+  .ov-wb-track { height: 16px; background: var(--bg-2); border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+  .ov-wb-fill { height: 100%; border-radius: 3px 0 0 3px; transition: width .3s; }
+  .ov-wb-fill.ok { background: var(--green); }
+  .ov-wb-fill.duenn { background: #d9a441; }
+  .ov-wb-fill.leer { background: #c0504d; }
+  .ov-wb-val { font-size: 12px; text-align: right; font-variant-numeric: tabular-nums; color: var(--text-dim); }
+  .team-list-compact-row { display: grid; grid-template-columns: 1fr 80px 70px 70px 70px 100px;
     gap: 10px; padding: 6px 0; font-size: 13px; align-items: center; border-bottom: 1px solid var(--line); }
   .team-list-compact-row:last-child { border-bottom: none; }
   .team-list-compact-header { font-size: 10px; color: var(--text-mute); text-transform: uppercase;
@@ -461,7 +471,8 @@
       </h1>
     </div>
     <div class="header-actions">
-      <button class="info-btn accent-btn" onclick="openModal('modal')">ℹ Anstellung & KCanG</button>
+      <button class="info-btn" onclick="zurueckZumDashboard()" title="Schließt den Rechner und kehrt zum Bewerbungs-Dashboard zurück">← Zurück zum Dashboard</button>
+      <button class="info-btn accent-btn" onclick="openModal('modal')" title="Erklärt die Beschäftigungsformen (Minijob, Midijob, Teilzeit, Vollzeit) und die KCanG-Vorgaben">ℹ Anstellung &amp; KCanG</button>
     </div>
   </header>
 
@@ -1013,7 +1024,8 @@
           <div class="team-list-compact-row team-list-compact-header">
             <div>Name</div>
             <div class="val">Typ</div>
-            <div class="val">h/M</div>
+            <div class="val" title="Vertraglich vereinbarte Soll-Stunden pro Monat">h/M Soll</div>
+            <div class="val" title="Vom Bewerber angegebene Verfügbarkeit pro Woche">h/W frei</div>
             <div class="val">€/h</div>
             <div class="val">Brutto/M</div>
           </div>
@@ -1034,6 +1046,12 @@
             <div class="num"><span id="ov_tmKosten">2.891</span><span class="u">€</span></div>
           </div>
         </div>
+      </div>
+
+      <div class="overview-section">
+        <h3>Verfügbarkeit nach Wochentag</h3>
+        <p class="ov-sec-hint">Summierte Team-Verfügbarkeit je Wochentag — zeigt, an welchen Tagen genug Leute einsatzbereit sind.</p>
+        <div class="ov-weekbars" id="ov_weekbars"></div>
       </div>
 
       <div class="overview-section">
@@ -1418,6 +1436,19 @@ document.querySelectorAll('.tab').forEach(t => {
     if (t.dataset.tab === 'overview') renderOverview();
   });
 });
+
+// ============ ZURÜCK ZUM DASHBOARD ============
+function zurueckZumDashboard() {
+  // Wurde der Rechner vom Dashboard via window.open geöffnet → Tab schließen,
+  // sonst zum Dashboard navigieren.
+  if (window.opener && !window.opener.closed) {
+    window.close();
+    // Falls der Browser das Schließen verweigert: trotzdem navigieren
+    setTimeout(() => { window.location.href = 'dashboard.html'; }, 150);
+  } else {
+    window.location.href = 'dashboard.html';
+  }
+}
 
 // ============ EINSTEIGER-MODUS ENTFERNT ============
 // Der Rechner läuft nur noch im Experten-Modus + Übersicht.
@@ -2262,10 +2293,12 @@ function renderOverview() {
   team.forEach(m => {
     const row = document.createElement('div');
     row.className = 'team-list-compact-row';
+    const verfW = memberAvailHoursWeek(m);
     row.innerHTML = `
       <div class="name">${m.name}</div>
       <div class="val"><span class="typ-pill">${TYPE_LABELS[m.type]}</span></div>
       <div class="val">${m.hours} h</div>
+      <div class="val">${verfW} h</div>
       <div class="val">${fmt(m.wage,2).replace('.',',')} €</div>
       <div class="val">${fmtInt(memberBrutto(m))} €</div>
     `;
@@ -2275,6 +2308,24 @@ function renderOverview() {
   $('ov_tmStdSub').textContent = `vs. ${fmtInt(d.persStdTotal)} h Soll`;
   $('ov_tmDeckung').textContent = fmt(d.deckungsgrad, 0);
   $('ov_tmKosten').textContent = fmtInt(d.teamKosten);
+
+  // Verfügbarkeit nach Wochentag (Summe Personen-Stunden je Tag)
+  const wb = $('ov_weekbars');
+  if (wb) {
+    const proTag = TAGE.map(t => team.reduce((s, m) => s + ((m.avail[t] || []).length), 0));
+    const maxTag = Math.max(1, ...proTag);
+    wb.innerHTML = TAGE.map((t, i) => {
+      const h = proTag[i];
+      const pct = Math.round(h / maxTag * 100);
+      const klasse = h === 0 ? 'leer' : (h < maxTag * 0.4 ? 'duenn' : 'ok');
+      return `
+        <div class="ov-weekbar" title="${TAGE_LABELS[i]}: ${h} Personen-Stunden Team-Verfügbarkeit">
+          <div class="ov-wb-day">${TAGE_LABELS[i]}</div>
+          <div class="ov-wb-track"><div class="ov-wb-fill ${klasse}" style="width:${Math.max(pct, h > 0 ? 6 : 0)}%"></div></div>
+          <div class="ov-wb-val">${h} h</div>
+        </div>`;
+    }).join('');
+  }
   const ovCovStat = $('ov_coverageStat');
   if (d.deckungsgrad < 80) ovCovStat.className = 'stat danger';
   else if (d.deckungsgrad < 95) ovCovStat.className = 'stat warn';

@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mariana Cannabis · Bewerbungs-Dashboard v2</title>
-  <!-- DASHBOARD_BUILD: 2026-05-15T2355 (appConfirm/appPrompt: Custom Modals ersetzen native confirm/prompt — Firefox-Block-Bug behoben) -->
-  <script>window.__DASHBOARD_BUILD = '2026-05-15T2355';</script>
+  <!-- DASHBOARD_BUILD: 2026-05-16T0030 (Kompakter Kopfbereich: Stat-Chips, Top-Vereine einklappbar, Filter zusammengefasst) -->
+  <script>window.__DASHBOARD_BUILD = '2026-05-16T0030';</script>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -119,7 +119,8 @@
     .login-msg.error { background: var(--red-bg); border: 1px solid var(--red); color: #f0bcbc; }
     
     /* App */
-    #app { display: none; min-height: 100vh; }
+    #app { display: none; min-height: 100vh; height: 100vh; flex-direction: column; }
+    #app.app-visible { display: flex; }
     header { background: var(--bg-card); border-bottom: 1px solid var(--border); padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; backdrop-filter: blur(20px); }
     .header-left { display: flex; align-items: center; gap: 16px; }
     .logo-text { font-size: 16px; font-weight: 700; letter-spacing: -0.01em; }
@@ -133,14 +134,14 @@
     .btn-ghost:hover { background: var(--bg-elev); color: var(--tx); }
     
     /* Statistik */
-    .stats-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; padding: 18px 24px; background: var(--bg); border-bottom: 1px solid var(--border); }
-    .stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; cursor: pointer; transition: all 0.15s; }
-    .stat-card:hover { border-color: var(--border-strong); transform: translateY(-1px); }
+    .stats-bar { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 24px; background: var(--bg); border-bottom: 1px solid var(--border); align-items: stretch; }
+    .stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 7px 13px; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 9px; }
+    .stat-card:hover { border-color: var(--border-strong); }
     .stat-card.active { border-color: var(--green); background: #1c2b22; }
     .stat-card.stat-inbox.has-pending { border-color: #d4a843; }
     .stat-card.stat-inbox.has-pending .stat-value { color: #f5c451; }
     .stat-card.stat-inbox.active { background: #2a2418; border-color: #f5c451; }
-    .stat-icon-warn { font-size: 0.85rem; margin-right: 0.3em; }
+    .stat-icon-warn { font-size: 0.85rem; }
     
     /* Tag-Wolke */
     .tag-cloud-bar {
@@ -185,35 +186,39 @@
       border-radius: 8px;
     }
     .tag-cloud-pill.active .tag-cloud-count { background: var(--green); color: #0a1410; }
-    .stat-label { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--tx-mute); margin-bottom: 6px; font-weight: 600; }
-    .stat-value { font-size: 26px; font-weight: 700; }
-    .stat-sub { font-size: 12px; color: var(--tx-dim); margin-top: 2px; }
-    .stat-icon { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+    .stat-label { font-size: 11px; letter-spacing: 0.03em; text-transform: uppercase; color: var(--tx-mute); font-weight: 600; white-space: nowrap; }
+    .stat-value { font-size: 19px; font-weight: 700; line-height: 1; }
+    .stat-sub { display: none; }
+    .stat-icon { width: 7px; height: 7px; border-radius: 50%; display: inline-block; margin-right: 6px; }
     .stat-icon.eingegangen { background: var(--blue); }
     .stat-icon.in_pruefung { background: var(--orange); }
     .stat-icon.eingeladen { background: var(--green); }
     .stat-icon.warteliste { background: var(--gold); }
     .stat-icon.angenommen { background: #5fbe7d; }
     .stat-icon.abgelehnt { background: var(--red); }
-    .top-vereine-box { grid-column: 1 / -1; background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px; }
-    .top-vereine-box h3 { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--tx-mute); margin-bottom: 12px; font-weight: 600; }
-    .top-vereine-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; }
-    .top-verein-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--bg-elev); border-radius: 6px; font-size: 14px; cursor: pointer; transition: background 0.1s; }
+    .top-vereine-box { width: 100%; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 0; }
+    .top-vereine-summary { font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--tx-mute); font-weight: 600; padding: 8px 14px; cursor: pointer; list-style: none; display: flex; align-items: center; gap: 8px; }
+    .top-vereine-summary::-webkit-details-marker { display: none; }
+    .top-vereine-box[open] .tv-toggle { transform: rotate(180deg); }
+    .tv-toggle { display: inline-block; transition: transform 0.15s; color: var(--tx-dim); }
+    .top-vereine-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; padding: 0 14px 12px 14px; }
+    .top-verein-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: var(--bg-elev); border-radius: 6px; font-size: 13px; cursor: pointer; transition: background 0.1s; }
     .top-verein-item:hover { background: var(--bg-elev2); }
     .top-verein-name { font-weight: 500; }
     .top-verein-count { background: var(--green-glow); color: var(--green); padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; }
     
     /* Main Layout */
-    .main { display: grid; grid-template-columns: 420px 1fr; height: calc(100vh - 56px - 140px); }
+    .main { display: grid; grid-template-columns: 420px 1fr; flex: 1; min-height: 0; }
     @media (max-width: 900px) { .main { grid-template-columns: 1fr; } }
     
     /* Liste */
     .list-panel { border-right: 1px solid var(--border); background: var(--bg-card); overflow: hidden; display: flex; flex-direction: column; }
-    .list-header { padding: 14px 16px; border-bottom: 1px solid var(--border); background: var(--bg-card); }
-    .list-title { font-size: 16px; font-weight: 600; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+    .list-header { padding: 10px 14px; border-bottom: 1px solid var(--border); background: var(--bg-card); }
+    .list-title { font-size: 15px; font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
     .list-title .count { font-size: 11px; background: var(--bg-elev); padding: 3px 8px; border-radius: 999px; color: var(--tx-dim); font-weight: 500; }
-    .filter-row { display: flex; gap: 6px; margin-bottom: 6px; }
-    .filter-row select, .filter-row input { padding: 9px 11px; font-size: 13px; flex: 1; }
+    .filter-row { display: flex; gap: 6px; margin-bottom: 6px; flex-wrap: wrap; }
+    .filter-row select, .filter-row input { padding: 7px 9px; font-size: 12px; flex: 1; min-width: 0; }
+    .filter-row.filter-row-compact > * { flex: 1 1 calc(50% - 3px); }
     .list-items { flex: 1; overflow-y: auto; }
     .list-item { padding: 12px 16px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.1s; display: flex; align-items: flex-start; gap: 0; }
     .list-item:hover { background: var(--bg-elev); }
@@ -1245,7 +1250,7 @@
             <button class="bulk-btn bulk-btn-clear" onclick="deselectAll()" title="Auswahl aufheben">✕ Auswahl aufheben</button>
           </div>
         </div>
-        <div class="filter-row">
+        <div class="filter-row filter-row-compact">
           <label for="filter-status" class="sr-only">Nach Status filtern</label>
           <select id="filter-status" onchange="renderList()" aria-label="Nach Status filtern">
             <option value="">Alle Status</option>
@@ -1260,8 +1265,6 @@
           <select id="filter-verein" onchange="renderList()" style="display:none" aria-label="Nach Verein filtern">
             <option value="">Alle Vereine</option>
           </select>
-        </div>
-        <div class="filter-row">
           <label for="filter-rolle" class="sr-only">Nach Rolle filtern</label>
           <select id="filter-rolle" onchange="renderList()" aria-label="Nach Rolle filtern">
             <option value="">Alle Rollen</option>
@@ -1279,8 +1282,6 @@
           <select id="filter-bundesland" onchange="renderList()" style="display:none" aria-label="Nach Bundesland filtern">
             <option value="">Alle Bundesländer</option>
           </select>
-        </div>
-        <div class="filter-row">
           <label for="filter-tag" class="sr-only">Nach Tag filtern</label>
           <select id="filter-tag" onchange="renderList()" aria-label="Nach Tag filtern">
             <option value="">Alle Tags</option>
@@ -1296,15 +1297,13 @@
         </div>
         <div class="filter-row">
           <label for="filter-search" class="sr-only">Bewerbungen durchsuchen</label>
-          <input type="text" id="filter-search" placeholder="Name, E-Mail oder Stadt..." oninput="renderList()" aria-label="Bewerbungen nach Name, E-Mail oder Stadt durchsuchen">
-        </div>
-        <div class="filter-row">
+          <input type="text" id="filter-search" placeholder="Name, E-Mail oder Stadt..." oninput="renderList()" aria-label="Bewerbungen nach Name, E-Mail oder Stadt durchsuchen" style="flex:2">
           <label for="sort-by" class="sr-only">Sortieren nach</label>
-          <select id="sort-by" onchange="renderList()" aria-label="Liste sortieren nach">
+          <select id="sort-by" onchange="renderList()" aria-label="Liste sortieren nach" style="flex:1">
             <optgroup label="Datum">
               <option value="date_desc">⏱ Neueste zuerst</option>
               <option value="date_asc">⏱ Älteste zuerst</option>
-              <option value="wartet_lange">⏰ Wartet am längsten (überfällige zuerst)</option>
+              <option value="wartet_lange">⏰ Wartet am längsten</option>
             </optgroup>
             <optgroup label="Score">
               <option value="score_desc">⭐ Score: hoch → niedrig</option>
@@ -1312,8 +1311,8 @@
             </optgroup>
             <optgroup label="Status &amp; Stunden">
               <option value="status">📋 Nach Status</option>
-              <option value="stunden_desc">⏰ Wunsch-Stunden: hoch → niedrig</option>
-              <option value="stunden_asc">⏰ Wunsch-Stunden: niedrig → hoch</option>
+              <option value="stunden_desc">⏰ Stunden: hoch → niedrig</option>
+              <option value="stunden_asc">⏰ Stunden: niedrig → hoch</option>
             </optgroup>
             <optgroup label="Verein &amp; Name">
               <option value="verein">📍 Nach Verein A-Z</option>
@@ -1545,7 +1544,7 @@ async function init() {
 }
 
 function showLogin() { document.getElementById('login').style.display = 'flex'; document.getElementById('app').style.display = 'none'; }
-function showApp() { document.getElementById('login').style.display = 'none'; document.getElementById('app').style.display = 'block'; }
+function showApp() { document.getElementById('login').style.display = 'none'; document.getElementById('app').style.display = 'flex'; }
 
 async function sendMagicLink() {
   const email = document.getElementById('login-email').value.trim().toLowerCase();
@@ -1896,10 +1895,9 @@ function renderStats() {
   const brauchtAntwortCount = bewerbungen.filter(brauchtAntwort).length;
   
   let html = cards.map(c => `
-    <div class="stat-card ${activeStatusFilter === c.key ? 'active' : ''}" onclick="setStatusFilter('${c.key}')">
+    <div class="stat-card ${activeStatusFilter === c.key ? 'active' : ''}" onclick="setStatusFilter('${c.key}')" title="${c.sub ? escapeHtml(c.sub) : escapeHtml(c.label)}">
       <div class="stat-label">${c.icon ? `<span class="stat-icon ${c.icon}"></span>` : ''}${c.label}</div>
       <div class="stat-value">${c.value}</div>
-      ${c.sub ? `<div class="stat-sub">${c.sub}</div>` : ''}
     </div>
   `).join('');
   
@@ -1910,7 +1908,6 @@ function renderStats() {
          title="Bewerbungen die eine Aktion brauchen: >7 Tage eingegangen oder >14 Tage in_pruefung / warteliste">
       <div class="stat-label"><span class="stat-icon-warn" aria-hidden="true">⚠️</span> Brauchen Antwort</div>
       <div class="stat-value">${brauchtAntwortCount}</div>
-      <div class="stat-sub">${brauchtAntwortCount === 0 ? 'alles aktuell ✓' : 'jetzt anklicken'}</div>
     </div>
   `;
   
@@ -1921,7 +1918,7 @@ function renderStats() {
       .map(([id, count]) => ({ id, name: vereine[id]?.name || 'Unbekannt', count }))
       .sort((a, b) => b.count - a.count).slice(0, 5);
     if (topVereine.length > 0) {
-      html += `<div class="top-vereine-box"><h3>Top Vereine (nach Bewerbungs-Anzahl)</h3><div class="top-vereine-list">${topVereine.map(v => `<div class="top-verein-item" onclick="filterByVerein('${v.id}')"><span class="top-verein-name">${escapeHtml(v.name)}</span><span class="top-verein-count">${v.count}</span></div>`).join('')}</div></div>`;
+      html += `<details class="top-vereine-box"><summary class="top-vereine-summary">Top Vereine (nach Bewerbungs-Anzahl) <span class="tv-toggle">▾</span></summary><div class="top-vereine-list">${topVereine.map(v => `<div class="top-verein-item" onclick="filterByVerein('${v.id}')"><span class="top-verein-name">${escapeHtml(v.name)}</span><span class="top-verein-count">${v.count}</span></div>`).join('')}</div></details>`;
     }
   }
   bar.innerHTML = html;

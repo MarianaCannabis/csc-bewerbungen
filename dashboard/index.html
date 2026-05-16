@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="color-scheme" content="dark">
   <title>Mariana Cannabis · Bewerbungs-Dashboard v2</title>
-  <!-- DASHBOARD_BUILD: 2026-05-16T0410 (Etappe 5a: Vorstand-Onboarding + Personalbedarfs-Berechnung) -->
-  <script>window.__DASHBOARD_BUILD = '2026-05-16T0410';</script>
+  <!-- DASHBOARD_BUILD: 2026-05-16T0445 (5a-Fix: Onboarding fuer Admin+Vorstand, robuste Rollen-Erkennung) -->
+  <script>window.__DASHBOARD_BUILD = '2026-05-16T0445';</script>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -1839,6 +1839,10 @@ async function loadDashboard() {
   }
   else { 
     pill.textContent = 'Vorstand'; pill.className = 'role-pill vorstand';
+  }
+  // ⚙️ Verein-Button: für Admin (jeder Verein) und Vorstand (eigener) — nicht Nur-Lese
+  const _rolle = getUserRolle();
+  if (_rolle === 'admin' || _rolle === 'vorstand') {
     const vBtn = document.querySelector('.verein-btn-header');
     if (vBtn) vBtn.style.display = '';
   }
@@ -3589,12 +3593,27 @@ function berechnePersonalbedarf(sd) {
 // Prüft nach dem Login ob das Onboarding-Modal gezeigt werden muss
 function checkOnboarding() {
   if (!userContext) return;
-  // Nur Vorstand (nicht Admin, nicht Nur-Lese-Zugang)
-  if (userContext.rolle !== 'zweigverein_vorstand') return;
+  // Auto-Modal nur für Vorstände (Admins haben keinen "eigenen" Verein)
+  if (getUserRolle() !== 'vorstand') return;
   const verein = vereine[userContext.verein_id];
   if (!verein) return;
   if (verein.onboarding_erledigt === true) return;
-  openOnboardingModal();
+  openOnboardingModal(userContext.verein_id);
+}
+
+// Robuste Rollen-Erkennung — tolerant gegenüber unterschiedlichen
+// rolle-Strings aus csc_user_profiles bzw. csc_dashboard_user.
+//  → 'admin'   : Hauptverein-Admin (darf jeden Verein)
+//  → 'vorstand': Zweigverein-Vorstand (eigener Verein)
+//  → 'lesen'   : Nur-Lese-Zugang
+//  → null      : unklar / kein Zugriff
+function getUserRolle() {
+  if (!userContext) return null;
+  if (userContext.ist_admin === true) return 'admin';
+  const r = String(userContext.rolle || '').toLowerCase();
+  if (r.includes('lesen') || r.includes('read')) return 'lesen';
+  if (userContext.verein_id) return 'vorstand';
+  return null;
 }
 
 // Stammdaten-Defaults
@@ -3603,20 +3622,24 @@ const ONBOARDING_DEFAULTS = {
   vorbereitung: 1, ausgabe_punkte: 1
 };
 
-function openOnboardingModal() {
-  const verein = vereine[userContext.verein_id];
-  const sd = (verein?.stammdaten && typeof verein.stammdaten === 'object' && Object.keys(verein.stammdaten).length)
+function openOnboardingModal(vereinId) {
+  const verein = vereine[vereinId];
+  if (!verein) { toast('Verein nicht gefunden', true); return; }
+  const sd = (verein.stammdaten && typeof verein.stammdaten === 'object' && Object.keys(verein.stammdaten).length)
     ? verein.stammdaten : ONBOARDING_DEFAULTS;
+  const erstmalig = verein.onboarding_erledigt !== true;
 
   const overlay = document.createElement('div');
   overlay.className = 'app-modal-overlay';
   overlay.id = 'onboarding-overlay';
+  overlay.dataset.vereinId = vereinId;
   overlay.innerHTML = `
     <div class="app-modal onboarding-modal" role="dialog" aria-modal="true" aria-labelledby="onb-title">
-      <div class="app-modal-title" id="onb-title">👋 Willkommen — kurze Einrichtung</div>
+      <div class="app-modal-title" id="onb-title">${erstmalig ? '👋 Willkommen — kurze Einrichtung' : '⚙️ Vereins-Stammdaten anpassen'}</div>
       <div class="onb-intro">
-        Damit das Dashboard deinen Personalbedarf vorausfüllen kann, brauchen wir ein paar
-        Eckdaten zu deinem Verein. Du kannst alles später jederzeit anpassen.
+        ${erstmalig
+          ? 'Damit das Dashboard deinen Personalbedarf vorausfüllen kann, brauchen wir ein paar Eckdaten zu deinem Verein. Du kannst alles später jederzeit anpassen.'
+          : `Betriebsdaten für <strong>${escapeHtml(verein.name)}</strong> — anpassen, wenn sich Mitgliederzahl oder Öffnungszeiten geändert haben. Der Ausgabe-Bedarf wird neu berechnet.`}
       </div>
       <div class="onb-fields">
         <label class="onb-field">
@@ -3645,7 +3668,7 @@ function openOnboardingModal() {
       </div>
       <div class="onb-vorschau" id="onb-vorschau"></div>
       <div class="app-modal-actions">
-        <button class="app-modal-btn app-modal-btn-cancel" type="button" onclick="skipOnboarding()">Später</button>
+        <button class="app-modal-btn app-modal-btn-cancel" type="button" onclick="skipOnboarding()">${erstmalig ? 'Später' : 'Abbrechen'}</button>
         <button class="app-modal-btn app-modal-btn-ok" type="button" onclick="saveOnboarding()">Speichern &amp; übernehmen</button>
       </div>
     </div>
@@ -3681,10 +3704,12 @@ function updateOnboardingVorschau() {
 }
 
 async function saveOnboarding() {
+  const overlay = document.getElementById('onboarding-overlay');
+  const vereinId = overlay?.dataset.vereinId;
+  if (!vereinId) { toast('Kein Verein-Bezug — bitte Modal neu öffnen', true); return; }
   const sd = readOnboardingFelder();
   const bedarf = berechnePersonalbedarf(sd);
-  const vereinId = userContext.verein_id;
-  const okBtn = document.querySelector('#onboarding-overlay .app-modal-btn-ok');
+  const okBtn = overlay.querySelector('.app-modal-btn-ok');
   if (okBtn) { okBtn.disabled = true; okBtn.textContent = 'Speichere…'; }
 
   try {
@@ -3711,7 +3736,7 @@ async function saveOnboarding() {
       verein.onboarding_erledigt = true;
       verein.personal_soll = soll;
     }
-    document.getElementById('onboarding-overlay')?.remove();
+    overlay.remove();
     renderPersonalPanel();
     toast(`Einrichtung gespeichert — Ausgabe-Soll auf ${bedarf.ausgabeMitarbeiter} gesetzt`);
   } catch (e) {
@@ -3722,20 +3747,26 @@ async function saveOnboarding() {
 }
 
 function skipOnboarding() {
-  // Modal schließen ohne zu speichern — onboarding_erledigt bleibt false,
-  // beim nächsten Login erscheint es erneut.
   document.getElementById('onboarding-overlay')?.remove();
-  toast('Einrichtung übersprungen — du findest sie später unter „Verein einrichten"');
 }
 
-// Manueller Aufruf (z.B. später per Button) — zeigt das Modal auch
-// wenn das Onboarding schon erledigt wurde.
+// Manueller Aufruf über den ⚙️-Button — für Vorstand UND Admin.
+//  - Vorstand: der eigene Verein
+//  - Admin:    der oben im Filter gewählte Verein (sonst Hinweis)
 function openVereinsStammdaten() {
-  if (!userContext || userContext.rolle !== 'zweigverein_vorstand') {
-    toast('Nur der Vorstand kann die Vereins-Stammdaten bearbeiten', true);
-    return;
+  const rolle = getUserRolle();
+  if (rolle === 'admin') {
+    const vereinId = document.getElementById('filter-verein')?.value || '';
+    if (!vereinId) {
+      toast('Bitte oben im Filter zuerst einen Verein wählen', true);
+      return;
+    }
+    openOnboardingModal(vereinId);
+  } else if (rolle === 'vorstand') {
+    openOnboardingModal(userContext.verein_id);
+  } else {
+    toast('Keine Berechtigung für die Vereins-Stammdaten', true);
   }
-  openOnboardingModal();
 }
 
 // Notiz speichern (onblur)

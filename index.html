@@ -9,8 +9,8 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="format-detection" content="telephone=yes">
 <meta name="robots" content="noindex,nofollow">
-<!-- BEWERBUNG_BUILD: 2026-05-15T0955 (Anstellungsformen offen für alle Rollen außer Grower) -->
-<script>window.__BEWERBUNG_BUILD = '2026-05-15T0955';</script>
+<!-- BEWERBUNG_BUILD: 2026-05-16T2145 (Info-Tooltips an allen Sektionen) -->
+<script>window.__BEWERBUNG_BUILD = '2026-05-16T2145';</script>
 <title>Bewerbung — Mariana Cannabis</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -263,6 +263,27 @@ body::before {
   line-height: 1.15;
 }
 
+/* ── Info-Tooltips ── */
+.info-i {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 17px; height: 17px; min-width: 17px; border-radius: 50%;
+  background: #eef2e8; border: 1px solid #b9c79f;
+  color: #5a6e3a; font-size: 10px; font-weight: 700;
+  font-style: normal; cursor: help; position: relative;
+  vertical-align: middle; margin-left: 7px;
+}
+.info-i:hover { background: #5a6e3a; color: #fff; }
+.info-i::after {
+  content: attr(data-tip);
+  position: absolute; top: 145%; left: 0; transform: none;
+  background: #2c3320; color: #f3f1e6;
+  padding: 9px 12px; border-radius: 8px; border: 1px solid #5a6e3a;
+  font-size: 12px; font-weight: 400; line-height: 1.5; text-align: left;
+  width: 250px; opacity: 0; pointer-events: none; transition: opacity .14s;
+  z-index: 500; box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+}
+.info-i:hover::after { opacity: 1; }
+.info-i.tip-right::after { left: auto; right: 0; }
 .section-description {
   font-size: 0.95rem;
   color: var(--ink-soft);
@@ -2873,7 +2894,7 @@ function renderSectionContent(n) {
 function renderSection1() {
   const s = state.i18n.sections['1'];
   return `
-    <h2 class="section-title">${s.title}</h2>
+    <h2 class="section-title">${s.title}<span class="info-i" data-tip="Hier prüfen wir gesetzliche Voraussetzungen. Pflichtfelder sind mit einem Stern (*) markiert.">i</span></h2>
     <p class="section-description">${s.description}</p>
 
     <div class="form-group" id="fg-verein">
@@ -3005,7 +3026,7 @@ function renderSection1() {
 function renderSection2() {
   const s = state.i18n.sections['2'];
   return `
-    <h2 class="section-title">${s.title}</h2>
+    <h2 class="section-title">${s.title}<span class="info-i" data-tip="Deine Kontaktdaten. Wir nutzen sie nur für das Bewerbungsverfahren — nicht für Werbung.">i</span></h2>
     <p class="section-description">${s.description}</p>
 
     <div class="field-grid cols-2">
@@ -3141,7 +3162,7 @@ function renderSection3() {
   ];
 
   return `
-    <h2 class="section-title">${s.title}</h2>
+    <h2 class="section-title">${s.title}<span class="info-i" data-tip="Wähle die Rolle(n), für die du dich interessierst. Mehrfachauswahl ist möglich.">i</span></h2>
     <p class="section-description">${s.description}</p>
 
     <div class="form-group" id="fg-rollen">
@@ -3231,7 +3252,7 @@ function renderSection4() {
   const niveaus = ['kein','a1','a2','b1','b2','c1','c2'];
 
   return `
-    <h2 class="section-title">${s.title}</h2>
+    <h2 class="section-title">${s.title}<span class="info-i" data-tip="Deine Vorerfahrung und Ausbildung. Auch ohne Vorerfahrung kannst du dich bewerben.">i</span></h2>
     <p class="section-description">${s.description}</p>
 
     <div class="form-group" id="fg-bildung">
@@ -3397,7 +3418,7 @@ function renderSection5() {
   }
 
   return `
-    <h2 class="section-title">${s.title}</h2>
+    <h2 class="section-title">${s.title}<span class="info-i" data-tip="Trag im Wochenraster ein, wann du arbeiten kannst. Je genauer, desto besser die Planung.">i</span></h2>
     <p class="section-description">${s.description}</p>
 
     ${zeigeStandorte.map(rasterHTML).join('')}
@@ -3569,7 +3590,7 @@ function renderSection6() {
   const empty_intersection = state.formData.rollen.length > 0 && allowed.length === 0;
   
   return `
-    <h2 class="section-title">${s.title}</h2>
+    <h2 class="section-title">${s.title}<span class="info-i" data-tip="Festanstellung, Minijob oder Honorar — was für dich infrage kommt.">i</span></h2>
     <p class="section-description">${s.description}</p>
 
     ${empty_intersection ? `
@@ -3634,7 +3655,7 @@ function renderSection7() {
   // Wenn beides → beide Fragen
   
   return `
-    <h2 class="section-title">${s.title}</h2>
+    <h2 class="section-title">${s.title}<span class="info-i" data-tip="Wie du zum Verein kommst und wie weit du fahren würdest.">i</span></h2>
     <p class="section-description">${s.description}</p>
 
     ${hatAusgabe ? `
@@ -3705,7 +3726,7 @@ function renderSection7() {
 function renderSection8() {
   const s = state.i18n.sections['8'];
   return `
-    <h2 class="section-title">${s.title}</h2>
+    <h2 class="section-title">${s.title}<span class="info-i" data-tip="Diese Angaben sind freiwillig (Art. 9 DSGVO). Du kannst sie auch leer lassen.">i</span></h2>
     <p class="section-description">${s.description}</p>
 
     <div class="info-box">
@@ -3787,7 +3808,7 @@ function renderSection8() {
 function renderSection9() {
   const s = state.i18n.sections['9'];
   return `
-    <h2 class="section-title">${s.title}</h2>
+    <h2 class="section-title">${s.title}<span class="info-i" data-tip="Letzter Schritt: Datenschutz-Zustimmung und Vorschau, dann endgültig absenden.">i</span></h2>
     <p class="section-description">${s.description}</p>
 
     <div class="privacy-block">

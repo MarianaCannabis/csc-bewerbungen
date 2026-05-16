@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="color-scheme" content="dark">
   <title>Mariana Cannabis · Bewerbungs-Dashboard v2</title>
-  <!-- DASHBOARD_BUILD: 2026-05-16T0600 (Etappe 5b: Vertragsvorschlag aus Verfuegbarkeit, Grow-Split) -->
-  <script>window.__DASHBOARD_BUILD = '2026-05-16T0600';</script>
+  <!-- DASHBOARD_BUILD: 2026-05-16T0640 (Etappe 5c-A: Uebergabe an Ausgabe-Rechner via localStorage) -->
+  <script>window.__DASHBOARD_BUILD = '2026-05-16T0640';</script>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -966,6 +966,8 @@
     .bulk-btn:hover:not(:disabled) { background: var(--bg-elev); border-color: var(--green-dim); }
     .bulk-btn:disabled { opacity: 0.5; cursor: not-allowed; }
     .bulk-btn-clear { color: var(--tx-dim); }
+    .bulk-btn-rechner { color: var(--blue); border-color: var(--blue); }
+    .bulk-btn-rechner:hover { background: var(--blue-bg); }
     .bulk-btn-clear:hover { color: var(--red); border-color: var(--red); }
 
     /* ===== EINSTELLUNG ===== */
@@ -1492,6 +1494,7 @@
             </select>
             <button class="bulk-btn" id="bulk-select-all" onclick="selectAllVisible()" title="Alle in der aktuellen Filter-Ansicht auswählen">Alle auswählen</button>
             <button class="bulk-btn" onclick="invertSelection()" title="Auswahl umkehren">Umkehren</button>
+            <button class="bulk-btn bulk-btn-rechner" onclick="uebergebeAnRechner()" title="Ausgewählte Bewerber an den Ausgabe-Rechner übergeben (mit Verfügbarkeit)">📥 An Ausgabe-Rechner</button>
             <button class="bulk-btn bulk-btn-clear" onclick="deselectAll()" title="Auswahl aufheben">✕ Auswahl aufheben</button>
           </div>
         </div>
@@ -6801,6 +6804,116 @@ async function bulkSetStatus(newStatus) {
     const sel = document.getElementById('bulk-status-select');
     if (sel) sel.value = '';
   }
+}
+
+// ============================================================================
+// ÜBERGABE AN AUSGABE-RECHNER (Etappe 5c)
+// ----------------------------------------------------------------------------
+// Ausgewählte Bewerber werden ins Team-Format des Ausgabe-Rechners
+// umgewandelt und über localStorage (gleicher Origin) übergeben.
+// Der Rechner liest den Key beim Laden und bietet den Import an.
+// ============================================================================
+
+const RECHNER_IMPORT_KEY = 'mariana_rechner_import';
+
+// 5-Slot-Verfügbarkeit → Stunden-Arrays des Rechners (Anzeige-Range 9–21 Uhr).
+// Slots: Früh 6-10, Vormittag 10-13, Nachmittag 13-17, Abend 17-22, Nacht 22-6.
+const SLOT_TO_RECHNER_HOURS = [
+  [9],                    // Früh — nur 9 liegt in 9–21
+  [10, 11, 12],           // Vormittag
+  [13, 14, 15, 16],       // Nachmittag
+  [17, 18, 19, 20, 21],   // Abend
+  []                      // Nacht — außerhalb 9–21
+];
+const RECHNER_TAGE = { Mo: 'mo', Di: 'di', Mi: 'mi', Do: 'do', Fr: 'fr', Sa: 'sa', So: 'so' };
+
+// Bewerber-Verfügbarkeit → Rechner-avail {mo:[std],...}
+function verfuegbarkeitZuRechnerAvail(verf) {
+  const avail = { mo: [], di: [], mi: [], do: [], fr: [], sa: [], so: [] };
+  if (!verf || typeof verf !== 'object') return avail;
+  // pro Wochentag die belegten Slot-Stunden sammeln (über Standorte vereinigt)
+  Object.values(verf).forEach(tagData => {
+    if (!tagData || typeof tagData !== 'object') return;
+    Object.entries(RECHNER_TAGE).forEach(([gross, klein]) => {
+      const slots = tagData[gross] || tagData[gross.toLowerCase()] || [];
+      for (let i = 0; i < 5; i++) {
+        const on = slots[i] === true || slots[i] === 'true' || slots[i] === 1;
+        if (on) SLOT_TO_RECHNER_HOURS[i].forEach(h => {
+          if (!avail[klein].includes(h)) avail[klein].push(h);
+        });
+      }
+    });
+  });
+  Object.keys(avail).forEach(t => avail[t].sort((a, b) => a - b));
+  return avail;
+}
+
+// Vertragsart (Dashboard) → Rechner-type
+function vertragZuRechnerType(vertrag) {
+  if (vertrag === 'teilzeit') return 'teilzeit';
+  if (vertrag === 'vollzeit') return 'vollzeit';
+  return 'minijob';   // minijob, ehrenamt, leer → minijob
+}
+
+async function uebergebeAnRechner() {
+  if (selectedIds.size === 0) { toast('Keine Bewerber ausgewählt', true); return; }
+  const ids = Array.from(selectedIds);
+  const ausgewaehlt = bewerbungen.filter(b => ids.includes(b.id));
+
+  // Team-Member im Rechner-Format aufbauen
+  const team = ausgewaehlt.map(b => {
+    const einst = getEinstellung(b);
+    // Vertrag: Nicht-Grow-Vertrag, sonst minijob (Grow-only / unentschieden)
+    const type = vertragZuRechnerType(einst.vertrag);
+    const avail = verfuegbarkeitZuRechnerAvail(b.verfuegbarkeit);
+    const availStd = Object.values(avail).reduce((s, arr) => s + arr.length, 0);
+    return {
+      name:  `${b.vorname || ''} ${b.nachname || ''}`.trim() || 'Bewerber',
+      type:  type,
+      avail: avail,
+      _availStd: availStd,
+      _rollen: einst.rollen
+    };
+  });
+
+  // Warnung wenn Bewerber ohne Verfügbarkeitsdaten dabei
+  const ohneVerf = team.filter(m => m._availStd === 0).length;
+
+  const verein = vereine[getPersonalPanelVereinId()] || {};
+  const payload = {
+    exportiert_am: new Date().toISOString(),
+    quelle: 'csc-bewerbungen-dashboard',
+    verein: verein.name || '',
+    team: team.map(m => ({ name: m.name, type: m.type, avail: m.avail }))
+  };
+
+  try {
+    localStorage.setItem(RECHNER_IMPORT_KEY, JSON.stringify(payload));
+  } catch (e) {
+    console.error('[uebergebeAnRechner]', e);
+    toast('Übergabe fehlgeschlagen: ' + e.message, true);
+    return;
+  }
+
+  // Bestätigungs-Modal
+  const overlay = document.createElement('div');
+  overlay.className = 'app-modal-overlay';
+  overlay.innerHTML = `
+    <div class="app-modal" role="dialog" aria-modal="true" style="max-width:480px">
+      <div class="app-modal-title">📥 ${team.length} Bewerber für den Rechner bereit</div>
+      <div class="app-modal-body">
+        Die Auswahl wurde mit Verfügbarkeit und vorgeschlagener Vertragsart vorbereitet.
+        ${ohneVerf > 0 ? `<br><br>⚠️ ${ohneVerf} davon ${ohneVerf === 1 ? 'hat' : 'haben'} keine Verfügbarkeits-Angabe — im Rechner bitte manuell ergänzen.` : ''}
+        <br><br><strong>So geht's weiter:</strong> Öffne den Ausgabe-Rechner. Dort erscheint oben die Karte „📥 Aus Bewerbungen übernehmen" — ein Klick fügt die Bewerber ins Team ein.
+      </div>
+      <div class="app-modal-actions">
+        <button class="app-modal-btn app-modal-btn-ok" type="button" onclick="this.closest('.app-modal-overlay').remove()">Verstanden</button>
+      </div>
+    </div>
+  `;
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+  toast(`${team.length} Bewerber an den Rechner übergeben`);
 }
 
 // ============================================================================

@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="color-scheme" content="dark">
   <title>Mariana Cannabis · Bewerbungs-Dashboard v2</title>
-  <!-- DASHBOARD_BUILD: 2026-05-16T0820 (KK-Mitgliedsnr-Key-Fix, Probearbeit-Labels) -->
-  <script>window.__DASHBOARD_BUILD = '2026-05-16T0820';</script>
+  <!-- DASHBOARD_BUILD: 2026-05-16T0850 (HeadGrow ohne KCanG, Stammdaten-Uebergabe an Rechner) -->
+  <script>window.__DASHBOARD_BUILD = '2026-05-16T0850';</script>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -3272,7 +3272,9 @@ async function setStatus(id, newStatus) {
 const VERTRAG_LABELS  = { minijob: 'Minijob', teilzeit: 'Teilzeit', vollzeit: 'Vollzeit', ehrenamt: 'Ehrenamt' };
 const VERTRAG_ALLE    = ['minijob', 'teilzeit', 'vollzeit', 'ehrenamt'];
 const VERTRAG_GROWER  = ['minijob', 'ehrenamt'];          // §17 KCanG
-const GROWER_ROLLEN   = ['grower', 'head_grower'];
+// §17 KCanG betrifft nur die reine Anbau-Tätigkeit (Grower).
+// Head Grower leitet den Anbau und ist nicht beschränkt — volle Vertragsfreiheit.
+const GROWER_ROLLEN   = ['grower'];
 
 // Welche Verträge sind für eine Menge gewählter Rollen erlaubt.
 // Sobald eine Grower-Rolle dabei ist → nur Minijob/Ehrenamt (§17 KCanG).
@@ -6986,10 +6988,20 @@ async function uebergebeAnRechner(idsOverride) {
   const ohneVerf = team.filter(m => m._availStd === 0).length;
 
   const verein = vereine[getPersonalPanelVereinId()] || {};
+  const sd = (verein.stammdaten && typeof verein.stammdaten === 'object') ? verein.stammdaten : null;
   const payload = {
     exportiert_am: new Date().toISOString(),
     quelle: 'csc-bewerbungen-dashboard',
     verein: verein.name || '',
+    // Vereins-Stammdaten als Vorbelegung für die Rechner-Felder
+    stammdaten: sd ? {
+      mitglieder:       Number(sd.mitglieder)        || null,
+      zeit_pro_ausgabe: Number(sd.zeit_pro_ausgabe)  || null,
+      oeffnungstage:    Number(sd.oeffnungstage)     || null,
+      oeffnungsstunden: Number(sd.oeffnungsstunden)  || null,
+      vorbereitung:     sd.vorbereitung != null ? Number(sd.vorbereitung) : null,
+      ausgabe_punkte:   Number(sd.ausgabe_punkte)    || null
+    } : null,
     team: team.map(m => ({ name: m.name, type: m.type, avail: m.avail }))
   };
 

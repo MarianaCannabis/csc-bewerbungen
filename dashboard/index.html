@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="color-scheme" content="dark">
   <title>Mariana Cannabis · Bewerbungs-Dashboard v2</title>
-  <!-- DASHBOARD_BUILD: 2026-05-16T2130 (Interaktive Hilfe + Schritt-fuer-Schritt-Tutorial) -->
+  <!-- DASHBOARD_BUILD: 2026-05-16T2130 (Interaktive Hilfe, Tutorial + Info-Tooltips) -->
   <script>window.__DASHBOARD_BUILD = '2026-05-16T2130';</script>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -827,6 +827,29 @@
     }
     .app-modal-btn:hover:not(:disabled) { background: var(--bg); }
     .app-modal-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* ═══ INFO-TOOLTIPS ═══ */
+    .info-i {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 16px; height: 16px; min-width: 16px; border-radius: 50%;
+      background: var(--bg-elev2); border: 1px solid var(--green-dim);
+      color: var(--green); font-size: 10px; font-weight: 700;
+      font-style: normal; text-transform: none; letter-spacing: 0;
+      cursor: help; position: relative; vertical-align: middle; margin-left: 6px;
+    }
+    .info-i:hover { background: var(--green-dim); color: #fff; }
+    .info-i::after {
+      content: attr(data-tip);
+      position: absolute; top: 145%; left: 50%; transform: translateX(-50%);
+      background: #0d1812; color: var(--tx);
+      padding: 9px 12px; border-radius: 8px; border: 1px solid var(--green-dim);
+      font-size: 12px; font-weight: 400; line-height: 1.5; letter-spacing: 0;
+      text-transform: none; text-align: left; width: 248px;
+      opacity: 0; pointer-events: none; transition: opacity .14s;
+      z-index: 500; box-shadow: 0 6px 20px rgba(0,0,0,0.55);
+    }
+    .info-i:hover::after { opacity: 1; }
+    .info-i.tip-left::after { left: auto; right: 0; transform: none; }
 
     /* ═══ HILFE & ANLEITUNG ═══ */
     .help-overlay {
@@ -2782,7 +2805,7 @@ async function selectBewerbung(id) {
     ${renderEinstellungBlock(b)}
     
     <div class="tag-section">
-      <div class="tag-section-label">🏷 Tags:</div>
+      <div class="tag-section-label">🏷 Tags:<span class="info-i" data-tip="Markierungen für deinen Überblick (heiß, Top, Wunschkandidat …). Sie erscheinen als Emoji in der Bewerber-Liste.">i</span></div>
       <div class="tag-list" id="tag-list-${b.id}">
         ${(Array.isArray(b.tags) ? b.tags : []).map(t => renderTagBadge(t, true, b.id)).join('')}
         <div class="tag-add-wrap">
@@ -2794,7 +2817,7 @@ async function selectBewerbung(id) {
     
     <div class="notiz-section">
       <div class="notiz-header">
-        <div class="notiz-header-title">📝 Schnell-Notiz</div>
+        <div class="notiz-header-title">📝 Schnell-Notiz<span class="info-i" data-tip="Ein Feld für den aktuellen Stand in einem Satz. Wird beim nächsten Speichern überschrieben — keine Historie.">i</span></div>
         <div class="notiz-header-meta" id="notiz-meta">${b.notiz_geaendert_am ? 'zuletzt: ' + new Date(b.notiz_geaendert_am).toLocaleString('de-DE', {day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'}) + (b.notiz_geaendert_von ? ' · ' + escapeHtml(b.notiz_geaendert_von) : '') : 'noch keine Notiz'}</div>
       </div>
       <textarea class="notiz-textarea" id="notiz-textarea" 
@@ -2806,7 +2829,7 @@ async function selectBewerbung(id) {
     <!-- Notiz-Verlauf (chronologisch, nicht überschreibbar) -->
     <div class="notiz-verlauf-section">
       <div class="notiz-verlauf-header">
-        <div class="notiz-verlauf-title">💬 Notiz-Verlauf <span class="notiz-verlauf-count" id="notiz-verlauf-count">–</span></div>
+        <div class="notiz-verlauf-title">💬 Notiz-Verlauf<span class="info-i" data-tip="Chronologische Einträge mit Zeitstempel und Autor. Wird nie überschrieben — ideal, wenn Vorstand und CM gemeinsam arbeiten.">i</span> <span class="notiz-verlauf-count" id="notiz-verlauf-count">–</span></div>
       </div>
       <div class="notiz-verlauf-list" id="notiz-verlauf-list">Lade…</div>
       <div class="notiz-verlauf-form">
@@ -2841,7 +2864,7 @@ async function selectBewerbung(id) {
     <!-- Interview-Termine -->
     <div class="termine-section">
       <div class="termine-header">
-        <div class="termine-title">📅 Interview-Termine 
+        <div class="termine-title">📅 Interview-Termine<span class="info-i" data-tip="Vorgespräche, Probearbeit und Follow-ups. Pro Termin gibt es einen ICS-Export für deinen Kalender.">i</span> 
           <span class="termine-count">${Array.isArray(b.interview_termine) ? b.interview_termine.length : 0}</span>
         </div>
         <button class="btn-termin-add" onclick="openTerminModal('${b.id}')">+ Termin</button>
@@ -2901,7 +2924,7 @@ async function selectBewerbung(id) {
     </div>
     
     <div class="section">
-      <div class="section-title">Bewerbung &amp; Rolle<button class="edit-btn" onclick="openEditModal('bewerbung')">Bearbeiten</button></div>
+      <div class="section-title">Bewerbung &amp; Rolle<span class="info-i" data-tip="Welche Rollen und Anstellungsformen sich die Person gewünscht hat.">i</span><button class="edit-btn" onclick="openEditModal('bewerbung')">Bearbeiten</button></div>
       <div class="field"><div class="field-label">Rolle(n)</div><div class="tag-list">${fmtRoles(b.rollen)}</div></div>
       <div class="field" style="margin-top:12px"><div class="field-label">Anstellungsform(en)</div><div class="tag-list">${fmtList(b.anstellungsformen)}</div></div>
       ${Array.isArray(b.rollen_standorte) && b.rollen_standorte.length ? `<div class="field" style="margin-top:12px"><div class="field-label">Rollen-Standorte</div><div class="tag-list">${b.rollen_standorte.map(s => `<span class="tag">${escapeHtml(s)}</span>`).join('')}</div></div>` : ''}
@@ -2910,7 +2933,7 @@ async function selectBewerbung(id) {
     </div>
     
     <div class="section">
-      <div class="section-title">Verfügbarkeit<button class="edit-btn" onclick="openEditModal('verfuegbarkeit')">Bearbeiten</button></div>
+      <div class="section-title">Verfügbarkeit<span class="info-i" data-tip="Das Wochenraster zeigt, wann die Person arbeiten kann. Grundlage für den Verfügbarkeits-Score.">i</span><button class="edit-btn" onclick="openEditModal('verfuegbarkeit')">Bearbeiten</button></div>
       <div class="field-grid" style="margin-bottom:14px">
         <div class="field"><div class="field-label">Wunsch-Stunden / Woche</div><div class="field-value">${b.wunsch_stunden_min || '?'}–${b.wunsch_stunden_max || '?'} Std.</div></div>
         <div class="field"><div class="field-label">Frühester Einstieg</div><div class="field-value">${fmtDate(b.eintritt_fruehestens)}</div></div>
@@ -2930,7 +2953,7 @@ async function selectBewerbung(id) {
     </div>
     
     <div class="section">
-      <div class="section-title">Probearbeit<button class="edit-btn" onclick="openEditModal('probearbeit')">Bearbeiten</button></div>
+      <div class="section-title">Probearbeit<span class="info-i" data-tip="Ob und wann die Person zur Probearbeit bereit ist. Organisiert das CM mit dem Verein.">i</span><button class="edit-btn" onclick="openEditModal('probearbeit')">Bearbeiten</button></div>
       <div class="field-grid">
         <div class="field"><div class="field-label">Bereit für Probearbeit</div><div class="field-value">${fmtBool(b.probearbeit_bereit)}</div></div>
         ${b.probearbeit_dauer ? `<div class="field"><div class="field-label">Dauer</div><div class="field-value">${escapeHtml(PROBEARBEIT_DAUER_LABELS[b.probearbeit_dauer] || b.probearbeit_dauer)}</div></div>` : ''}
@@ -2947,7 +2970,7 @@ async function selectBewerbung(id) {
     ` : ''}
     
     <div class="section">
-      <div class="section-title">Qualifikationen &amp; Erfahrung<button class="edit-btn" onclick="openEditModal('qualifikationen')">Bearbeiten</button></div>
+      <div class="section-title">Qualifikationen &amp; Erfahrung<span class="info-i" data-tip="Vorerfahrung, Bildung und Sprachen. Fließt in den Erfahrungs-Score ein.">i</span><button class="edit-btn" onclick="openEditModal('qualifikationen')">Bearbeiten</button></div>
       <div class="field-grid" style="margin-bottom:14px">
         <div class="field"><div class="field-label">Bildungsabschluss</div><div class="field-value">${fmt(b.bildungsabschluss)}</div></div>
         <div class="field"><div class="field-label">Letzte Tätigkeit</div><div class="field-value">${fmt(b.letzte_taetigkeit)}</div></div>
@@ -2958,7 +2981,7 @@ async function selectBewerbung(id) {
     </div>
     
     <div class="section">
-      <div class="section-title">Nachweise &amp; Sachkunde<button class="edit-btn" onclick="openEditModal('bewerbung')">Bearbeiten</button></div>
+      <div class="section-title">Nachweise &amp; Sachkunde<span class="info-i" data-tip="Der Sachkundenachweis ist vor allem für die Präventionsrolle relevant und gibt Score-Bonus.">i</span><button class="edit-btn" onclick="openEditModal('bewerbung')">Bearbeiten</button></div>
       <div class="field-grid">
         <div class="field"><div class="field-label">Präventions-Sachkunde</div><div class="field-value">${fmt(b.praevention_sachkunde)}</div></div>
         <div class="field"><div class="field-label">Sicherheits-Nachweis</div><div class="field-value">${b.sicherheit_nachweis === null || b.sicherheit_nachweis === undefined ? '<span class="empty">–</span>' : fmtBool(b.sicherheit_nachweis)}</div></div>
@@ -2969,7 +2992,7 @@ async function selectBewerbung(id) {
     
     ${b.schwerbehinderung && b.schwerbehinderung !== 'nein' ? `
     <div class="section">
-      <div class="section-title">Schwerbehinderung<button class="edit-btn" onclick="openEditModal('sensibel')">Bearbeiten</button></div>
+      <div class="section-title">Schwerbehinderung<span class="info-i" data-tip="Sensible Daten nach Art. 9 DSGVO. Nur sichtbar, wenn die Person gesondert eingewilligt hat.">i</span><button class="edit-btn" onclick="openEditModal('sensibel')">Bearbeiten</button></div>
       <div class="field-grid">
         <div class="field"><div class="field-label">Status</div><div class="field-value">${fmt(b.schwerbehinderung)}</div></div>
         <div class="field"><div class="field-label">GdB</div><div class="field-value">${b.schwerbehinderung_gdb ? escapeHtml(String(b.schwerbehinderung_gdb)) : '<span class="empty">–</span>'}</div></div>
@@ -2980,7 +3003,7 @@ async function selectBewerbung(id) {
     ` : ''}
     
     <div class="section">
-      <div class="section-title">Personalien für Anstellung<button class="edit-btn" onclick="openEditModal('personalien')">Bearbeiten</button></div>
+      <div class="section-title">Personalien für Anstellung<span class="info-i" data-tip="Wird erst kurz vor der Einstellung benötigt, etwa für den Arbeitsvertrag.">i</span><button class="edit-btn" onclick="openEditModal('personalien')">Bearbeiten</button></div>
       <div class="field-grid">
         <div class="field"><div class="field-label">Steuer-ID</div><div class="field-value mono">${fmt(b.steuer_id)}</div></div>
         <div class="field"><div class="field-label">Sozialversicherungs-Nr.</div><div class="field-value mono">${fmt(b.sv_nummer)}</div></div>
@@ -2990,7 +3013,7 @@ async function selectBewerbung(id) {
     </div>
     
     <div class="section">
-      <div class="section-title">Compliance &amp; Audit</div>
+      <div class="section-title">Compliance &amp; Audit<span class="info-i" data-tip="Protokoll aller Änderungen an dieser Bewerbung, mit Zeitstempel und Bearbeiter.">i</span></div>
       <div class="field-grid">
         <div class="field"><div class="field-label">DSGVO-Zustimmung</div><div class="field-value">${fmtBool(b.dsgvo_zustimmung)} ${b.dsgvo_zeitstempel ? '<span style="color:var(--tx-mute);font-size:12px"> · ' + new Date(b.dsgvo_zeitstempel).toLocaleString('de-DE') + '</span>' : ''}</div></div>
         <div class="field"><div class="field-label">Sensible Daten — Einwilligung</div><div class="field-value">${fmtBool(b.sensible_einwilligung)}</div></div>
@@ -3630,7 +3653,7 @@ function renderEinstellungBlock(b) {
   return `
     <details class="einstellung-section ${fehltPflicht ? 'eb-pflicht-fehlt' : ''}" ${(fehltPflicht || !istVollstaendig) ? 'open' : ''}>
       <summary class="eb-header">
-        <span class="eb-title">🎯 Einstellung — für welche Position(en)?</span>
+        <span class="eb-title">🎯 Einstellung — für welche Position(en)?<span class="info-i" data-tip="Lege Rolle(n) und Vertragsart fest. Pflicht, bevor der Status auf Warteliste oder Angenommen wechseln kann.">i</span></span>
         ${summaryBadge}
         ${fehltPflicht ? '<span class="eb-count eb-count-warn">⚠️ Pflicht</span>' : ''}
         <span class="eb-toggle">▾</span>

@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="color-scheme" content="dark">
   <title>Mariana Cannabis · Bewerbungs-Dashboard v2</title>
-  <!-- DASHBOARD_BUILD: 2026-05-16T0520 (5a-Fix2: Modal-Status sichtbar, Zeit/Ausgabe-Feld, dynamische Oeffnungstage) -->
-  <script>window.__DASHBOARD_BUILD = '2026-05-16T0520';</script>
+  <!-- DASHBOARD_BUILD: 2026-05-16T0600 (Etappe 5b: Vertragsvorschlag aus Verfuegbarkeit, Grow-Split) -->
+  <script>window.__DASHBOARD_BUILD = '2026-05-16T0600';</script>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -1042,9 +1042,9 @@
     }
     .eb-vertrag-row {
       display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-      margin-top: 12px; padding-top: 12px;
-      border-top: 1px solid var(--border);
+      margin-top: 10px;
     }
+    .eb-vertrag-leer { color: var(--tx-mute); font-size: 12px; }
     .eb-vertrag-label {
       font-size: 12px; font-weight: 600; color: var(--tx);
     }
@@ -1054,6 +1054,27 @@
       color: var(--tx); min-width: 160px;
     }
     .eb-vertrag-select:disabled { opacity: 0.5; cursor: not-allowed; }
+    .eb-vertrag-grow {
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+      font-size: 12px; color: var(--tx); margin-top: 10px;
+      background: #1c2b22; border: 1px solid var(--green-dim);
+      border-radius: 6px; padding: 8px 11px;
+    }
+    .eb-verf {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; flex-wrap: wrap;
+      font-size: 12px; background: var(--bg-elev);
+      border: 1px dashed var(--blue); border-radius: 6px;
+      padding: 9px 12px; margin-top: 12px;
+    }
+    .eb-verf-text { color: var(--tx-dim); line-height: 1.45; }
+    .eb-verf-text strong { color: var(--tx); }
+    .eb-verf-leer { border-style: solid; border-color: var(--border); color: var(--tx-mute); }
+    .eb-badge-grow {
+      font-size: 10px; background: #1c2b22; color: var(--green);
+      padding: 1px 7px; border-radius: 999px; font-weight: 600;
+      border: 1px solid var(--green-dim);
+    }
     .eb-kcang-hint {
       font-size: 10px; color: var(--gold); font-weight: 700;
       border: 1px solid var(--gold); border-radius: 4px; padding: 1px 5px;
@@ -3139,7 +3160,7 @@ async function setStatus(id, newStatus) {
   // Mindestens eine Rolle UND eine Vertragsart.
   if (newStatus === 'warteliste' || newStatus === 'angenommen') {
     const einst = getEinstellung(b);
-    const valide = einst.rollen.length > 0 && !!einst.vertrag;
+    const valide = einstellungVollstaendig(einst);
     if (!valide) {
       await appConfirm(
         `Bevor "${b.vorname} ${b.nachname}" auf „${STATUS_LABELS[newStatus]}" gesetzt werden kann, muss im Block „🎯 Einstellung" mindestens eine Rolle UND die Vertragsart festgelegt werden.\n\nSo weiß der Bewerber, für welche Position(en) er vorgesehen ist.`,
@@ -3211,15 +3232,84 @@ function erlaubteVertraege(rollen) {
   return hatGrower ? VERTRAG_GROWER : VERTRAG_ALLE;
 }
 
+// ── Verfügbarkeits-basierter Vertragsvorschlag ─────────────────────────────
+// Slot-Dauern in Stunden: Früh 6-10, Vormittag 10-13, Nachmittag 13-17,
+// Abend 17-22, Nacht 22-6.
+const SLOT_STUNDEN = [4, 3, 4, 5, 8];
+const VERF_TAGE = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+const GROW_MINIJOB_STD = 9;   // Wochenstunden eines Grow-Minijobs (~40h/Monat)
+
+// Verfügbare Wochenstunden aus der verfuegbarkeit-Heatmap.
+// Mehrere Standorte werden vereinigt (ein Slot zählt, wenn an mind.
+// einem Standort verfügbar) — Verfügbarkeit ist WANN, nicht WO.
+function verfuegbareWochenstunden(b) {
+  const verf = b.verfuegbarkeit;
+  if (!verf || typeof verf !== 'object') return 0;
+  const merged = {};
+  VERF_TAGE.forEach(t => merged[t] = [false, false, false, false, false]);
+  Object.values(verf).forEach(tagData => {
+    if (!tagData || typeof tagData !== 'object') return;
+    VERF_TAGE.forEach(t => {
+      const slots = tagData[t] || tagData[t.toLowerCase()] || [];
+      for (let i = 0; i < 5; i++) {
+        if (slots[i] === true || slots[i] === 'true' || slots[i] === 1) merged[t][i] = true;
+      }
+    });
+  });
+  let h = 0;
+  VERF_TAGE.forEach(t => {
+    for (let i = 0; i < 5; i++) if (merged[t][i]) h += SLOT_STUNDEN[i];
+  });
+  return h;
+}
+
+// Vertragstyp aus verfügbaren Wochenstunden ableiten (3 Stufen).
+function vertragAusStunden(h) {
+  if (h >= 30) return 'vollzeit';
+  if (h >= 15) return 'teilzeit';
+  return 'minijob';
+}
+
+// Zentraler Vertragsvorschlag aus der Verfügbarkeit.
+// Berücksichtigt den Grow-Sonderfall: Grow-Rollen bekommen IMMER einen
+// eigenen Minijob (§17 KCanG), die übrigen Rollen einen gemeinsamen
+// Vertrag aus der restlichen verfügbaren Zeit.
+//   rollenBasis: gegen welche Rollen geprüft wird (Default: beworbene Rollen)
+function getVertragsVorschlag(b, rollenBasis) {
+  const stunden = verfuegbareWochenstunden(b);
+  if (stunden === 0) return null;   // keine Verfügbarkeitsdaten
+
+  const rollen = (rollenBasis && rollenBasis.length)
+    ? rollenBasis
+    : (Array.isArray(b.rollen) ? b.rollen : []);
+  const hatGrow      = rollen.some(r => GROWER_ROLLEN.includes(r));
+  const hatNichtGrow = rollen.some(r => !GROWER_ROLLEN.includes(r));
+
+  const res = { wochenstunden: stunden, hatGrow, hatNichtGrow };
+  if (hatGrow && hatNichtGrow) {
+    // Aufteilung: Grow-Minijob abziehen, Rest bestimmt den übrigen Vertrag
+    const rest = Math.max(0, stunden - GROW_MINIJOB_STD);
+    res.growVertrag  = 'minijob';
+    res.restVertrag  = vertragAusStunden(rest);
+    res.restStunden  = rest;
+  } else if (hatGrow) {
+    res.growVertrag  = 'minijob';
+  } else {
+    res.restVertrag  = vertragAusStunden(stunden);
+  }
+  return res;
+}
+
 // Einstellung aus b lesen — Format { rollen: [...], vertrag: '...' }.
+// vertrag = Vertrag für die NICHT-Grow-Rollen. Grow-Rollen sind per
+// §17 KCanG immer Minijob und werden nicht separat gespeichert.
 // Abwärtskompatibel: altes Array-Format [{rolle,vertrag}] wird konvertiert.
 function getEinstellung(b) {
   const ed = b.eingestellt_details;
   if (Array.isArray(ed)) {
-    // Altes Format → konvertieren (Vertrag = erster gesetzter)
     return {
       rollen: ed.map(d => d && d.rolle).filter(Boolean),
-      vertrag: (ed.find(d => d && d.vertrag) || {}).vertrag || ''
+      vertrag: (ed.find(d => d && d.vertrag && !GROWER_ROLLEN.includes(d.rolle)) || ed.find(d => d && d.vertrag) || {}).vertrag || ''
     };
   }
   if (ed && typeof ed === 'object') {
@@ -3231,7 +3321,16 @@ function getEinstellung(b) {
   return { rollen: [], vertrag: '' };
 }
 
-// Score-basierter Vorschlag: beste Rolle + sinnvoller Vertrag
+// Ist die Einstellung vollständig? Nicht-Grow-Rollen brauchen einen Vertrag.
+// Grow-Rollen sind per Definition Minijob — kein extra Vertrag nötig.
+function einstellungVollstaendig(einst) {
+  if (!einst || einst.rollen.length === 0) return false;
+  const hatNichtGrow = einst.rollen.some(r => !GROWER_ROLLEN.includes(r));
+  if (hatNichtGrow && !einst.vertrag) return false;
+  return true;
+}
+
+// Score-basierter Vorschlag: beste Rolle (Vertrag kommt aus der Verfügbarkeit)
 function getScoreVorschlag(b) {
   if (!b.score_pro_rolle || typeof b.score_pro_rolle !== 'object') return null;
   const rollenScores = Object.entries(b.score_pro_rolle)
@@ -3239,26 +3338,24 @@ function getScoreVorschlag(b) {
   if (rollenScores.length === 0) return null;
   rollenScores.sort((a, b) => b[1] - a[1]);
   const [besteRolle, score] = rollenScores[0];
-
-  // Vertrag-Vorschlag: erste vom Bewerber gewünschte Anstellungsform,
-  // gefiltert nach KCanG falls Grower-Rolle
-  const erlaubt = erlaubteVertraege([besteRolle]);
-  const gewuenscht = Array.isArray(b.anstellungsformen) ? b.anstellungsformen : [];
-  let vertrag = gewuenscht.find(v => erlaubt.includes(v)) || erlaubt[0];
-
-  return { rolle: besteRolle, score, vertrag };
+  return { rolle: besteRolle, score };
 }
 
 function renderEinstellungBlock(b) {
   const einst = getEinstellung(b);
   const gewaehlteRollen = einst.rollen;
-  const vertrag = einst.vertrag;
+  const vertrag = einst.vertrag;   // Vertrag für die Nicht-Grow-Rollen
 
   const beworbeneRollen = Array.isArray(b.rollen) ? b.rollen : [];
   const status = b.status || 'eingegangen';
   const istPflicht = ['warteliste', 'angenommen'].includes(status);
-  const istVollstaendig = gewaehlteRollen.length > 0 && !!vertrag;
+  const istVollstaendig = einstellungVollstaendig(einst);
   const fehltPflicht = istPflicht && !istVollstaendig;
+
+  const growRollen      = gewaehlteRollen.filter(r => GROWER_ROLLEN.includes(r));
+  const nichtGrowRollen = gewaehlteRollen.filter(r => !GROWER_ROLLEN.includes(r));
+  const hatGrow      = growRollen.length > 0;
+  const hatNichtGrow = nichtGrowRollen.length > 0;
 
   // Alle Rollen anzeigen (Variante B), beworbene zuerst und markiert
   const alleRollen = Object.keys(ROLE_LABELS);
@@ -3267,17 +3364,16 @@ function renderEinstellungBlock(b) {
     ...alleRollen.filter(r => !beworbeneRollen.includes(r))
   ];
 
-  const vorschlag = getScoreVorschlag(b);
-  const vorschlagSchonGesetzt = vorschlag && gewaehlteRollen.includes(vorschlag.rolle);
+  const scoreVorschlag = getScoreVorschlag(b);
+  const scoreSchonGesetzt = scoreVorschlag && gewaehlteRollen.includes(scoreVorschlag.rolle);
 
-  // Erlaubte Verträge hängen von der GESAMT-Auswahl ab (KCanG)
-  const erlaubt = erlaubteVertraege(gewaehlteRollen);
-  const hatGrowerGewaehlt = gewaehlteRollen.some(r => GROWER_ROLLEN.includes(r));
-  const vertragUngueltig = vertrag && !erlaubt.includes(vertrag);
+  // Verfügbarkeits-basierter Vertragsvorschlag
+  const vV = getVertragsVorschlag(b, gewaehlteRollen.length ? gewaehlteRollen : beworbeneRollen);
 
   const rollenHtml = sortiert.map(rolle => {
     const aktiv    = gewaehlteRollen.includes(rolle);
     const beworben = beworbeneRollen.includes(rolle);
+    const istGrow  = GROWER_ROLLEN.includes(rolle);
     return `
       <div class="eb-rolle ${aktiv ? 'eb-rolle-aktiv' : ''}">
         <label class="eb-rolle-check">
@@ -3287,28 +3383,67 @@ function renderEinstellungBlock(b) {
           ${beworben 
             ? '<span class="eb-badge-beworben" title="Hat sich auf diese Rolle beworben">beworben</span>' 
             : '<span class="eb-badge-andere" title="Nicht beworben — du vergibst eine andere Rolle">andere Rolle</span>'}
+          ${istGrow ? '<span class="eb-badge-grow" title="Anbau-Rolle — immer Minijob (§17 KCanG)">🌱 Minijob</span>' : ''}
         </label>
       </div>
     `;
   }).join('');
 
-  // EIN Vertrag-Dropdown für die ganze Einstellung
-  const vertragHtml = `
-    <div class="eb-vertrag-row">
-      <span class="eb-vertrag-label">Vertragsart${gewaehlteRollen.length > 1 ? ' (für alle Rollen)' : ''}:</span>
-      <select class="eb-vertrag-select" onchange="setEinstellungVertrag('${b.id}', this.value)" ${gewaehlteRollen.length === 0 ? 'disabled' : ''}>
-        <option value="">${gewaehlteRollen.length === 0 ? 'erst Rolle wählen…' : 'Vertrag wählen…'}</option>
-        ${erlaubt.map(v => `<option value="${v}" ${vertrag === v ? 'selected' : ''}>${VERTRAG_LABELS[v]}</option>`).join('')}
-      </select>
-      ${hatGrowerGewaehlt ? '<span class="eb-kcang-hint" title="§17 KCanG: sobald eine Anbau-Rolle dabei ist, ist nur Minijob oder Ehrenamt zulässig">§17 KCanG</span>' : ''}
-    </div>
-    ${vertragUngueltig ? `<div class="eb-warn">⚠️ Der bisherige Vertrag „${VERTRAG_LABELS[vertrag] || vertrag}" ist mit einer Grower-Rolle nicht zulässig (§17 KCanG). Bitte Minijob oder Ehrenamt wählen.</div>` : ''}
-  `;
+  // Verfügbarkeits-Vorschlag-Box
+  let verfBox = '';
+  if (vV) {
+    let vorschlagText;
+    if (vV.hatGrow && vV.hatNichtGrow) {
+      vorschlagText = `Grow-Rollen → <strong>Minijob</strong> · übrige Rollen → <strong>${VERTRAG_LABELS[vV.restVertrag]}</strong> (aus ${vV.restStunden} h Restzeit)`;
+    } else if (vV.hatGrow) {
+      vorschlagText = `Grow-Rollen → <strong>Minijob</strong> (§17 KCanG)`;
+    } else {
+      vorschlagText = `Empfohlener Vertrag → <strong>${VERTRAG_LABELS[vV.restVertrag]}</strong>`;
+    }
+    verfBox = `
+      <div class="eb-verf">
+        <span class="eb-verf-text">
+          📅 <strong>${vV.wochenstunden} h/Woche</strong> verfügbar (aus der Verfügbarkeits-Angabe) — ${vorschlagText}
+        </span>
+        ${(vV.restVertrag && hatNichtGrow) ? `<button class="eb-vorschlag-btn" onclick="applyVertragsVorschlag('${b.id}')">Vertrag übernehmen</button>` : ''}
+      </div>
+    `;
+  } else {
+    verfBox = `<div class="eb-verf eb-verf-leer">📅 Keine Verfügbarkeits-Angabe vorhanden — Vertragsart bitte manuell wählen.</div>`;
+  }
+
+  // Vertrag-Bereich
+  let vertragHtml = '';
+  if (hatGrow) {
+    vertragHtml += `
+      <div class="eb-vertrag-grow">
+        🌱 <strong>${growRollen.map(r => ROLE_LABELS[r] || r).join(', ')}</strong> — Vertrag: <strong>Minijob</strong>
+        <span class="eb-kcang-hint" title="§17 KCanG: Anbau-Tätigkeit ist nur als Minijob zulässig">§17 KCanG · fest</span>
+      </div>
+    `;
+  }
+  if (hatNichtGrow) {
+    vertragHtml += `
+      <div class="eb-vertrag-row">
+        <span class="eb-vertrag-label">Vertrag für ${nichtGrowRollen.map(r => ROLE_LABELS[r] || r).join(', ')}:</span>
+        <select class="eb-vertrag-select" onchange="setEinstellungVertrag('${b.id}', this.value)">
+          <option value="">Vertrag wählen…</option>
+          ${VERTRAG_ALLE.map(v => `<option value="${v}" ${vertrag === v ? 'selected' : ''}>${VERTRAG_LABELS[v]}</option>`).join('')}
+        </select>
+      </div>
+    `;
+  }
+  if (!hatGrow && !hatNichtGrow) {
+    vertragHtml = `<div class="eb-vertrag-row eb-vertrag-leer">Erst Rolle(n) auswählen — dann die Vertragsart festlegen.</div>`;
+  }
 
   // Zusammenfassungs-Text für die Summary
   let summaryBadge;
   if (istVollstaendig) {
-    summaryBadge = `<span class="eb-count">${gewaehlteRollen.length} Rolle${gewaehlteRollen.length !== 1 ? 'n' : ''} · ${VERTRAG_LABELS[vertrag]}</span>`;
+    const teile = [];
+    if (hatGrow) teile.push(`${growRollen.length}× Grow/Minijob`);
+    if (hatNichtGrow) teile.push(`${nichtGrowRollen.length}× ${VERTRAG_LABELS[vertrag]}`);
+    summaryBadge = `<span class="eb-count">${teile.join(' · ')}</span>`;
   } else if (gewaehlteRollen.length > 0) {
     summaryBadge = `<span class="eb-count eb-count-warn">Vertrag fehlt</span>`;
   } else {
@@ -3325,21 +3460,22 @@ function renderEinstellungBlock(b) {
       </summary>
       <div class="eb-body">
         ${fehltPflicht ? `
-          <div class="eb-warn">⚠️ Status ist „${STATUS_LABELS[status]}" — bitte mindestens eine Rolle UND die Vertragsart festlegen, damit der Bewerber weiß wofür.</div>
+          <div class="eb-warn">⚠️ Status ist „${STATUS_LABELS[status]}" — bitte mindestens eine Rolle UND (für Nicht-Grow-Rollen) die Vertragsart festlegen.</div>
         ` : ''}
-        ${vorschlag && !vorschlagSchonGesetzt ? `
+        ${scoreVorschlag && !scoreSchonGesetzt ? `
           <div class="eb-vorschlag">
             <span class="eb-vorschlag-text">
-              💡 <strong>Score-Empfehlung:</strong> ${escapeHtml(ROLE_LABELS[vorschlag.rolle] || vorschlag.rolle)} 
-              (Score ${vorschlag.score} — höchster Wert)${vorschlag.vertrag ? ` · Vertrag: ${VERTRAG_LABELS[vorschlag.vertrag]}` : ''}
+              💡 <strong>Score-Empfehlung:</strong> ${escapeHtml(ROLE_LABELS[scoreVorschlag.rolle] || scoreVorschlag.rolle)} 
+              (Score ${scoreVorschlag.score} — höchster Wert)
             </span>
-            <button class="eb-vorschlag-btn" onclick="applyScoreVorschlag('${b.id}')">Übernehmen</button>
+            <button class="eb-vorschlag-btn" onclick="applyScoreVorschlag('${b.id}')">Rolle übernehmen</button>
           </div>
         ` : ''}
         <div class="eb-rollen-list-label">Rolle(n) auswählen — mehrere möglich:</div>
         <div class="eb-rollen-list">
           ${rollenHtml}
         </div>
+        ${verfBox}
         ${vertragHtml}
       </div>
     </details>
@@ -3351,18 +3487,11 @@ async function toggleEinstellungRolle(bewerbungId, rolle) {
   if (!b) return;
   const einst = getEinstellung(b);
   const idx = einst.rollen.indexOf(rolle);
-  if (idx === -1) {
-    einst.rollen.push(rolle);
-  } else {
-    einst.rollen.splice(idx, 1);
-  }
-  // KCanG-Check: wenn jetzt eine Grower-Rolle dabei ist und der Vertrag
-  // dadurch ungültig wird → Vertrag zurücksetzen
-  const erlaubt = erlaubteVertraege(einst.rollen);
-  if (einst.vertrag && !erlaubt.includes(einst.vertrag)) {
-    einst.vertrag = '';
-    toast('Vertrag zurückgesetzt — mit Grower-Rolle nur Minijob/Ehrenamt (§17 KCanG)', false);
-  }
+  if (idx === -1) einst.rollen.push(rolle);
+  else einst.rollen.splice(idx, 1);
+  // Wenn keine Nicht-Grow-Rolle mehr übrig → Nicht-Grow-Vertrag leeren
+  const hatNichtGrow = einst.rollen.some(r => !GROWER_ROLLEN.includes(r));
+  if (!hatNichtGrow) einst.vertrag = '';
   await saveEinstellung(bewerbungId, einst);
 }
 
@@ -3374,20 +3503,31 @@ async function setEinstellungVertrag(bewerbungId, vertrag) {
   await saveEinstellung(bewerbungId, einst);
 }
 
+// Übernimmt den verfügbarkeits-basierten Vertragsvorschlag für die
+// Nicht-Grow-Rollen.
+async function applyVertragsVorschlag(bewerbungId) {
+  const b = bewerbungen.find(x => x.id === bewerbungId);
+  if (!b) return;
+  const einst = getEinstellung(b);
+  const vV = getVertragsVorschlag(b, einst.rollen.length ? einst.rollen : (b.rollen || []));
+  if (!vV || !vV.restVertrag) { toast('Kein Vertragsvorschlag verfügbar', true); return; }
+  einst.vertrag = vV.restVertrag;
+  await saveEinstellung(bewerbungId, einst);
+  toast(`Vertrag übernommen: ${VERTRAG_LABELS[vV.restVertrag]} (aus Verfügbarkeit)`);
+}
+
 async function applyScoreVorschlag(bewerbungId) {
   const b = bewerbungen.find(x => x.id === bewerbungId);
   if (!b) return;
   const vorschlag = getScoreVorschlag(b);
   if (!vorschlag) { toast('Kein Score-Vorschlag verfügbar', true); return; }
   const einst = getEinstellung(b);
-  if (!einst.rollen.includes(vorschlag.rolle)) {
-    einst.rollen.push(vorschlag.rolle);
-  }
-  // Vertrag nur übernehmen wenn noch keiner gesetzt ODER der bisherige
-  // mit der neuen Rolle nicht mehr erlaubt ist
-  const erlaubt = erlaubteVertraege(einst.rollen);
-  if (!einst.vertrag || !erlaubt.includes(einst.vertrag)) {
-    einst.vertrag = erlaubt.includes(vorschlag.vertrag) ? vorschlag.vertrag : (erlaubt[0] || '');
+  if (!einst.rollen.includes(vorschlag.rolle)) einst.rollen.push(vorschlag.rolle);
+  // Vertrag für Nicht-Grow-Rollen aus Verfügbarkeit vorbelegen (falls noch leer)
+  const hatNichtGrow = einst.rollen.some(r => !GROWER_ROLLEN.includes(r));
+  if (hatNichtGrow && !einst.vertrag) {
+    const vV = getVertragsVorschlag(b, einst.rollen);
+    if (vV && vV.restVertrag) einst.vertrag = vV.restVertrag;
   }
   await saveEinstellung(bewerbungId, einst);
   toast(`Empfehlung übernommen: ${ROLE_LABELS[vorschlag.rolle] || vorschlag.rolle}`);
@@ -5201,18 +5341,23 @@ function applyMailPlaceholders(text, b, v) {
   const datum = new Date().toLocaleDateString('de-DE');
 
   // {positionen} + {vertrag}: aus der Einstellungs-Entscheidung
+  // Grow-Rollen sind immer Minijob, Nicht-Grow-Rollen teilen sich einst.vertrag.
   const einst = getEinstellung(b);
-  const rollenLabels = einst.rollen.map(r => ROLE_LABELS[r] || r);
+  const growR    = einst.rollen.filter(r => GROWER_ROLLEN.includes(r));
+  const nichtGrowR = einst.rollen.filter(r => !GROWER_ROLLEN.includes(r));
   const vertragLabel = einst.vertrag ? (VERTRAG_LABELS[einst.vertrag] || einst.vertrag) : '';
-  let positionen;
-  if (rollenLabels.length === 0) {
-    positionen = '(Position noch offen)';
-  } else if (rollenLabels.length === 1) {
-    positionen = rollenLabels[0] + (vertragLabel ? ` (${vertragLabel})` : '');
-  } else {
-    const liste = rollenLabels.slice(0, -1).join(', ') + ' und ' + rollenLabels[rollenLabels.length - 1];
-    positionen = liste + (vertragLabel ? ` (jeweils ${vertragLabel})` : '');
+  const teile = [];
+  if (nichtGrowR.length) {
+    const lbl = nichtGrowR.map(r => ROLE_LABELS[r] || r);
+    const liste = lbl.length === 1 ? lbl[0] : (lbl.slice(0, -1).join(', ') + ' und ' + lbl[lbl.length - 1]);
+    teile.push(liste + (vertragLabel ? ` (${vertragLabel})` : ''));
   }
+  if (growR.length) {
+    const lbl = growR.map(r => ROLE_LABELS[r] || r);
+    const liste = lbl.length === 1 ? lbl[0] : (lbl.slice(0, -1).join(', ') + ' und ' + lbl[lbl.length - 1]);
+    teile.push(liste + ' (Minijob)');
+  }
+  const positionen = teile.length ? teile.join(', ') : '(Position noch offen)';
 
   return text
     .replaceAll('{vorname}', vorname)
@@ -5221,7 +5366,7 @@ function applyMailPlaceholders(text, b, v) {
     .replaceAll('{rolle}', rolle)
     .replaceAll('{datum}', datum)
     .replaceAll('{positionen}', positionen)
-    .replaceAll('{vertrag}', vertragLabel || '(Vertrag noch offen)');
+    .replaceAll('{vertrag}', vertragLabel || (growR.length ? 'Minijob' : '(Vertrag noch offen)'));
 }
 
 function plainToHtml(text, b, v) {

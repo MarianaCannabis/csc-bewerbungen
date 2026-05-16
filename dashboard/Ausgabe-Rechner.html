@@ -593,7 +593,7 @@
           <h2>Schritt 3 · Mitglieder & Nutzung<span class="num-pill" id="pillMitglieder">500</span></h2>
           <div class="field">
             <label>Mitglieder<span class="val"><span id="lblMitglieder">500</span></span></label>
-            <input type="range" id="mitglieder" min="50" max="500" step="10" value="500">
+            <input type="range" id="mitglieder" min="50" max="2000" step="10" value="500">
           </div>
           <div class="field">
             <label>U21-Anteil<span class="val"><span id="lblU21">5</span> %</span></label>
@@ -645,7 +645,7 @@
           </div>
           <div class="field">
             <label>Öffnungstage / Woche<span class="val"><span id="lblTage">6</span></span></label>
-            <input type="range" id="tage" min="3" max="7" step="1" value="6">
+            <input type="range" id="tage" min="1" max="7" step="1" value="6">
           </div>
           <div class="field">
             <label>Öffnungsstunden / Tag<span class="val"><span id="lblStunden">5</span> h</span></label>
@@ -657,11 +657,11 @@
           </div>
           <div class="toggle-row">
             <div><label for="zweiPersonen">2-Personen-Prinzip<span class="desc">min. 2 anwesend</span></label></div>
-            <label class="switch"><input type="checkbox" id="zweiPersonen" checked><span class="slider-sw"></span></label>
+            <label class="switch"><input type="checkbox" id="zweiPersonen"><span class="slider-sw"></span></label>
           </div>
           <div class="toggle-row">
             <div><label for="terminModus">Termin-Modus<span class="desc">−30 % Personal vs. Walk-in</span></label></div>
-            <label class="switch"><input type="checkbox" id="terminModus"><span class="slider-sw"></span></label>
+            <label class="switch"><input type="checkbox" id="terminModus" checked><span class="slider-sw"></span></label>
           </div>
           <div class="field">
             <label>Urlaubs- / Krankheitspuffer<span class="val">+<span id="lblKrank">20</span> %</span></label>
@@ -2341,7 +2341,8 @@ function pruefeBewerbungsImport() {
     { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
   $('importInfo').textContent =
     `${data.team.length} Bewerber aus „${data.verein || 'CSC-Dashboard'}"`
-    + (dat ? ` · übergeben ${dat} Uhr` : '');
+    + (dat ? ` · übergeben ${dat} Uhr` : '')
+    + (data.stammdaten ? ' · inkl. Vereins-Eckdaten' : '');
 
   const TYPE_LBL = { minijob: 'Minijob', midijob: 'Midijob', teilzeit: 'Teilzeit', vollzeit: 'Vollzeit' };
   $('importListe').innerHTML = data.team.map(m => {
@@ -2378,13 +2379,40 @@ function importiereBewerber() {
   });
   // Import-Daten verbrauchen, damit es nicht doppelt importiert wird
   try { localStorage.removeItem(BEWERBUNGS_IMPORT_KEY); } catch (e) {}
+
+  // Vereins-Stammdaten aus dem Dashboard als Vorbelegung übernehmen
+  // (bleiben über die Slider frei anpassbar)
+  let sdUebernommen = false;
+  const sd = data.stammdaten;
+  if (sd && typeof sd === 'object') {
+    const setRange = (id, val) => {
+      if (val == null) return;
+      const el = $(id);
+      if (!el) return;
+      // auf den Slider-Bereich begrenzen
+      const min = parseFloat(el.min), max = parseFloat(el.max);
+      el.value = Math.max(min, Math.min(max, val));
+      sdUebernommen = true;
+    };
+    setRange('mitglieder', sd.mitglieder);
+    setRange('minProAbgabe', sd.zeit_pro_ausgabe);
+    setRange('tage', sd.oeffnungstage);
+    setRange('stunden', sd.oeffnungsstunden);
+    if (sd.vorbereitung != null) setRange('puffer', Math.round(sd.vorbereitung * 60));
+    if (sd.ausgabe_punkte != null) {
+      const zp = $('zweiPersonen');
+      if (zp) { zp.checked = sd.ausgabe_punkte >= 2; sdUebernommen = true; }
+    }
+  }
+
   pruefeBewerbungsImport();
   renderTeam();
   calc();
   // sanft zum Team scrollen
   const tg = $('teamGrid');
   if (tg) tg.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  alert(`${n} Bewerber ins Team übernommen — Verfügbarkeit und Anstellungsart wurden mitgeführt.`);
+  alert(`${n} Bewerber ins Team übernommen — Verfügbarkeit und Anstellungsart wurden mitgeführt.`
+    + (sdUebernommen ? '\n\nDie Vereins-Eckdaten (Mitglieder, Öffnungszeiten …) wurden ebenfalls vorausgefüllt — du kannst sie jederzeit anpassen.' : ''));
 }
 
 function verwerfeBewerbungsImport() {

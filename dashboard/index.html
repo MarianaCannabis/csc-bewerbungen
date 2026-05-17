@@ -1651,7 +1651,7 @@
       <button class="btn-ghost errorlog-btn-header" onclick="openErrorLogModal()" title="Error-Log (technische Fehler)" style="display:none" aria-label="Error-Log öffnen"><span aria-hidden="true">⚠️</span> Errors</button>
       <button class="btn-ghost verein-btn-header" onclick="openVereinsStammdaten()" title="Vereins-Stammdaten & Personalbedarf" style="display:none" aria-label="Verein einrichten"><span aria-hidden="true">⚙️</span> Verein</button>
       <button class="btn-ghost" onclick="openAusgabePlanung()" title="Ausgabe-Mitarbeiter an den Ausgabe-Rechner übergeben — Öffnungszeiten & Dienstpläne planen" aria-label="Ausgabe-Personalplanung"><span aria-hidden="true">🗓</span> Ausgabe planen</button>
-      <button class="btn-ghost" onclick="planeGrowEinsatz()" title="Grower an den Grow-Rechner übergeben — Anbau, Personalbedarf & Einsatzplan" aria-label="Grow-Personalplanung"><span aria-hidden="true">🌱</span> Grow planen</button>
+      <button class="btn-ghost" onclick="openGrowPlanung()" title="Grower an den Grow-Rechner übergeben — Anbau, Personalbedarf & Einsatzplan" aria-label="Grow-Personalplanung"><span aria-hidden="true">🌱</span> Grow planen</button>
       <button class="btn-ghost" onclick="openHelp()" title="Hilfe, Anleitung & Schritt-für-Schritt-Tutorial" aria-label="Hilfe öffnen"><span aria-hidden="true">❓</span> Hilfe</button>
       <button class="btn-ghost" id="btn-refresh" onclick="manualRefresh()" title="Daten neu laden (passiert auch automatisch alle 25 Sek)" aria-label="Daten neu laden"><span class="refresh-icon" aria-hidden="true">🔄</span></button>
       <button class="btn-ghost" onclick="exportCsv()" title="Aktuell sichtbare Bewerbungen als CSV/Excel exportieren" aria-label="Aktuell sichtbare Bewerbungen als CSV exportieren"><span aria-hidden="true">⬇</span> Export</button>
@@ -7356,17 +7356,102 @@ async function uebergebeAnGrowRechner(idsOverride) {
   document.body.appendChild(overlay);
 }
 
-// Header-Button „Grow planen": alle Grow-Bewerber der aktuellen Liste übergeben.
-function planeGrowEinsatz() {
+// Geführter Einstieg: Planungs-Modal für die Grow-Personalplanung
+let gpSelected = new Set();
+
+function openGrowPlanung() {
+  // Grow-relevante Bewerber aus der aktuellen Liste (außer abgelehnte)
   const kandidaten = lastFilteredList.filter(b => b.status !== 'abgelehnt' && istGrowerBewerber(b));
-  if (kandidaten.length === 0) {
-    appConfirm(
-      'In der aktuellen Ansicht sind keine Grow-Bewerber.\n\nTipp: oben die Filter zurücksetzen oder auf die Rolle „Grower“ filtern.',
-      { title: 'Keine Grow-Bewerber', okLabel: 'Verstanden', cancelLabel: '' }
-    );
-    return;
-  }
-  uebergebeAnGrowRechner(kandidaten.map(b => b.id));
+  gpSelected = new Set(kandidaten.map(b => b.id));
+
+  const mehrereVereine = new Set(kandidaten.map(b => b.verein_id)).size > 1;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'app-modal-overlay';
+  overlay.id = 'grow-planung-overlay';
+  overlay.innerHTML = `
+    <div class="app-modal" role="dialog" aria-modal="true" style="max-width:560px">
+      <div class="app-modal-title">🌱 Grow-Personalplanung</div>
+      <div class="app-modal-body" style="padding-bottom:4px">
+        Wähle die Grower für die Anbau-Planung. Der Rechner berechnet daraus
+        Personalbedarf und Einsatzplan. Head Grower sind hier bewusst nicht dabei.
+        ${kandidaten.length === 0 ? `
+          <div class="ap-status" style="margin-top:12px">
+            Keine Grow-Bewerber in der aktuellen Ansicht.<br>
+            <span style="color:var(--tx-mute);font-size:12px">Tipp: oben die Filter zurücksetzen oder auf die Rolle „Grower“ filtern.</span>
+          </div>` : ''}
+      </div>
+      ${kandidaten.length > 0 ? `
+        <div class="ap-listtools">
+          <button class="ap-mini" type="button" onclick="gpSetAll(true)">Alle</button>
+          <button class="ap-mini" type="button" onclick="gpSetAll(false)">Keine</button>
+          <span class="ap-counter" id="gp-counter"></span>
+        </div>
+        <div class="ap-list" id="gp-list">
+          ${kandidaten.map(b => {
+            const name = `${b.vorname || ''} ${b.nachname || ''}`.trim() || 'Bewerber';
+            const verf = verfuegbareWochenstunden(b);
+            const stLabel = STATUS_LABELS[b.status] || b.status || '';
+            const vName = mehrereVereine ? (vereine[b.verein_id]?.name || '') : '';
+            const einst = getEinstellung(b);
+            const eingestellt = einst.rollen.includes('grower');
+            return `
+              <label class="ap-row">
+                <input type="checkbox" checked onchange="gpToggle('${b.id}', this.checked)">
+                <span class="ap-row-main">
+                  <span class="ap-row-name">${escapeHtml(name)}</span>
+                  <span class="ap-row-meta">
+                    <span class="ap-tag ap-tag-status">${escapeHtml(stLabel)}</span>
+                    ${eingestellt ? '<span class="ap-tag ap-tag-ok">für Anbau eingestellt</span>' : '<span class="ap-tag">auf Anbau beworben</span>'}
+                    ${vName ? `<span class="ap-tag">${escapeHtml(vName)}</span>` : ''}
+                    <span class="ap-tag ${verf > 0 ? '' : 'ap-tag-warn'}">${verf > 0 ? verf + ' h/Woche' : 'keine Verfügbarkeit'}</span>
+                  </span>
+                </span>
+              </label>
+            `;
+          }).join('')}
+        </div>
+      ` : ''}
+      <div class="app-modal-actions">
+        <button class="app-modal-btn app-modal-btn-cancel" type="button" onclick="this.closest('.app-modal-overlay').remove()">Abbrechen</button>
+        ${kandidaten.length > 0 ? `<button class="app-modal-btn app-modal-btn-ok" id="gp-ok" type="button" onclick="gpUebernehmen()">Übernehmen &amp; Rechner öffnen</button>` : ''}
+      </div>
+    </div>
+  `;
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+  gpUpdateCounter();
+}
+
+function gpToggle(id, checked) {
+  if (checked) gpSelected.add(id); else gpSelected.delete(id);
+  gpUpdateCounter();
+}
+
+function gpSetAll(on) {
+  const list = document.getElementById('gp-list');
+  if (!list) return;
+  list.querySelectorAll('.ap-row').forEach(row => {
+    const cb = row.querySelector('input[type=checkbox]');
+    const id = cb.getAttribute('onchange').match(/'([^']+)'/)[1];
+    cb.checked = on;
+    if (on) gpSelected.add(id); else gpSelected.delete(id);
+  });
+  gpUpdateCounter();
+}
+
+function gpUpdateCounter() {
+  const el = document.getElementById('gp-counter');
+  if (el) el.textContent = `${gpSelected.size} ausgewählt`;
+  const ok = document.getElementById('gp-ok');
+  if (ok) ok.disabled = gpSelected.size === 0;
+}
+
+function gpUebernehmen() {
+  const ids = Array.from(gpSelected);
+  if (ids.length === 0) { toast('Keine Bewerber ausgewählt', true); return; }
+  document.getElementById('grow-planung-overlay')?.remove();
+  uebergebeAnGrowRechner(ids);
 }
 
 // Geführter Einstieg: Planungs-Modal mit Bewerber-Auswahlliste

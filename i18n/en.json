@@ -49,7 +49,10 @@
       "blocker_wohnsitz": "Under the KCanG, residence in Germany for at least 6 months is mandatory.",
       "blocker_mitglied": "Membership in the club is required for employment at a CSC under §17 KCanG. Without membership, we unfortunately cannot hire you. If you'd like to reconsider: you can sign up directly here — then come back and continue your application.",
       "blocker_mitglied_link": "Become a member via TerpTrain →",
-      "blocker_mitglied_url": "https://app.terptrain.de/anmeldung"
+      "blocker_mitglied_url": "https://app.terptrain.de/anmeldung",
+      "ehrenmitglied_titel": "Just want to help out, without obtaining cannabis yourself?",
+      "ehrenmitglied_text1": "If you would like to help out at the club but do not want to obtain cannabis from it yourself, you can contact support after registering at",
+      "ehrenmitglied_text2": "and have your membership changed to an honorary membership. As an honorary member you pay no membership fees at the local club and do not obtain any cannabis from it."
     },
     "2": {
       "title": "Personal information",
@@ -314,7 +317,11 @@
       "jobticket_hint": "We can offer qualified employees a public transport subsidy — it eases your finances and is eco-friendly.",
       "jobticket_ja": "Yes, that would be interesting",
       "jobticket_nein": "No, I don't need it",
-      "jobticket_unsicher": "Maybe — happy to discuss"
+      "jobticket_unsicher": "Maybe — happy to discuss",
+      "kfz_verein_label": "Could you use your own vehicle for the club when needed (against a mileage allowance), e.g. for transport?",
+      "kfz_verein_ja": "Yes, that would be possible",
+      "kfz_verein_absprache": "By arrangement",
+      "kfz_verein_nein": "No"
     },
     "8": {
       "title": "Optional information",

@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="color-scheme" content="dark">
   <title>Mariana Cannabis · Bewerbungs-Dashboard v2</title>
-  <!-- DASHBOARD_BUILD: 2026-05-16T2130 (Interaktive Hilfe, Tutorial + Info-Tooltips) -->
-  <script>window.__DASHBOARD_BUILD = '2026-05-16T2130';</script>
+  <!-- DASHBOARD_BUILD: 2026-05-17T1730 (Grow-Rechner-Anbindung) -->
+  <script>window.__DASHBOARD_BUILD = '2026-05-17T1730';</script>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -1651,6 +1651,7 @@
       <button class="btn-ghost errorlog-btn-header" onclick="openErrorLogModal()" title="Error-Log (technische Fehler)" style="display:none" aria-label="Error-Log öffnen"><span aria-hidden="true">⚠️</span> Errors</button>
       <button class="btn-ghost verein-btn-header" onclick="openVereinsStammdaten()" title="Vereins-Stammdaten & Personalbedarf" style="display:none" aria-label="Verein einrichten"><span aria-hidden="true">⚙️</span> Verein</button>
       <button class="btn-ghost" onclick="openAusgabePlanung()" title="Ausgabe-Mitarbeiter an den Ausgabe-Rechner übergeben — Öffnungszeiten & Dienstpläne planen" aria-label="Ausgabe-Personalplanung"><span aria-hidden="true">🗓</span> Ausgabe planen</button>
+      <button class="btn-ghost" onclick="planeGrowEinsatz()" title="Grower an den Grow-Rechner übergeben — Anbau, Personalbedarf & Einsatzplan" aria-label="Grow-Personalplanung"><span aria-hidden="true">🌱</span> Grow planen</button>
       <button class="btn-ghost" onclick="openHelp()" title="Hilfe, Anleitung & Schritt-für-Schritt-Tutorial" aria-label="Hilfe öffnen"><span aria-hidden="true">❓</span> Hilfe</button>
       <button class="btn-ghost" id="btn-refresh" onclick="manualRefresh()" title="Daten neu laden (passiert auch automatisch alle 25 Sek)" aria-label="Daten neu laden"><span class="refresh-icon" aria-hidden="true">🔄</span></button>
       <button class="btn-ghost" onclick="exportCsv()" title="Aktuell sichtbare Bewerbungen als CSV/Excel exportieren" aria-label="Aktuell sichtbare Bewerbungen als CSV exportieren"><span aria-hidden="true">⬇</span> Export</button>
@@ -1686,6 +1687,7 @@
             <button class="bulk-btn" id="bulk-select-all" onclick="selectAllVisible()" title="Alle in der aktuellen Filter-Ansicht auswählen">Alle auswählen</button>
             <button class="bulk-btn" onclick="invertSelection()" title="Auswahl umkehren">Umkehren</button>
             <button class="bulk-btn bulk-btn-rechner" onclick="uebergebeAnRechner()" title="Ausgewählte Bewerber an den Ausgabe-Rechner übergeben (mit Verfügbarkeit)">📥 An Ausgabe-Rechner</button>
+            <button class="bulk-btn bulk-btn-rechner" onclick="uebergebeAnGrowRechner()" title="Ausgewählte Grower an den Grow-Rechner übergeben (mit Verfügbarkeit)">🌱 An Grow-Rechner</button>
             <button class="bulk-btn bulk-btn-clear" onclick="deselectAll()" title="Auswahl aufheben">✕ Auswahl aufheben</button>
           </div>
         </div>
@@ -7235,6 +7237,136 @@ function waehleAlleAusgabeBewerber() {
   });
   renderList();
   return n;
+}
+
+// ============================================================================
+// ÜBERGABE AN GROW-RECHNER
+// ----------------------------------------------------------------------------
+// Spiegelt die Ausgabe-Rechner-Anbindung für die Grower-Rolle.
+// Grow-relevante Bewerber werden über localStorage an Grow-Rechner.html
+// übergeben. §17 KCanG: Grower nur Minijob/Ehrenamt.
+// ============================================================================
+
+const GROW_RECHNER_IMPORT_KEY = 'mariana_grow_rechner_import';
+const GROW_RECHNER_URL = 'Grow-Rechner.html';
+
+// Ist der Bewerber für den ANBAU (Grower) relevant?
+function istGrowerBewerber(b) {
+  const einst = getEinstellung(b);
+  if (einst.rollen.includes('grower')) return true;
+  if (einst.rollen.length === 0 && Array.isArray(b.rollen) && b.rollen.includes('grower')) return true;
+  return false;
+}
+
+// Vertragsart → Grow-Rechner-type (nur minijob/ehrenamt, §17 KCanG)
+function vertragZuGrowType(vertrag) {
+  return vertrag === 'ehrenamt' ? 'ehrenamt' : 'minijob';
+}
+
+async function uebergebeAnGrowRechner(idsOverride) {
+  const ids = Array.isArray(idsOverride) ? idsOverride : Array.from(selectedIds);
+  if (ids.length === 0) { toast('Keine Bewerber ausgewählt', true); return; }
+  const alleAusgewaehlt = bewerbungen.filter(b => ids.includes(b.id));
+
+  const growBewerber = alleAusgewaehlt.filter(istGrowerBewerber);
+  const verworfen = alleAusgewaehlt.length - growBewerber.length;
+
+  if (growBewerber.length === 0) {
+    await appConfirm(
+      'In deiner Auswahl ist kein Bewerber für den Anbau dabei.\n\nDer Grow-Rechner plant nur Grow-Einsätze — wähle bitte Bewerber aus, die für die Rolle „Grower“ vorgesehen sind oder sich darauf beworben haben.',
+      { title: 'Keine Grow-Bewerber', okLabel: 'Verstanden', cancelLabel: '' }
+    );
+    return;
+  }
+
+  const team = growBewerber.map(b => {
+    const einst = getEinstellung(b);
+    const type  = vertragZuGrowType(einst.vertrag);
+    const avail = verfuegbarkeitZuRechnerAvail(b.verfuegbarkeit);
+    const availStd = Object.values(avail).reduce((s, arr) => s + arr.length, 0);
+    return { name: `${b.vorname || ''} ${b.nachname || ''}`.trim() || 'Grower',
+             type, avail, _availStd: availStd };
+  });
+  const ohneVerf = team.filter(m => m._availStd === 0).length;
+
+  const verein = vereine[getPersonalPanelVereinId()] || {};
+  const sd = (verein.stammdaten && typeof verein.stammdaten === 'object') ? verein.stammdaten : null;
+  const payload = {
+    exportiert_am: new Date().toISOString(),
+    quelle: 'csc-bewerbungen-dashboard',
+    verein: verein.name || '',
+    stammdaten: sd ? { mitglieder: Number(sd.mitglieder) || null } : null,
+    team: team.map(m => ({ name: m.name, type: m.type, avail: m.avail }))
+  };
+
+  try {
+    localStorage.setItem(GROW_RECHNER_IMPORT_KEY, JSON.stringify(payload));
+  } catch (e) {
+    console.error('[uebergebeAnGrowRechner]', e);
+    toast('Übergabe fehlgeschlagen: ' + e.message, true);
+    return;
+  }
+
+  let rechnerDa = true;
+  try {
+    const resp = await fetch(GROW_RECHNER_URL, { method: 'HEAD', cache: 'no-store' });
+    rechnerDa = resp.ok;
+  } catch (e) { rechnerDa = false; }
+
+  if (rechnerDa) window.open(GROW_RECHNER_URL, '_blank');
+  const rechnerAbsURL = new URL(GROW_RECHNER_URL, location.href).href;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'app-modal-overlay';
+  if (rechnerDa) {
+    overlay.innerHTML = `
+      <div class="app-modal" role="dialog" aria-modal="true" style="max-width:480px">
+        <div class="app-modal-title">🌱 ${team.length} Grow-Bewerber übergeben</div>
+        <div class="app-modal-body">
+          Der Grow-Rechner öffnet sich in einem neuen Tab. Dort oben auf
+          „Ins Team übernehmen“ klicken — dann rechnet er Anbau, Personalbedarf und Einsatzplan.
+          ${verworfen > 0 ? `<br><br>ℹ️ ${verworfen} ausgewählte${verworfen === 1 ? 'r Bewerber war' : ' Bewerber waren'} nicht für den Anbau vorgesehen und ${verworfen === 1 ? 'wurde' : 'wurden'} nicht übergeben.` : ''}
+          ${ohneVerf > 0 ? `<br><br>⚠️ ${ohneVerf} ${ohneVerf === 1 ? 'hat' : 'haben'} keine Verfügbarkeits-Angabe — im Rechner bitte manuell ergänzen.` : ''}
+        </div>
+        <div class="app-modal-actions">
+          <a class="app-modal-btn" href="${escapeHtml(GROW_RECHNER_URL)}" target="_blank" rel="noopener">Rechner erneut öffnen</a>
+          <button class="app-modal-btn app-modal-btn-ok" type="button" onclick="this.closest('.app-modal-overlay').remove()">OK</button>
+        </div>
+      </div>
+    `;
+  } else {
+    overlay.innerHTML = `
+      <div class="app-modal" role="dialog" aria-modal="true" style="max-width:520px">
+        <div class="app-modal-title">⚠️ Grow-Rechner nicht gefunden</div>
+        <div class="app-modal-body">
+          Die ${team.length} Grower wurden vorbereitet — aber der Grow-Rechner ist
+          unter dieser Adresse nicht erreichbar:<br><br>
+          <code style="font-size:12px;word-break:break-all;color:var(--gold)">${escapeHtml(rechnerAbsURL)}</code>
+          <br><br>
+          <strong>So behebst du das:</strong> Lade die Datei <strong>Grow-Rechner.html</strong>
+          in denselben GitHub-Ordner wie das Dashboard (<code>csc-bewerbungen</code>).
+          Achte auf die exakte Schreibweise — GitHub Pages unterscheidet Groß- und Kleinschreibung.
+        </div>
+        <div class="app-modal-actions">
+          <button class="app-modal-btn app-modal-btn-ok" type="button" onclick="this.closest('.app-modal-overlay').remove()">OK</button>
+        </div>
+      </div>
+    `;
+  }
+  document.body.appendChild(overlay);
+}
+
+// Header-Button „Grow planen": alle Grow-Bewerber der aktuellen Liste übergeben.
+function planeGrowEinsatz() {
+  const kandidaten = lastFilteredList.filter(b => b.status !== 'abgelehnt' && istGrowerBewerber(b));
+  if (kandidaten.length === 0) {
+    appConfirm(
+      'In der aktuellen Ansicht sind keine Grow-Bewerber.\n\nTipp: oben die Filter zurücksetzen oder auf die Rolle „Grower“ filtern.',
+      { title: 'Keine Grow-Bewerber', okLabel: 'Verstanden', cancelLabel: '' }
+    );
+    return;
+  }
+  uebergebeAnGrowRechner(kandidaten.map(b => b.id));
 }
 
 // Geführter Einstieg: Planungs-Modal mit Bewerber-Auswahlliste

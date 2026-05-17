@@ -49,7 +49,10 @@
       "blocker_wohnsitz": "Nach dem Konsumcannabisgesetz ist ein Wohnsitz in Deutschland von mindestens 6 Monaten Pflicht.",
       "blocker_mitglied": "Eine Mitgliedschaft im Verein ist nach §17 KCanG Voraussetzung für eine Anstellung im CSC. Ohne Mitgliedschaft können wir dich leider nicht einstellen. Wenn du dir das nochmal überlegen möchtest: Hier kannst du dich direkt anmelden — und danach mit der Bewerbung weitermachen.",
       "blocker_mitglied_link": "Jetzt Mitglied werden bei TerpTrain →",
-      "blocker_mitglied_url": "https://app.terptrain.de/anmeldung"
+      "blocker_mitglied_url": "https://app.terptrain.de/anmeldung",
+      "ehrenmitglied_titel": "Nur mitarbeiten, ohne selbst zu beziehen?",
+      "ehrenmitglied_text1": "Wenn du im Verein mitarbeiten, aber selbst kein Cannabis aus dem Verein beziehen möchtest, kannst du dich nach der Anmeldung beim Support unter",
+      "ehrenmitglied_text2": "melden und deine Mitgliedschaft auf eine Ehrenmitgliedschaft umstellen lassen. Als Ehrenmitglied zahlst du keine Mitgliedsbeiträge im Zweigverein und beziehst auch kein Cannabis aus dem Verein."
     },
     "2": {
       "title": "Persönliche Daten",
@@ -314,7 +317,11 @@
       "jobticket_hint": "Wir können qualifizierten Mitarbeitern ein Jobticket anbieten — es entlastet dich finanziell und ist umweltfreundlich.",
       "jobticket_ja": "Ja, das wäre für mich interessant",
       "jobticket_nein": "Nein, brauche ich nicht",
-      "jobticket_unsicher": "Vielleicht — gerne im Gespräch klären"
+      "jobticket_unsicher": "Vielleicht — gerne im Gespräch klären",
+      "kfz_verein_label": "Könntest du dein eigenes Fahrzeug bei Bedarf für den Verein einsetzen (gegen Kilometerpauschale), z. B. für Transporte?",
+      "kfz_verein_ja": "Ja, das wäre möglich",
+      "kfz_verein_absprache": "Nach Absprache",
+      "kfz_verein_nein": "Nein"
     },
     "8": {
       "title": "Freiwillige Angaben",

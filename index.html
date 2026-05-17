@@ -9,8 +9,8 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="format-detection" content="telephone=yes">
 <meta name="robots" content="noindex,nofollow">
-<!-- BEWERBUNG_BUILD: 2026-05-16T2145 (Info-Tooltips an allen Sektionen) -->
-<script>window.__BEWERBUNG_BUILD = '2026-05-16T2145';</script>
+<!-- BEWERBUNG_BUILD: 2026-05-17T1900 (Ehrenmitglied-Hinweis + KFZ-Nutzung Verein) -->
+<script>window.__BEWERBUNG_BUILD = '2026-05-17T1900';</script>
 <title>Bewerbung — Mariana Cannabis</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -2503,6 +2503,7 @@ const state = {
     max_anfahrt_anbau: '',
     fuehrerschein: [],
     eigenes_fahrzeug: null,
+    kfz_fuer_verein: null,
     jobticket: null,
     sensible_einwilligung: false,
     sucht_relevant: '',
@@ -2966,6 +2967,12 @@ function renderSection1() {
            onclick="trackTerptrainClick()">
           ${s.terptrain_button}
         </a>
+        <p class="ehrenmitglied-hinweis" style="margin: 16px 0 0; padding-top: 14px; border-top: 1px solid rgba(0,0,0,0.10); font-size: 0.9rem; line-height: 1.55; color: var(--c-text, #3a4230);">
+          <strong style="color: var(--c-primary, #4a5a32);">${s.ehrenmitglied_titel || 'Nur mitarbeiten, ohne selbst zu beziehen?'}</strong><br>
+          ${s.ehrenmitglied_text1 || 'Wenn du im Verein mitarbeiten, aber selbst kein Cannabis aus dem Verein beziehen möchtest, kannst du dich nach der Anmeldung beim Support unter'}
+          <a href="mailto:kontakt@cscsdeutschland.de" style="color: var(--c-primary, #4a5a32); font-weight: 600;">kontakt@cscsdeutschland.de</a>
+          ${s.ehrenmitglied_text2 || 'melden und deine Mitgliedschaft auf eine Ehrenmitgliedschaft umstellen lassen. Als Ehrenmitglied zahlst du keine Mitgliedsbeiträge im Zweigverein und beziehst auch kein Cannabis aus dem Verein.'}
+        </p>
       </div>
       
       <!-- Rückkehr-Frage (erscheint nach Klick auf Terptrain-Link) -->
@@ -3710,6 +3717,16 @@ function renderSection7() {
       <div class="error-message">${t('validation.required')}</div>
     </div>
 
+    <div id="cb-kfz-verein" class="conditional-block" style="display: none;">
+      <label class="form-label">${s.kfz_verein_label || 'Könntest du dein eigenes Fahrzeug bei Bedarf für den Verein einsetzen (gegen Kilometerpauschale), z. B. für Transporte?'}</label>
+      ${s.kfz_verein_hint ? `<p class="form-hint" style="margin-bottom: 0.75rem;">${s.kfz_verein_hint}</p>` : ''}
+      <div class="checkbox-stack">
+        <label class="checkbox-block"><input type="radio" name="kfz_verein" value="ja"><span class="checkbox-label">${s.kfz_verein_ja || 'Ja, das wäre möglich'}</span></label>
+        <label class="checkbox-block"><input type="radio" name="kfz_verein" value="nach_absprache"><span class="checkbox-label">${s.kfz_verein_absprache || 'Nach Absprache'}</span></label>
+        <label class="checkbox-block"><input type="radio" name="kfz_verein" value="nein"><span class="checkbox-label">${s.kfz_verein_nein || 'Nein'}</span></label>
+      </div>
+    </div>
+
     <div id="cb-jobticket" class="conditional-block" style="display: none;">
       <label class="form-label">${s.jobticket_label}</label>
       ${s.jobticket_hint ? `<p class="form-hint" style="margin-bottom: 0.75rem;">${s.jobticket_hint}</p>` : ''}
@@ -4451,6 +4468,10 @@ function attachSection3() {
           const r = sec7.querySelector(`input[name="fahrzeug"][value="${state.formData.eigenes_fahrzeug}"]`);
           if (r) r.checked = true;
         }
+        if (state.formData.kfz_fuer_verein) {
+          const r = sec7.querySelector(`input[name="kfz_verein"][value="${state.formData.kfz_fuer_verein}"]`);
+          if (r) r.checked = true;
+        }
         if (state.formData.jobticket) {
           const r = sec7.querySelector(`input[name="jobticket"][value="${state.formData.jobticket}"]`);
           if (r) r.checked = true;
@@ -4963,6 +4984,7 @@ function attachSection7() {
     r.addEventListener('change', e => {
       state.formData.eigenes_fahrzeug = e.target.value === 'true';
       updateJobticketVisibility();
+      updateKfzVereinVisibility();
       saveDraft();
     });
   });
@@ -4973,9 +4995,17 @@ function attachSection7() {
       saveDraft();
     });
   });
+
+  document.querySelectorAll('input[name="kfz_verein"]').forEach(r => {
+    r.addEventListener('change', e => {
+      state.formData.kfz_fuer_verein = e.target.value;
+      saveDraft();
+    });
+  });
   
-  // Initial Jobticket-Sichtbarkeit setzen
+  // Initiale Sichtbarkeit der bedingten Bloecke setzen
   updateJobticketVisibility();
+  updateKfzVereinVisibility();
 }
 
 // Jobticket nur zeigen wenn kein Führerschein ODER kein eigenes Fahrzeug
@@ -4993,6 +5023,21 @@ function updateJobticketVisibility() {
     // Reset wenn versteckt
     state.formData.jobticket = null;
     document.querySelectorAll('input[name="jobticket"]').forEach(r => r.checked = false);
+  }
+}
+
+// KFZ-Nutzung fuer den Verein nur zeigen, wenn ein eigenes Fahrzeug vorhanden ist
+function updateKfzVereinVisibility() {
+  const block = document.getElementById('cb-kfz-verein');
+  if (!block) return;
+  if (state.formData.eigenes_fahrzeug === true) {
+    block.style.display = '';
+    block.classList.add('active');
+  } else {
+    block.style.display = 'none';
+    block.classList.remove('active');
+    state.formData.kfz_fuer_verein = null;
+    document.querySelectorAll('input[name="kfz_verein"]').forEach(r => r.checked = false);
   }
 }
 
@@ -5398,6 +5443,10 @@ function fillFormFromState() {
   });
   if (d.eigenes_fahrzeug !== null && d.eigenes_fahrzeug !== undefined) {
     const r = document.querySelector(`input[name="fahrzeug"][value="${d.eigenes_fahrzeug}"]`);
+    if (r) r.checked = true;
+  }
+  if (d.kfz_fuer_verein) {
+    const r = document.querySelector(`input[name="kfz_verein"][value="${d.kfz_fuer_verein}"]`);
     if (r) r.checked = true;
   }
   if (d.jobticket) {
@@ -5945,6 +5994,7 @@ function printBewerbung() {
     ${block('Mobilität', [
       ['Max. Anfahrt', val(d.max_anfahrt)],
       ['Eigenes Fahrzeug', val(d.eigenes_fahrzeug)],
+      ['Fahrzeug für Verein nutzbar', d.eigenes_fahrzeug === true ? (({ja:'Ja',nein:'Nein',nach_absprache:'Nach Absprache'})[d.kfz_fuer_verein] || '—') : '—'],
       ['Führerschein', val(d.fuehrerschein)]
     ])}
     
@@ -6132,6 +6182,7 @@ function buildReviewHTML() {
     section(6, 'Anfahrt & Mobilität', `
       <span class="review-label">Max. Anfahrt</span>${val(d.max_anfahrt)}
       <span class="review-label">Eigenes Fahrzeug</span>${val(d.eigenes_fahrzeug)}
+      <span class="review-label">Fahrzeug für Verein nutzbar</span>${d.eigenes_fahrzeug === true ? (({ja:'Ja',nein:'Nein',nach_absprache:'Nach Absprache'})[d.kfz_fuer_verein] || '—') : '—'}
       <span class="review-label">Führerschein</span>${val(d.fuehrerschein)}
     `),
     section(7, 'Nachweise & Sachkunde', `
@@ -6240,6 +6291,7 @@ async function submitForm() {
     max_anfahrt_anbau: d.max_anfahrt_anbau ? parseInt(d.max_anfahrt_anbau) : null,
     fuehrerschein: d.fuehrerschein,
     eigenes_fahrzeug: d.eigenes_fahrzeug,
+    kfz_fuer_verein: d.eigenes_fahrzeug === true ? (d.kfz_fuer_verein || null) : null,
     jobticket: d.jobticket || null,
     sensible_einwilligung: d.sensible_einwilligung,
     sucht_relevant: d.sensible_einwilligung && d.sucht_relevant ? d.sucht_relevant : null,

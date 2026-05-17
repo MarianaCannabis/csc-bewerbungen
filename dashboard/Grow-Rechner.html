@@ -1,0 +1,1845 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grow-Rechner v1 · CSC Planungstool</title>
+<style>
+  :root {
+    --bg: #08100b; --bg-2: #0d1a12; --panel: #11221a; --panel-2: #16301f;
+    --line: #1f4a30; --green: #4caf6a; --green-soft: #6ed089; --green-dim: #2d6b44;
+    --accent: #f9c74f; --accent-dim: #c19a3a; --text: #e8f0ea; --text-dim: #9bb1a3;
+    --text-mute: #6e8579; --danger: #e57373; --warn: #ff9f43;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 15px; line-height: 1.5; min-height: 100vh; }
+  body { background: radial-gradient(circle at 10% 0%, rgba(76,175,106,0.08) 0%, transparent 40%),
+    radial-gradient(circle at 90% 100%, rgba(249,199,79,0.05) 0%, transparent 40%), var(--bg); }
+  .wrap { max-width: 1320px; margin: 0 auto; padding: 24px 20px 80px; }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    margin-bottom: 16px; flex-wrap: wrap; }
+  h1 { font-size: 22px; font-weight: 600; margin: 0; color: var(--green-soft); }
+  h1 .sub { color: var(--text-dim); font-weight: 400; font-size: 14px; display: block; margin-top: 2px; }
+  .header-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .info-btn { background: var(--panel); border: 1px solid var(--line); color: var(--text);
+    padding: 8px 14px; border-radius: 8px; font-size: 13px; cursor: pointer; font-family: inherit; }
+  .info-btn:hover { background: var(--panel-2); border-color: var(--green-dim); color: var(--green-soft); }
+  .info-btn.accent-btn { color: var(--accent); }
+  .info-btn.accent-btn:hover { border-color: var(--accent-dim); }
+
+  /* Toolbar: Szenarien + Snapshot + Permalink */
+  .toolbar { background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 12px 14px; margin-bottom: 16px; display: grid; grid-template-columns: 1fr 1fr auto;
+    gap: 12px; align-items: center; }
+  @media (max-width: 980px) { .toolbar { grid-template-columns: 1fr; } }
+  .tb-block { display: flex; gap: 8px; align-items: center; min-width: 0; }
+  .tb-block .tb-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--text-mute); flex-shrink: 0; }
+  .tb-block select { background: var(--bg-2); border: 1px solid var(--line); color: var(--text);
+    padding: 6px 10px; border-radius: 6px; font-family: inherit; font-size: 12px; min-width: 0; flex: 1; max-width: 240px; }
+  .tb-block select:focus { outline: none; border-color: var(--green); }
+  .tb-btn { background: var(--bg-2); border: 1px solid var(--line); color: var(--text-dim);
+    padding: 6px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; font-family: inherit; white-space: nowrap; }
+  .tb-btn:hover { background: var(--panel-2); color: var(--text); }
+  .tb-btn.primary { background: var(--green-dim); border-color: var(--green); color: var(--green-soft); }
+  .tb-btn.primary:hover { background: var(--green); color: var(--bg); }
+  .tb-btn.snap-active { background: var(--accent-dim); border-color: var(--accent); color: var(--bg); }
+  .tb-btn.snap-active:hover { background: var(--accent); }
+  .tb-block.actions { justify-content: flex-end; gap: 6px; }
+  .snap-status { font-size: 11px; color: var(--accent); display: none; align-items: center; gap: 6px; }
+  .snap-status.visible { display: inline-flex; }
+
+  .tabs { display: flex; gap: 4px; background: var(--panel); border: 1px solid var(--line);
+    border-radius: 10px; padding: 4px; margin-bottom: 20px; }
+  .tab { flex: 1; padding: 10px 16px; background: transparent; border: none; color: var(--text-dim);
+    cursor: pointer; font-size: 13px; font-weight: 500; border-radius: 7px; transition: all 0.15s;
+    font-family: inherit; }
+  .tab:hover { color: var(--text); }
+  .tab.active { background: var(--green-dim); color: var(--green-soft); }
+  .tab .icon { display: inline-block; margin-right: 6px; }
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* Diff-Banner (wenn Snapshot aktiv) */
+  .diff-banner { background: linear-gradient(135deg, rgba(249,199,79,0.10), rgba(249,199,79,0.02));
+    border: 1px solid var(--accent-dim); border-radius: 10px; padding: 10px 14px; margin-bottom: 16px;
+    display: none; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .diff-banner.visible { display: flex; }
+  .diff-banner .db-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--accent); font-weight: 600; }
+  .diff-banner .db-pills { display: flex; gap: 10px; flex-wrap: wrap; flex: 1; }
+  .diff-pill { display: inline-flex; align-items: center; gap: 4px; font-size: 12px;
+    background: var(--bg-2); border: 1px solid var(--line); padding: 3px 8px; border-radius: 99px;
+    font-variant-numeric: tabular-nums; }
+  .diff-pill .lbl { color: var(--text-mute); }
+  .diff-pill .delta { font-weight: 600; }
+  .diff-pill .delta.up { color: var(--danger); }
+  .diff-pill .delta.down { color: var(--green-soft); }
+  .diff-pill .delta.same { color: var(--text-mute); }
+
+  .grid-main { display: grid; grid-template-columns: 380px 1fr; gap: 20px; }
+  @media (max-width: 980px) { .grid-main { grid-template-columns: 1fr; } }
+  .col-stack { display: flex; flex-direction: column; gap: 16px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px; }
+  .card h2 { margin: 0 0 14px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--green); font-weight: 600; display: flex; align-items: center; gap: 8px; justify-content: space-between; }
+  .card h2 .h2-right { display: flex; gap: 6px; align-items: center; }
+  .card h2 .num-pill { background: var(--bg-2); border: 1px solid var(--line); border-radius: 99px;
+    padding: 2px 8px; font-size: 10px; color: var(--text-dim); font-weight: 500; }
+  .card-spacer { margin-top: 16px; }
+
+  /* ── Erklärungs-Tooltips ─────────────────────────────────── */
+  .info-i {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 16px; height: 16px; min-width: 16px; border-radius: 50%;
+    background: var(--bg-2); border: 1px solid var(--green-dim);
+    color: var(--green-soft); font-size: 10px; font-weight: 700;
+    font-style: normal; text-transform: none; letter-spacing: 0;
+    cursor: help; position: relative; vertical-align: middle;
+  }
+  .info-i:hover { background: var(--green-dim); }
+  .info-i::after {
+    content: attr(data-tip);
+    position: absolute; top: 140%; left: 50%; transform: translateX(-50%);
+    background: #142019; color: var(--text);
+    padding: 9px 12px; border-radius: 8px; border: 1px solid var(--green-dim);
+    font-size: 12px; font-weight: 400; line-height: 1.5; letter-spacing: 0;
+    text-transform: none; text-align: left; width: 250px;
+    opacity: 0; pointer-events: none; transition: opacity .14s;
+    z-index: 200; box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+  }
+  .info-i:hover::after { opacity: 1; }
+  /* Tooltip am rechten Rand: nach links ausrichten */
+  .info-i.tip-left::after { left: auto; right: 0; transform: none; }
+  .card h2 .info-i { margin-left: 2px; }
+  label .info-i { margin-left: 5px; }
+
+  /* ── Einführungs-Banner ──────────────────────────────────── */
+  .intro-banner {
+    background: linear-gradient(135deg, var(--panel) 0%, var(--panel-2) 100%);
+    border: 1px solid var(--green-dim); border-radius: 12px;
+    padding: 16px 20px; margin-bottom: 16px;
+  }
+  .intro-banner-title {
+    font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--green); font-weight: 700; margin-bottom: 10px;
+  }
+  .intro-banner-steps {
+    display: flex; flex-wrap: wrap; gap: 10px 22px; margin-bottom: 10px;
+  }
+  .intro-banner-steps span { font-size: 13px; color: var(--text); }
+  .intro-banner-steps strong { color: var(--green-soft); }
+  .intro-banner-hint {
+    font-size: 12px; color: var(--text-dim); line-height: 1.6;
+    border-top: 1px solid var(--line); padding-top: 9px;
+  }
+
+  .field { margin-bottom: 14px; }
+  .field:last-child { margin-bottom: 0; }
+  .field label { display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 6px; font-size: 13px; color: var(--text-dim); }
+  .field label .val { color: var(--accent); font-weight: 600; font-variant-numeric: tabular-nums; font-size: 14px; }
+  .field input[type="range"] { width: 100%; -webkit-appearance: none; appearance: none;
+    background: transparent; cursor: pointer; margin: 4px 0 0; }
+  .field input[type="range"]::-webkit-slider-runnable-track { background: var(--bg-2); height: 5px;
+    border-radius: 3px; border: 1px solid var(--line); }
+  .field input[type="range"]::-moz-range-track { background: var(--bg-2); height: 5px;
+    border-radius: 3px; border: 1px solid var(--line); }
+  .field input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none;
+    width: 16px; height: 16px; border-radius: 50%; background: var(--green);
+    border: 2px solid var(--bg); margin-top: -6px; cursor: pointer; box-shadow: 0 0 0 1px var(--green-dim); }
+  .field input[type="range"]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%;
+    background: var(--green); border: 2px solid var(--bg); cursor: pointer; }
+  .field .hint { font-size: 11px; color: var(--text-mute); margin-top: 4px; }
+
+  .toggle-row { display: flex; align-items: center; justify-content: space-between;
+    background: var(--bg-2); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px;
+    margin-bottom: 14px; gap: 12px; }
+  .toggle-row label { font-size: 13px; color: var(--text); cursor: pointer; margin: 0; }
+  .toggle-row .desc { font-size: 11px; color: var(--text-mute); display: block; margin-top: 2px; }
+  .switch { position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider-sw { position: absolute; cursor: pointer; inset: 0; background: var(--bg);
+    border: 1px solid var(--line); border-radius: 24px; transition: 0.2s; }
+  .slider-sw:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px;
+    bottom: 3px; background: var(--text-dim); border-radius: 50%; transition: 0.2s; }
+  input:checked + .slider-sw { background: var(--green-dim); border-color: var(--green); }
+  input:checked + .slider-sw:before { transform: translateX(20px); background: var(--green-soft); }
+
+  .seg { display: inline-flex; background: var(--bg-2); border: 1px solid var(--line);
+    border-radius: 6px; padding: 2px; }
+  .seg button { background: transparent; border: none; color: var(--text-dim); padding: 5px 10px;
+    font-size: 11px; cursor: pointer; border-radius: 4px; font-family: inherit; }
+  .seg button.active { background: var(--green-dim); color: var(--green-soft); }
+
+  .preset-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 12px; }
+  .preset-btn { background: var(--bg-2); border: 1px solid var(--line); color: var(--text-dim);
+    padding: 7px 4px; border-radius: 6px; cursor: pointer; font-size: 11px; font-family: inherit; transition: all 0.15s; }
+  .preset-btn:hover { background: var(--panel-2); color: var(--text); }
+  .preset-btn.active { background: var(--green-dim); border-color: var(--green); color: var(--green-soft); }
+
+  .verteilung-summary { background: var(--bg-2); border: 1px solid var(--line); border-radius: 8px;
+    padding: 10px 12px; margin-top: 4px; font-size: 12px; color: var(--text-dim);
+    display: flex; justify-content: space-between; align-items: center; }
+  .verteilung-summary .vs-stat { text-align: center; }
+  .verteilung-summary .vs-stat .v { color: var(--green-soft); font-weight: 600;
+    font-variant-numeric: tabular-nums; font-size: 13px; display: block; }
+  .verteilung-summary .vs-stat .l { font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-mute); }
+  .vs-bar { width: 100%; height: 6px; background: var(--bg); border-radius: 3px; overflow: hidden; margin-top: 8px; display: flex; }
+  .vs-bar > div { height: 100%; transition: width 0.2s; }
+  .vs-1 { background: #2d6b44; } .vs-2 { background: #4caf6a; }
+  .vs-3 { background: #f9c74f; } .vs-4 { background: #ff9f43; }
+  .vs-0 { background: var(--bg); }
+
+  .stat-grid { display: grid; gap: 10px; }
+  .stat-grid.cols-2 { grid-template-columns: 1fr 1fr; }
+  .stat-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+  .stat-grid.cols-4 { grid-template-columns: repeat(4, 1fr); }
+  @media (max-width: 700px) { .stat-grid.cols-3, .stat-grid.cols-4 { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 460px) { .stat-grid { grid-template-columns: 1fr !important; } }
+  .stat { background: var(--bg-2); border: 1px solid var(--line); border-radius: 8px; padding: 12px; position: relative; }
+  .stat .lbl { font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em;
+    color: var(--text-mute); margin-bottom: 6px; line-height: 1.3; }
+  .stat .num { font-size: 22px; font-weight: 600; color: var(--text);
+    font-variant-numeric: tabular-nums; line-height: 1.1; }
+  .stat .num .u { font-size: 12px; color: var(--text-dim); font-weight: 400; margin-left: 2px; }
+  .stat .sub { font-size: 11px; color: var(--text-mute); margin-top: 4px; }
+  .stat .delta-mini { display: none; font-size: 10px; font-variant-numeric: tabular-nums;
+    padding: 1px 6px; border-radius: 99px; background: var(--bg); border: 1px solid var(--line);
+    margin-top: 4px; }
+  .stat .delta-mini.visible { display: inline-block; }
+  .stat .delta-mini.up { color: var(--danger); border-color: rgba(229,115,115,0.3); }
+  .stat .delta-mini.down { color: var(--green-soft); border-color: var(--green-dim); }
+  .stat .delta-mini.same { color: var(--text-mute); }
+  .stat.big { padding: 18px; }
+  .stat.big .num { font-size: 32px; }
+  .stat.highlight { background: linear-gradient(135deg, rgba(76,175,106,0.12), rgba(76,175,106,0.04)); border-color: var(--green-dim); }
+  .stat.highlight .num { color: var(--green-soft); }
+  .stat.accent { background: linear-gradient(135deg, rgba(249,199,79,0.10), rgba(249,199,79,0.02)); border-color: var(--accent-dim); }
+  .stat.accent .num { color: var(--accent); }
+  .stat.warn { background: linear-gradient(135deg, rgba(255,159,67,0.12), rgba(255,159,67,0.02)); border-color: var(--warn); }
+  .stat.warn .num { color: var(--warn); }
+  .stat.danger { background: linear-gradient(135deg, rgba(229,115,115,0.12), rgba(229,115,115,0.02)); border-color: var(--danger); }
+  .stat.danger .num { color: var(--danger); }
+
+  .notes { background: var(--bg-2); border-left: 3px solid var(--green); padding: 10px 12px;
+    border-radius: 4px; font-size: 13px; color: var(--text-dim); margin-top: 12px; line-height: 1.55; }
+  .notes strong { color: var(--green-soft); }
+  .notes.warn { border-left-color: var(--warn); }
+  .notes.warn strong { color: var(--warn); }
+  .notes.danger { border-left-color: var(--danger); }
+  .notes.danger strong { color: var(--danger); }
+
+  /* TEAM */
+  .btn-primary { background: var(--green-dim); border: 1px solid var(--green); color: var(--green-soft);
+    padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; font-family: inherit; }
+  .btn-primary:hover { background: var(--green); color: var(--bg); }
+  .btn-ghost { background: var(--bg-2); border: 1px solid var(--line); color: var(--text-dim);
+    padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; font-family: inherit; }
+  .btn-ghost:hover { background: var(--panel-2); color: var(--text); }
+  .team-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 12px; }
+  .team-member { background: var(--bg-2); border: 1px solid var(--line); border-radius: 10px; padding: 12px; transition: border-color 0.2s; }
+  .team-member.invalid { border-color: var(--warn); }
+  .team-member.over { border-color: var(--danger); }
+  .tm-header { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }
+  .tm-header input[type="text"] { flex: 1; background: var(--panel); border: 1px solid var(--line);
+    color: var(--text); padding: 6px 10px; border-radius: 6px; font-family: inherit; font-size: 13px; font-weight: 500; }
+  .tm-header input[type="text"]:focus { outline: none; border-color: var(--green); }
+  .tm-header .remove-btn { background: transparent; border: 1px solid var(--line); color: var(--text-mute);
+    width: 28px; height: 28px; border-radius: 6px; cursor: pointer; font-size: 16px; line-height: 1; padding: 0; }
+  .tm-header .remove-btn:hover { background: var(--danger); border-color: var(--danger); color: white; }
+  .tm-fields { display: grid; grid-template-columns: 1fr 80px 80px; gap: 6px; margin-bottom: 10px; }
+  .tm-fields select, .tm-fields input { background: var(--panel); border: 1px solid var(--line); color: var(--text);
+    padding: 6px 8px; border-radius: 6px; font-family: inherit; font-size: 12px; font-variant-numeric: tabular-nums; }
+  .tm-fields select:focus, .tm-fields input:focus { outline: none; border-color: var(--green); }
+  .tm-fields .input-wrap { position: relative; }
+  .tm-fields .input-wrap input { padding-right: 22px; width: 100%; }
+  .tm-fields .input-wrap .u { position: absolute; right: 7px; top: 50%; transform: translateY(-50%);
+    font-size: 10px; color: var(--text-mute); pointer-events: none; }
+  .tm-stats { display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 10px; background: var(--panel); border-radius: 6px; font-size: 11px; margin-bottom: 10px; }
+  .tm-stats .tm-brutto { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .tm-stats .tm-status { font-size: 10px; }
+  .tm-stats .tm-status.ok { color: var(--green-soft); }
+  .tm-stats .tm-status.warn { color: var(--warn); }
+  .tm-stats .tm-status.over { color: var(--danger); }
+  .avail-matrix { background: var(--panel); border-radius: 6px; padding: 10px; }
+  .avail-title { font-size: 10px; color: var(--text-mute); text-transform: uppercase;
+    letter-spacing: 0.05em; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+  .avail-title .avail-availh { color: var(--text-dim); font-variant-numeric: tabular-nums; }
+  .avail-hours { display: grid; gap: 2px; user-select: none; }
+  .avail-hours .h-header { display: flex; gap: 1px; padding-left: 28px; }
+  .avail-hours .h-header .h-lbl { flex: 1; font-size: 8px; color: var(--text-mute); text-align: center; }
+  .avail-hours .h-row { display: flex; gap: 1px; align-items: center; }
+  .avail-hours .h-day { width: 24px; font-size: 10px; color: var(--text-mute); text-transform: uppercase;
+    text-align: center; padding-right: 4px; flex-shrink: 0; }
+  .avail-hours .h-cells { flex: 1; display: flex; gap: 1px; }
+  .avail-hours .h-cell { flex: 1; height: 14px; background: var(--bg); border: 1px solid var(--line);
+    border-radius: 2px; cursor: pointer; transition: all 0.1s; }
+  .avail-hours .h-cell:hover { border-color: var(--green); }
+  .avail-hours .h-cell.active { background: var(--green-dim); border-color: var(--green); }
+  .avail-summary { font-size: 11px; color: var(--text-dim); text-align: center;
+    margin-top: 8px; padding-top: 6px; border-top: 1px solid var(--line); }
+  .avail-actions { display: flex; gap: 4px; justify-content: center; margin-top: 6px; flex-wrap: wrap; }
+  .avail-actions button { background: var(--bg); border: 1px solid var(--line); color: var(--text-mute);
+    padding: 3px 8px; font-size: 10px; border-radius: 4px; cursor: pointer; font-family: inherit; }
+  .avail-actions button:hover { background: var(--panel-2); color: var(--text); }
+
+  /* MÖGLICHE ÖFFNUNGSZEITEN HEATMAP */
+  .open-heat { background: var(--bg-2); border: 1px solid var(--line); border-radius: 8px; padding: 14px; }
+  .open-heat .oh-header { display: flex; gap: 1px; padding-left: 30px; margin-bottom: 4px; }
+  .open-heat .oh-header .oh-hlbl { flex: 1; font-size: 9px; color: var(--text-mute); text-align: center; }
+  .open-heat .oh-row { display: flex; gap: 1px; align-items: center; margin-bottom: 2px; }
+  .open-heat .oh-day { width: 26px; font-size: 10px; color: var(--text-dim); text-transform: uppercase;
+    text-align: right; padding-right: 4px; font-weight: 600; flex-shrink: 0; }
+  .open-heat .oh-cells { flex: 1; display: flex; gap: 1px; }
+  .open-heat .oh-cell { flex: 1; height: 22px; background: var(--bg); border: 1px solid var(--line);
+    border-radius: 2px; font-size: 10px; color: var(--text-mute); display: flex; align-items: center;
+    justify-content: center; font-variant-numeric: tabular-nums; transition: all 0.2s; }
+  .open-heat .oh-cell.short { background: rgba(255,159,67,0.15); border-color: rgba(255,159,67,0.4); color: var(--warn); }
+  .open-heat .oh-cell.ok { background: rgba(76,175,106,0.18); border-color: var(--green-dim); color: var(--green-soft); }
+  .open-heat .oh-cell.peak { background: rgba(76,175,106,0.40); border-color: var(--green); color: var(--green-soft); font-weight: 600; }
+  .oh-legend { display: flex; gap: 16px; font-size: 11px; color: var(--text-dim); margin-top: 12px;
+    flex-wrap: wrap; }
+  .oh-legend span { display: flex; align-items: center; gap: 5px; }
+  .oh-legend .dot { width: 12px; height: 12px; border-radius: 2px; border: 1px solid var(--line); }
+  .oh-suggest { background: var(--bg-2); border: 1px solid var(--line); border-radius: 8px;
+    padding: 12px 14px; margin-top: 12px; }
+  .oh-suggest .ohs-title { font-size: 10px; color: var(--green); text-transform: uppercase;
+    letter-spacing: 0.05em; margin-bottom: 6px; }
+  .oh-suggest .ohs-list { font-size: 13px; color: var(--text); line-height: 1.8; }
+  .oh-suggest .ohs-day { color: var(--green-soft); font-weight: 600; }
+  .oh-suggest .ohs-h { color: var(--text-dim); }
+
+  /* SCHICHTPLAN-VORSCHLAG */
+  .shift-plan { background: var(--bg-2); border: 1px solid var(--line); border-radius: 8px;
+    padding: 14px; margin-top: 4px; }
+  .shift-plan-grid { display: grid; grid-template-columns: 50px repeat(7, 1fr); gap: 4px; min-width: 600px; }
+  .sp-corner { font-size: 10px; color: var(--text-mute); text-transform: uppercase; }
+  .sp-dayhead { font-size: 11px; color: var(--accent); text-align: center; text-transform: uppercase;
+    letter-spacing: 0.05em; font-weight: 600; padding: 4px; }
+  .sp-hour { font-size: 10px; color: var(--text-mute); text-align: right; padding-right: 6px;
+    align-self: center; font-variant-numeric: tabular-nums; }
+  .sp-cell { background: var(--bg); border: 1px solid var(--line); border-radius: 4px;
+    padding: 6px 4px; min-height: 32px; font-size: 10px; line-height: 1.3; }
+  .sp-cell.assigned { background: rgba(76,175,106,0.10); border-color: var(--green-dim); }
+  .sp-cell.short { background: rgba(255,159,67,0.10); border-color: var(--warn); }
+  .sp-cell.empty { opacity: 0.4; }
+  .sp-cell .sp-name { display: block; color: var(--green-soft); }
+  .sp-cell .sp-name.warn { color: var(--warn); }
+  .shift-plan-wrap { overflow-x: auto; }
+  .shift-totals { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px;
+    margin-top: 14px; }
+  .shift-total { background: var(--bg); border: 1px solid var(--line); border-radius: 6px;
+    padding: 8px 10px; font-size: 12px; }
+  .shift-total .stl-name { color: var(--text); font-weight: 500; margin-bottom: 2px; }
+  .shift-total .stl-bar-bg { width: 100%; height: 4px; background: var(--panel); border-radius: 2px; margin-top: 4px; overflow: hidden; }
+  .shift-total .stl-bar { height: 100%; background: var(--green); transition: width 0.2s; }
+  .shift-total .stl-bar.over { background: var(--danger); }
+  .shift-total .stl-bar.under { background: var(--warn); }
+  .shift-total .stl-meta { display: flex; justify-content: space-between; color: var(--text-dim);
+    font-variant-numeric: tabular-nums; font-size: 10px; margin-top: 4px; }
+
+  /* Anstellungs-Vergleich */
+  .compare-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .compare-table th, .compare-table td { padding: 8px 10px; text-align: right; border-bottom: 1px solid var(--line); }
+  .compare-table th { background: var(--bg-2); color: var(--green); font-weight: 500; font-size: 10px;
+    text-transform: uppercase; letter-spacing: 0.05em; }
+  .compare-table th:first-child, .compare-table td:first-child { text-align: left; color: var(--text); font-weight: 500; }
+  .compare-table tr.recommended { background: rgba(76,175,106,0.08); }
+  .compare-table tr.recommended td:first-child { color: var(--green-soft); }
+  .table-wrap { overflow-x: auto; }
+
+  /* Beitragsdeckung */
+  .beitrag-bar { width: 100%; height: 28px; background: var(--bg); border: 1px solid var(--line);
+    border-radius: 6px; overflow: hidden; display: flex; margin: 8px 0 4px; position: relative; }
+  .beitrag-bar .bb-fill-personal { background: linear-gradient(90deg, var(--green-dim), var(--green-soft));
+    height: 100%; display: flex; align-items: center; justify-content: center;
+    color: var(--bg); font-weight: 600; font-size: 11px; transition: width 0.3s; min-width: 0; overflow: hidden; }
+  .beitrag-bar .bb-fill-rest { background: linear-gradient(90deg, var(--accent-dim), var(--accent));
+    height: 100%; display: flex; align-items: center; justify-content: center;
+    color: var(--bg); font-weight: 600; font-size: 11px; transition: width 0.3s; min-width: 0; overflow: hidden; }
+  .beitrag-bar .bb-fill-deficit { background: linear-gradient(90deg, var(--danger), var(--warn));
+    height: 100%; display: flex; align-items: center; justify-content: center;
+    color: var(--bg); font-weight: 600; font-size: 11px; transition: width 0.3s; }
+  .beitrag-legend { display: flex; gap: 14px; font-size: 11px; color: var(--text-dim); }
+  .beitrag-legend .bl-item { display: flex; align-items: center; gap: 5px; }
+  .beitrag-legend .bl-dot { width: 10px; height: 10px; border-radius: 2px; }
+
+  .team-summary { margin-top: 16px; padding: 14px; background: var(--bg-2); border: 1px solid var(--line); border-radius: 10px; }
+  .coverage-bar { width: 100%; height: 10px; background: var(--bg); border: 1px solid var(--line);
+    border-radius: 5px; overflow: hidden; margin: 8px 0; position: relative; }
+  .coverage-fill { height: 100%; background: linear-gradient(90deg, var(--green), var(--green-soft));
+    transition: width 0.3s; }
+  .coverage-fill.over { background: linear-gradient(90deg, var(--accent), var(--warn)); }
+  .coverage-fill.under { background: linear-gradient(90deg, var(--warn), var(--danger)); }
+
+  .peak-content { display: grid; grid-template-columns: 320px 1fr; gap: 20px; }
+  @media (max-width: 800px) { .peak-content { grid-template-columns: 1fr; } }
+  .peak-visual { background: var(--bg-2); border: 1px solid var(--line); border-radius: 8px; padding: 16px; }
+  .peak-visual .day-bars { display: flex; gap: 4px; align-items: flex-end; height: 140px; margin-top: 16px; }
+  .peak-visual .day-bar { flex: 1; background: var(--green-dim); border-radius: 3px 3px 0 0; min-height: 8px; transition: height 0.3s; }
+  .peak-visual .day-bar.peak { background: var(--accent); }
+  .peak-visual .day-labels { display: flex; gap: 4px; margin-top: 4px; font-size: 9px; color: var(--text-mute); }
+  .peak-visual .day-labels > div { flex: 1; text-align: center; }
+  .peak-visual .peak-title { font-size: 11px; text-transform: uppercase; color: var(--text-mute); letter-spacing: 0.05em; margin-bottom: 4px; }
+
+  table.cmp { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; min-width: 600px; }
+  table.cmp th, table.cmp td { padding: 8px 10px; text-align: right; border-bottom: 1px solid var(--line); }
+  table.cmp th { background: var(--bg-2); color: var(--green); font-weight: 500; font-size: 10px;
+    text-transform: uppercase; letter-spacing: 0.05em; }
+  table.cmp th:first-child, table.cmp td:first-child { text-align: left; }
+  table.cmp tr.current { background: rgba(76,175,106,0.08); }
+  table.cmp tr.current td { color: var(--green-soft); font-weight: 600; }
+
+  /* Übersicht */
+  .overview-header { display: flex; justify-content: space-between; align-items: flex-end;
+    margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--line); flex-wrap: wrap; gap: 12px; }
+  .overview-header h2 { color: var(--green-soft); margin: 0 0 4px; font-size: 24px; }
+  .overview-header .meta { font-size: 12px; color: var(--text-mute); }
+  .overview-section { margin-bottom: 24px; page-break-inside: avoid; }
+  .overview-section h3 { color: var(--accent); font-size: 12px; text-transform: uppercase;
+    letter-spacing: 0.08em; margin: 0 0 12px; }
+  .assumption-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
+  .assumption { background: var(--bg-2); border: 1px solid var(--line); border-radius: 6px;
+    padding: 10px 12px; font-size: 12px; }
+  .assumption .a-lbl { color: var(--text-mute); font-size: 10px; text-transform: uppercase;
+    letter-spacing: 0.05em; margin-bottom: 2px; }
+  .assumption .a-val { color: var(--text); font-weight: 500; }
+  .team-list-compact { background: var(--bg-2); border: 1px solid var(--line); border-radius: 6px; padding: 12px; }
+  .ov-sec-hint { color: var(--text-dim); font-size: 12px; margin: -4px 0 12px; }
+  .ov-weekbars { display: flex; flex-direction: column; gap: 7px; }
+  .ov-weekbar { display: grid; grid-template-columns: 40px 1fr 56px; align-items: center; gap: 10px; }
+  .ov-wb-day { font-size: 12px; font-weight: 600; color: var(--text-dim); }
+  .ov-wb-track { height: 16px; background: var(--bg-2); border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+  .ov-wb-fill { height: 100%; border-radius: 3px 0 0 3px; transition: width .3s; }
+  .ov-wb-fill.ok { background: var(--green); }
+  .ov-wb-fill.duenn { background: #d9a441; }
+  .ov-wb-fill.leer { background: #c0504d; }
+  .ov-wb-val { font-size: 12px; text-align: right; font-variant-numeric: tabular-nums; color: var(--text-dim); }
+  .team-list-compact-row { display: grid; grid-template-columns: 1fr 80px 70px 70px 70px 100px;
+    gap: 10px; padding: 6px 0; font-size: 13px; align-items: center; border-bottom: 1px solid var(--line); }
+  .team-list-compact-row:last-child { border-bottom: none; }
+  .team-list-compact-header { font-size: 10px; color: var(--text-mute); text-transform: uppercase;
+    letter-spacing: 0.05em; padding-bottom: 8px; border-bottom: 1px solid var(--line); margin-bottom: 4px; }
+  .team-list-compact-row .name { color: var(--text); font-weight: 500; }
+  .team-list-compact-row .val { color: var(--text-dim); text-align: right; font-variant-numeric: tabular-nums; }
+  .team-list-compact-row .typ-pill { font-size: 10px; padding: 2px 6px; background: var(--panel);
+    border: 1px solid var(--line); border-radius: 99px; color: var(--text-dim); display: inline-block; }
+
+  /* Modals */
+  .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+    display: none; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
+  .modal-backdrop.open { display: flex; }
+  .modal { background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+    max-width: 640px; width: 100%; max-height: 85vh; overflow-y: auto; padding: 28px;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.5); }
+  .modal.small { max-width: 460px; }
+  .modal h3 { margin: 0 0 8px; color: var(--green-soft); font-size: 20px; }
+  .modal h4 { margin: 20px 0 6px; color: var(--accent); font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .modal p, .modal li { color: var(--text-dim); font-size: 14px; line-height: 1.6; }
+  .modal ul { padding-left: 20px; }
+  .modal .close { float: right; background: var(--bg-2); border: 1px solid var(--line);
+    color: var(--text); width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 18px; line-height: 1; }
+  .modal .close:hover { background: var(--panel-2); }
+  .modal strong { color: var(--text); }
+  .modal .num-highlight { color: var(--green-soft); font-weight: 600; }
+  .modal input[type="text"], .modal textarea { width: 100%; background: var(--bg-2); border: 1px solid var(--line);
+    color: var(--text); padding: 8px 12px; border-radius: 8px; font-family: inherit; font-size: 14px; margin-top: 4px; }
+  .modal textarea { resize: vertical; min-height: 80px; font-size: 11px; font-family: monospace; }
+  .modal input[type="text"]:focus, .modal textarea:focus { outline: none; border-color: var(--green); }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px; }
+  .source-hint { font-size: 11px; color: var(--text-mute); margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--line); }
+  .footer-note { text-align: center; color: var(--text-mute); font-size: 11px; margin-top: 32px; }
+  .divider { height: 1px; background: var(--line); margin: 12px 0; }
+
+  /* ============ PRINT ============ */
+  @media print {
+    @page { margin: 1.5cm; size: A4; }
+    body { background: white !important; color: black !important;
+      font-size: 11pt; }
+    .wrap { max-width: 100%; padding: 0; }
+    header { margin-bottom: 12px; }
+    h1 { color: #2d6b44 !important; font-size: 18pt; }
+    h1 .sub { color: #555 !important; }
+    /* Alles ausser Übersicht-View ausblenden */
+    .tabs, .toolbar, .diff-banner, .header-actions { display: none !important; }
+    .view { display: none !important; }
+    .view#view-overview { display: block !important; }
+    /* Card-Styles für Druck */
+    .card { background: white !important; border: 1px solid #ccc !important;
+      box-shadow: none !important; page-break-inside: avoid; padding: 12px !important; }
+    .card h2 { color: #2d6b44 !important; }
+    .stat { background: #f6f9f6 !important; border: 1px solid #ccc !important; }
+    .stat .lbl { color: #666 !important; }
+    .stat .num { color: black !important; }
+    .stat .sub { color: #555 !important; }
+    .stat.highlight { background: #eaf5ee !important; }
+    .stat.accent { background: #fcf3d8 !important; }
+    .stat.warn { background: #fde9d3 !important; }
+    .stat.danger { background: #fadcdc !important; }
+    .stat.highlight .num { color: #2d6b44 !important; }
+    .stat.accent .num { color: #8a6800 !important; }
+    .stat.warn .num { color: #a85500 !important; }
+    .stat.danger .num { color: #a02020 !important; }
+    .overview-header { border-bottom: 2px solid #2d6b44 !important; }
+    .overview-header h2 { color: #2d6b44 !important; }
+    .overview-section h3 { color: #8a6800 !important; }
+    .assumption { background: #f6f9f6 !important; border: 1px solid #ccc !important; }
+    .assumption .a-lbl { color: #666 !important; }
+    .assumption .a-val { color: black !important; }
+    .team-list-compact { background: white !important; border: 1px solid #ccc !important; }
+    .team-list-compact-row { color: black !important; }
+    .team-list-compact-row .name { color: black !important; }
+    .team-list-compact-row .val { color: #333 !important; }
+    .team-list-compact-row .typ-pill { background: #eee !important; color: #333 !important; border-color: #999 !important; }
+    .notes { background: #f6f9f6 !important; color: #333 !important;
+      border-left-color: #2d6b44 !important; }
+    .notes strong { color: #2d6b44 !important; }
+    .notes.warn { background: #fdf0e2 !important; border-left-color: #c47200 !important; }
+    .notes.warn strong { color: #c47200 !important; }
+    .notes.danger { background: #fbe5e5 !important; border-left-color: #a02020 !important; }
+    .notes.danger strong { color: #a02020 !important; }
+    .btn-ghost, .btn-primary, button { display: none !important; }
+    .modal-backdrop { display: none !important; }
+    .footer-note { color: #888 !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Grow-Rechner v1
+        <span class="sub">CSC-Planungstool · Grow-Team · Verfügbarkeit · Anbau · Personalbedarf</span>
+      </h1>
+    </div>
+    <div class="header-actions">
+      <button class="info-btn" onclick="zurueckZumDashboard()" title="Schließt den Rechner und kehrt zum Bewerbungs-Dashboard zurück">← Zurück zum Dashboard</button>
+      <button class="info-btn accent-btn" onclick="openModal('modal')" title="Erklärt die Beschäftigungsformen für Grower und die KCanG-Vorgaben zum Anbau">ℹ Anbau &amp; KCanG</button>
+    </div>
+  </header>
+
+  <!-- TOOLBAR -->
+  <div class="toolbar" style="grid-template-columns:1fr auto;">
+    <div class="tb-block">
+      <span class="tb-label">Szenario</span>
+      <select id="scenarioSelect" onchange="loadScenario(this.value)">
+        <option value="">— neu —</option>
+      </select>
+      <button class="tb-btn primary" onclick="openSaveScenarioModal()">+ Speichern</button>
+      <button class="tb-btn" onclick="deleteCurrentScenario()" title="Aktuelles Szenario löschen">🗑</button>
+    </div>
+    <div class="tb-block actions">
+      <button class="tb-btn" onclick="window.print()">🖨 Drucken</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="expert"><span class="icon">◐</span>Experte</button>
+    <button class="tab" data-tab="overview"><span class="icon">◯</span>Übersicht</button>
+  </div>
+
+  <!-- ============ EXPERTE ============ -->
+  <div class="view active" id="view-expert">
+
+    <div class="intro-banner">
+      <div class="intro-banner-title">So funktioniert der Grow-Rechner</div>
+      <div class="intro-banner-steps">
+        <span><strong>1.</strong> Grow-Team eintragen oder aus Bewerbungen übernehmen</span>
+        <span><strong>2.</strong> Anbaufläche, Zyklen, Ertrag &amp; Mitgliederbedarf einstellen</span>
+        <span><strong>3.</strong> Ergebnis ablesen — Produktions-Deckung, Arbeitsaufwand &amp; Grower-Bedarf</span>
+      </div>
+      <div class="intro-banner-hint">Bei jeder Funktion zeigt das Symbol <span class="info-i" data-tip="Genau so ein Symbol — überall im Rechner. Fahr mit der Maus drüber für eine Erklärung.">i</span> eine Erklärung, wenn du mit der Maus darüber fährst. Geplant wird der <strong>Grower</strong> (nicht Head Grow): die Anbauleitung plant, das Team führt aus.</div>
+    </div>
+
+    <!-- 0. IMPORT AUS BEWERBUNGEN -->
+    <div class="card" id="growImportKarte" style="display:none;border-color:#5b8def">
+      <h2>📥 Aus Bewerbungen übernehmen<span class="info-i" data-tip="Übernimmt die im Bewerbungs-Dashboard ausgewählten Grow-Bewerber samt Verfügbarkeit und Anstellungsart direkt ins Team.">i</span></h2>
+      <p style="color:var(--text-dim);font-size:13px;margin:-8px 0 12px;" id="growImportInfo"></p>
+      <div id="growImportListe" style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px;"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn-primary" onclick="importiereGrowBewerber()">Ins Team übernehmen</button>
+        <button class="btn-ghost" onclick="verwerfeGrowImport()">Verwerfen</button>
+      </div>
+    </div>
+
+    <!-- 1. GROW-TEAM -->
+    <div class="card">
+      <h2>👥 Schritt 1 · Grow-Team aufbauen<span class="info-i" data-tip="Trag hier alle Grower ein: Name, Anstellungsart, Soll-Stunden und stündlich, wann sie verfügbar sind. Diese Liste ist die Basis von Personal-Auswertung und Einsatzplan.">i</span>
+        <span class="h2-right">
+          <button class="btn-ghost" onclick="resetTeam()">Reset</button>
+          <button class="btn-primary" onclick="addMember()">+ Grower</button>
+        </span>
+      </h2>
+      <p style="color:var(--text-dim);font-size:13px;margin:-8px 0 14px;">
+        Name, Anstellung, Soll-Stunden — und stündlich klicken, wann jemand verfügbar ist.
+        Für Grower sind nach §17 KCanG nur <strong>Minijob</strong> und <strong>Ehrenamt</strong> vorgesehen.
+      </p>
+      <div class="team-grid" id="teamGrid"></div>
+    </div>
+
+    <!-- CONTROLS + RESULTS -->
+    <div class="grid-main card-spacer">
+      <div class="col-stack">
+
+        <!-- SCHRITT 2 · ANBAU-ECKDATEN -->
+        <div class="card">
+          <h2>🌱 Schritt 2 · Anbau-Eckdaten<span class="info-i" data-tip="Grundgrößen der Anlage: wie groß die Anbaufläche ist, wie viele Räume es gibt und wie oft pro Jahr geerntet wird.">i</span></h2>
+          <p style="color:var(--text-dim);font-size:13px;margin:-6px 0 12px;">Anbauart wählen — setzt typische Werte. Danach frei anpassen.</p>
+          <div class="preset-row" style="grid-template-columns:repeat(3,1fr);">
+            <button class="preset-btn" data-anbau="indoor">Indoor</button>
+            <button class="preset-btn" data-anbau="gewaechshaus">Gewächshaus</button>
+            <button class="preset-btn" data-anbau="outdoor">Outdoor</button>
+          </div>
+          <div class="field">
+            <label>Anbaufläche (Canopy)<span class="info-i" data-tip="Reine Pflanzen-/Lichtfläche, nicht die gesamte Raumfläche. Pflege-Aufwand und Ertrag rechnen sich pro m² Canopy.">i</span><span class="val"><span id="lblFlaeche">70</span> m²</span></label>
+            <input type="range" id="flaeche" min="10" max="400" step="5" value="70" oninput="calc()">
+            <div class="hint">Beleuchtete Pflanzenfläche der gesamten Anlage.</div>
+          </div>
+          <div class="field">
+            <label>Grow-Räume / Zonen<span class="info-i" data-tip="Getrennt steuerbare Räume oder Zelte. Mehr Räume = mehr Reinigungs- und Umrüst-Aufwand zwischen den Zyklen, aber auch versetzte Ernten.">i</span><span class="val"><span id="lblRaeume">3</span></span></label>
+            <input type="range" id="raeume" min="1" max="12" step="1" value="3" oninput="calc()">
+            <div class="hint">Versetzte Räume glätten die Ernte-Spitzen.</div>
+          </div>
+          <div class="field">
+            <label>Zyklen pro Jahr<span class="info-i" data-tip="Wie oft pro Jahr die gesamte Fläche durchläuft (Aussaat bis Ernte). Indoor typisch 3–5, Gewächshaus 2–3, Outdoor 1.">i</span><span class="val"><span id="lblZyklen">4</span></span></label>
+            <input type="range" id="zyklen" min="1" max="6" step="1" value="4" oninput="calc()">
+            <div class="hint">Mehr Zyklen = mehr Jahresertrag, aber mehr Ernte- und Umrüst-Arbeit.</div>
+          </div>
+        </div>
+
+        <!-- SCHRITT 3 · ERTRAG & BEDARF -->
+        <div class="card">
+          <h2>📊 Schritt 3 · Ertrag &amp; Mitgliederbedarf<span class="info-i" data-tip="Wie viel die Anlage erntet und wie viel die Mitglieder im Jahr abnehmen. Daraus ergibt sich, ob der Anbau den Bedarf deckt.">i</span></h2>
+          <div class="field">
+            <label>Ertrag je m² &amp; Zyklus<span class="info-i" data-tip="Getrockneter, abgabefertiger Ertrag pro m² Canopy und Zyklus. Realistisch indoor 300–500 g/m², je nach Sorte, Licht und Erfahrung.">i</span><span class="val"><span id="lblErtrag">420</span> g/m²</span></label>
+            <input type="range" id="ertrag" min="100" max="700" step="10" value="420" oninput="calc()">
+            <div class="hint">Trockenertrag pro Zyklus. Konservativ rechnen.</div>
+          </div>
+          <div class="field">
+            <label>Ausfall / Verlust<span class="info-i" data-tip="Anteil der Ernte, der durch Schädlinge, Schimmel, Untauglichkeit oder Qualitätsmängel wegfällt. 10–20 % sind realistisch.">i</span><span class="val"><span id="lblVerlust">12</span> %</span></label>
+            <input type="range" id="verlust" min="0" max="35" step="1" value="12" oninput="calc()">
+            <div class="hint">Wird vom Bruttoertrag abgezogen.</div>
+          </div>
+          <div class="field">
+            <label>Mitglieder<span class="info-i" data-tip="Anzahl der Vereinsmitglieder. Nach KCanG max. 500 je Anbauvereinigung. Bestimmt den Gesamtbedarf.">i</span><span class="val"><span id="lblMitglieder">300</span></span></label>
+            <input type="range" id="mitglieder" min="0" max="500" step="10" value="300" oninput="calc()">
+            <div class="hint">KCanG-Höchstgrenze: 500 Mitglieder.</div>
+          </div>
+          <div class="field">
+            <label>Anteil unter 21<span class="info-i" data-tip="Für 18- bis 20-Jährige gilt eine niedrigere Höchstmenge (30 g/Monat statt 50 g). Beeinflusst die gesetzliche Bedarfs-Obergrenze.">i</span><span class="val"><span id="lblU21">10</span> %</span></label>
+            <input type="range" id="u21" min="0" max="100" step="5" value="10" oninput="calc()">
+            <div class="hint">U21: max. 30 g/Monat · Ü21: max. 50 g/Monat.</div>
+          </div>
+          <div class="field">
+            <label>Ø Abgabe je Mitglied / Monat<span class="info-i" data-tip="Realistische Planungsannahme, wie viel ein Mitglied im Schnitt monatlich abnimmt — nicht jeder schöpft die 50 g aus. Erfahrungswert eher 20–35 g.">i</span><span class="val"><span id="lblAbgabe">28</span> g</span></label>
+            <input type="range" id="abgabe" min="5" max="50" step="1" value="28" oninput="calc()">
+            <div class="hint">Planungswert für den realistischen Bedarf.</div>
+          </div>
+        </div>
+
+        <!-- SCHRITT 4 · ARBEITSAUFWAND -->
+        <div class="card">
+          <h2>⏱ Schritt 4 · Arbeitsaufwand &amp; Lohn<span class="info-i" data-tip="Wie viel Arbeitszeit der Anbau bindet. Diese Werte bestimmen, wie viele Grower nötig sind.">i</span></h2>
+          <div class="field">
+            <label>Pflege je m² &amp; Woche<span class="info-i" data-tip="Laufende Arbeit pro m² Canopy und Woche: Gießen, Düngen, Pflanzentraining, Entlauben, Klima- und Schädlingskontrolle. Erfahrungswert 0,4–0,8 h/m².">i</span><span class="val"><span id="lblPflegeH">0,65</span> h/m²</span></label>
+            <input type="range" id="pflegeH" min="0.1" max="1.5" step="0.05" value="0.65" oninput="calc()">
+            <div class="hint">Tägliche und wöchentliche Pflanzenpflege.</div>
+          </div>
+          <div class="field">
+            <label>Ernte &amp; Trimmen je kg<span class="info-i" data-tip="Arbeitszeit pro kg Ernte für Schneiden, Trocknen überwachen, Trimmen und Curing. Handtrimmen 3–6 h/kg, mit Trimmaschine deutlich weniger.">i</span><span class="val"><span id="lblTrimH">4,0</span> h/kg</span></label>
+            <input type="range" id="trimH" min="1" max="10" step="0.5" value="4" oninput="calc()">
+            <div class="hint">Größter Einzelposten zur Erntezeit.</div>
+          </div>
+          <div class="field">
+            <label>Umrüstung je Raum &amp; Zyklus<span class="info-i" data-tip="Reinigung, Desinfektion und Neubestückung eines Raums zwischen zwei Zyklen.">i</span><span class="val"><span id="lblTurnaround">14</span> h</span></label>
+            <input type="range" id="turnaroundH" min="0" max="40" step="1" value="14" oninput="calc()">
+            <div class="hint">Fällt je Raum bei jedem Zyklus an.</div>
+          </div>
+          <div class="field">
+            <label>Reserve für Krank &amp; Urlaub<span class="info-i" data-tip="Aufschlag auf die benötigte Grower-Zahl, damit der Anbau bei Ausfällen weiterläuft. Pflanzen warten nicht.">i</span><span class="val"><span id="lblKrank">15</span> %</span></label>
+            <input type="range" id="krank" min="0" max="40" step="1" value="15" oninput="calc()">
+            <div class="hint">Erhöht nur die empfohlene Personenzahl.</div>
+          </div>
+          <div class="card-spacer"></div>
+          <h2>Lohn-Basis<span class="info-i" data-tip="Stundenlohn für die Minijob-Kalkulation. Der Mindestlohn ist gesetzlich vorgegeben.">i</span>
+            <span class="h2-right"><span class="seg" id="lohnJahrSeg">
+              <button data-jahr="2026" class="active">2026</button>
+              <button data-jahr="2027">2027</button>
+            </span></span>
+          </h2>
+          <div class="field">
+            <label>Stundenlohn<span class="info-i" data-tip="Lohn pro Stunde für Minijob-Grower. Ehrenamtliche werden je Person separat erfasst.">i</span><span class="val"><span id="lblLohn">13,90</span> €</span></label>
+            <input type="range" id="lohn" min="13.90" max="30" step="0.10" value="13.90" oninput="calc()">
+            <div class="hint" id="lohnHint">Mindestlohn 2026: 13,90 € · Minijob-Grenze 603 €</div>
+          </div>
+          <div class="toggle-row">
+            <div>
+              <label for="wochenende">Wochenend-Pflege nötig</label>
+              <span class="desc">Pflanzen brauchen tägliche Kontrolle — auch Sa/So</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="wochenende" checked onchange="calc()">
+              <span class="slider-sw"></span>
+            </label>
+          </div>
+        </div>
+
+      </div>
+      <div class="col-stack">
+
+        <!-- ERGEBNIS: PRODUKTION & BEDARF -->
+        <div class="card">
+          <h2>Produktion &amp; Mitgliederbedarf<span class="info-i tip-left" data-tip="Vergleicht den Jahresertrag der Anlage mit dem, was die Mitglieder im Jahr abnehmen.">i</span></h2>
+          <div class="stat-grid cols-2">
+            <div class="stat big highlight">
+              <div class="lbl">Jahresernte (netto)</div>
+              <div class="num"><span id="rJahresernte">0</span><span class="u">kg</span></div>
+              <div class="sub" id="rJahresernteSub"></div>
+            </div>
+            <div class="stat big">
+              <div class="lbl">Mitgliederbedarf / Jahr</div>
+              <div class="num"><span id="rBedarf">0</span><span class="u">kg</span></div>
+              <div class="sub" id="rBedarfSub"></div>
+            </div>
+          </div>
+          <div class="stat-grid cols-2" style="margin-top:10px;">
+            <div class="stat" id="prodStat">
+              <div class="lbl">Produktions-Deckung</div>
+              <div class="num"><span id="rDeckungProd">0</span><span class="u">%</span></div>
+              <div class="sub" id="rDeckungProdSub"></div>
+            </div>
+            <div class="stat">
+              <div class="lbl">Ernte je Zyklus</div>
+              <div class="num"><span id="rErnteZyklus">0</span><span class="u">kg</span></div>
+              <div class="sub" id="rErnteZyklusSub"></div>
+            </div>
+          </div>
+          <div class="notes" id="prodNote"><span id="prodNoteText"></span></div>
+        </div>
+
+        <!-- ERGEBNIS: ARBEITSAUFWAND -->
+        <div class="card">
+          <h2>Arbeitsaufwand<span class="info-i tip-left" data-tip="Zerlegt die jährliche Arbeitszeit in laufende Pflege, Ernte/Trimmen und Umrüstung.">i</span></h2>
+          <div class="stat-grid cols-3">
+            <div class="stat">
+              <div class="lbl">Pflege</div>
+              <div class="num"><span id="rPflege">0</span><span class="u">h/M</span></div>
+              <div class="sub">laufend</div>
+            </div>
+            <div class="stat">
+              <div class="lbl">Ernte &amp; Trim</div>
+              <div class="num"><span id="rTrim">0</span><span class="u">h/J</span></div>
+              <div class="sub">je Zyklus gebündelt</div>
+            </div>
+            <div class="stat">
+              <div class="lbl">Umrüstung</div>
+              <div class="num"><span id="rTurnaround">0</span><span class="u">h/J</span></div>
+              <div class="sub">zwischen Zyklen</div>
+            </div>
+          </div>
+          <div class="stat-grid cols-2" style="margin-top:10px;">
+            <div class="stat big accent">
+              <div class="lbl">Gesamt-Arbeit Ø</div>
+              <div class="num"><span id="rGesamtMonat">0</span><span class="u">h/Monat</span></div>
+              <div class="sub" id="rGesamtJahrSub"></div>
+            </div>
+            <div class="stat">
+              <div class="lbl">Gesamt / Jahr</div>
+              <div class="num"><span id="rGesamtJahr">0</span><span class="u">h</span></div>
+              <div class="sub">Pflege + Ernte + Umrüstung</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ERGEBNIS: PERSONALBEDARF -->
+        <div class="card">
+          <h2>Grower-Bedarf (Schätzung)<span class="info-i tip-left" data-tip="Geschätzte Zahl der benötigten Grower, damit der Anbau mit Reserve für Urlaub und Krankheit läuft.">i</span></h2>
+          <div class="stat-grid cols-2">
+            <div class="stat">
+              <div class="lbl">Grower (Basis)</div>
+              <div class="num" id="rGrowerBasis">0</div>
+              <div class="sub" id="rGrowerBasisSub">ohne Reserve</div>
+            </div>
+            <div class="stat big highlight">
+              <div class="lbl">Grower empfohlen</div>
+              <div class="num" id="rGrowerFinal">0</div>
+              <div class="sub" id="rGrowerFinalSub"></div>
+            </div>
+          </div>
+          <div class="stat-grid cols-3" style="margin-top:10px;">
+            <div class="stat">
+              <div class="lbl">Kosten / Monat</div>
+              <div class="num" style="font-size:18px;"><span id="rKostenMonat">0</span><span class="u">€</span></div>
+              <div class="sub">Minijob-Basis + 30 %</div>
+            </div>
+            <div class="stat">
+              <div class="lbl">Kosten / Jahr</div>
+              <div class="num" style="font-size:18px;"><span id="rKostenJahr">0</span><span class="u">€</span></div>
+              <div class="sub">grobe Hochrechnung</div>
+            </div>
+            <div class="stat">
+              <div class="lbl">je Mitglied</div>
+              <div class="num" style="font-size:18px;"><span id="rKostenMember">0</span></div>
+              <div class="sub">€/Monat</div>
+            </div>
+          </div>
+          <div class="notes" id="persNote"><span id="persNoteText"></span></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- TEAM-AUSWERTUNG -->
+    <div class="card card-spacer">
+      <h2>Team-Auswertung · Deckt das Grow-Team den Aufwand?<span class="info-i tip-left" data-tip="Vergleicht die Soll-Stunden des eingetragenen Teams mit der berechneten Gesamt-Arbeit.">i</span></h2>
+      <div class="stat-grid cols-4">
+        <div class="stat">
+          <div class="lbl">Team-Stunden</div>
+          <div class="num"><span id="tmStunden">0</span><span class="u">h/M</span></div>
+          <div class="sub" id="tmStundenSub"></div>
+        </div>
+        <div class="stat">
+          <div class="lbl">Soll-Aufwand</div>
+          <div class="num"><span id="tmSoll">0</span><span class="u">h/M</span></div>
+          <div class="sub">Gesamt-Arbeit Ø</div>
+        </div>
+        <div class="stat" id="coverageStat">
+          <div class="lbl">Deckung</div>
+          <div class="num"><span id="tmDeckung">0</span><span class="u">%</span></div>
+          <div class="sub" id="tmDeckungSub"></div>
+        </div>
+        <div class="stat">
+          <div class="lbl">Team-Kosten</div>
+          <div class="num" style="font-size:18px;"><span id="tmKosten">0</span><span class="u">€</span></div>
+          <div class="sub" id="tmKostenSub"></div>
+        </div>
+      </div>
+      <div class="coverage-bar"><div class="coverage-fill" id="coverageBar"></div></div>
+      <div class="notes" id="teamNote"><span id="teamNoteText"></span></div>
+    </div>
+
+    <!-- ERNTE-SPITZE -->
+    <div class="card card-spacer">
+      <h2>⚡ Ernte-Spitze<span class="info-i" data-tip="Ernte und Trimmen fallen gebündelt an. Diese Rechnung zeigt, wie viel Personal zur Erntezeit zusätzlich gebraucht wird.">i</span></h2>
+      <p style="color:var(--text-dim);font-size:13px;margin:-8px 0 14px;">
+        Die Trim-Arbeit eines Zyklus muss in einem kurzen Fenster erledigt werden — sonst leidet die Qualität.
+      </p>
+      <div class="field" style="max-width:420px;">
+        <label>Trim-Fenster je Ernte<span class="info-i" data-tip="In wie vielen Tagen die Ernte eines Zyklus verarbeitet werden soll. Kürzer = mehr Personal gleichzeitig nötig.">i</span><span class="val"><span id="lblTrimFenster">14</span> Tage</span></label>
+        <input type="range" id="trimFenster" min="3" max="30" step="1" value="14" oninput="calc()">
+      </div>
+      <div class="stat-grid cols-4" style="margin-top:6px;">
+        <div class="stat">
+          <div class="lbl">Trim-Arbeit je Zyklus</div>
+          <div class="num"><span id="rTrimZyklus">0</span><span class="u">h</span></div>
+          <div class="sub" id="rTrimZyklusSub"></div>
+        </div>
+        <div class="stat">
+          <div class="lbl">Arbeit / Tag (Ernte)</div>
+          <div class="num"><span id="rSpitzeHTag">0</span><span class="u">h</span></div>
+          <div class="sub">Trim + tägliche Pflege</div>
+        </div>
+        <div class="stat" id="spitzePersStat">
+          <div class="lbl">Personen / Tag (Ernte)</div>
+          <div class="num" id="rSpitzePers">0</div>
+          <div class="sub" id="rSpitzePersSub"></div>
+        </div>
+        <div class="stat">
+          <div class="lbl">Normal / Tag</div>
+          <div class="num" id="rNormalPers">0</div>
+          <div class="sub">außerhalb der Ernte</div>
+        </div>
+      </div>
+      <div class="notes" id="spitzeNote"><span id="spitzeNoteText"></span></div>
+    </div>
+
+    <!-- ANSTELLUNGSFORMEN-VERGLEICH -->
+    <div class="card card-spacer">
+      <h2>Anstellungsformen-Vergleich<span class="info-i" data-tip="Zeigt, wie viele Grower man je nach Anstellungsart bräuchte. Für Grower sind nach §17 KCanG nur Minijob und Ehrenamt zulässig.">i</span></h2>
+      <div class="table-wrap">
+        <table class="compare-table">
+          <thead><tr>
+            <th>Modell</th><th>Stunden / Person</th><th>Personen nötig</th><th>Kosten / Monat</th><th>Hinweis</th>
+          </tr></thead>
+          <tbody id="cmpTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- EINSATZPLAN -->
+    <div class="card card-spacer">
+      <h2>🗓 Einsatzplan<span class="info-i" data-tip="Verfügbarkeits-Heatmap, Tages-Abdeckung und ein Vorschlag, wer an welchem Tag den Pflege-Dienst übernimmt.">i</span></h2>
+      <p style="color:var(--text-dim);font-size:13px;margin:-8px 0 14px;">
+        Stunde für Stunde: wie viele Grower sind verfügbar? Daraus leiten sich die Tages-Abdeckung und ein Pflege-Dienstplan ab.
+      </p>
+      <div class="open-heat" id="availHeat"></div>
+      <div class="oh-legend">
+        <span><span class="dot"></span>0 = keiner da</span>
+        <span><span class="dot" style="background:rgba(255,159,67,0.4);"></span>1 = knapp</span>
+        <span><span class="dot" style="background:rgba(76,175,106,0.4);"></span>2 = gut</span>
+        <span><span class="dot" style="background:var(--green);"></span>3+ = komfortabel</span>
+      </div>
+      <div class="stat-grid cols-3" style="margin-top:14px;">
+        <div class="stat" id="coverageDaysStat">
+          <div class="lbl">Tage mit Pflege-Abdeckung</div>
+          <div class="num"><span id="rTageAbgedeckt">0</span><span class="u" id="rTageAbgedecktU">/7</span></div>
+          <div class="sub" id="rTageAbgedecktSub"></div>
+        </div>
+        <div class="stat">
+          <div class="lbl">Verfügbare Stunden / Woche</div>
+          <div class="num"><span id="rVerfH">0</span><span class="u">h</span></div>
+          <div class="sub">über alle Grower</div>
+        </div>
+        <div class="stat">
+          <div class="lbl">Kritische Tage</div>
+          <div class="num" id="rKritischeTage" style="font-size:18px;">—</div>
+          <div class="sub">ohne Abdeckung</div>
+        </div>
+      </div>
+      <div class="oh-suggest" style="margin-top:14px;">
+        <div class="ohs-title">Pflege-Dienstplan (Vorschlag) — wer hat an welchem Tag den Tagesdienst?</div>
+        <div id="careRoster" style="display:flex;flex-direction:column;gap:5px;margin-top:8px;"></div>
+      </div>
+      <div class="notes" id="einsatzNote"><span id="einsatzNoteText"></span></div>
+      <div class="card-spacer"></div>
+      <h2 style="margin-bottom:10px;">Aufgaben-Rhythmus im Grow</h2>
+      <div class="table-wrap">
+        <table class="compare-table">
+          <thead><tr><th>Aufgabe</th><th>Rhythmus</th><th>Wer</th><th>Geschätzter Aufwand</th></tr></thead>
+          <tbody id="aufgabenBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="footer-note">
+      Grow-Rechner v1 · Mariana Cannabis · Planungstool — alle Werte sind Schätzungen, keine Rechtsberatung.
+    </div>
+  </div>
+
+  <!-- ============ ÜBERSICHT ============ -->
+  <div class="view" id="view-overview">
+    <div class="overview-header">
+      <div>
+        <h2 id="ov_titel">Grow-Planung Übersicht</h2>
+        <div class="meta" id="ov_meta"></div>
+      </div>
+    </div>
+    <div class="overview-section">
+      <h3>Annahmen</h3>
+      <div class="assumption-list" id="ov_assumptions"></div>
+    </div>
+    <div class="overview-section">
+      <h3>Kern-Ergebnis</h3>
+      <div class="assumption-list" id="ov_results"></div>
+    </div>
+    <div class="overview-section">
+      <h3>Grow-Team</h3>
+      <div class="ov-sec-hint" id="ov_teamhint"></div>
+      <div class="team-list-compact" id="ov_team"></div>
+    </div>
+    <div class="overview-section">
+      <h3>Verfügbarkeit je Wochentag</h3>
+      <div class="ov-sec-hint">Verfügbare Grower-Stunden pro Tag — Basis für die Pflege-Abdeckung.</div>
+      <div class="ov-weekbars" id="ov_weekbars"></div>
+    </div>
+    <div class="overview-section">
+      <h3>Einschätzung</h3>
+      <div class="notes" id="ov_fazit"><span id="ov_fazitText"></span></div>
+    </div>
+    <div class="footer-note">Erstellt mit dem Grow-Rechner v1 · Mariana Cannabis</div>
+  </div>
+</div>
+
+<!-- ============ MODALS ============ -->
+<div class="modal-backdrop" id="modal" onclick="if(event.target===this)closeModal('modal')">
+  <div class="modal">
+    <button class="close" onclick="closeModal('modal')">×</button>
+    <h3>Anbau &amp; KCanG</h3>
+    <p>Kurzüberblick zu den Beschäftigungsformen für Grower und den Anbau-Vorgaben des Konsumcannabisgesetzes.</p>
+
+    <h4>Beschäftigung der Grower</h4>
+    <p>Im Anbau einer Anbauvereinigung wird die Arbeit durch die Mitglieder geleistet. Dieses Tool plant ausschließlich
+      <strong>Grower</strong> (nicht die Anbauleitung / Head Grow) und kennt dafür zwei Modelle:</p>
+    <ul>
+      <li><strong>Minijob</strong> — geringfügige Beschäftigung bis zur Minijob-Grenze (<span class="num-highlight">603 €</span> in 2026,
+        <span class="num-highlight">633 €</span> in 2027). Stundenlohn mindestens Mindestlohn.</li>
+      <li><strong>Ehrenamt</strong> — ehrenamtliche Mitarbeit, ggf. mit Aufwandsentschädigung im Rahmen der
+        Ehrenamtspauschale (840 €/Jahr steuerfrei). Sollte echte Freiwilligkeit bleiben und im Stundenumfang moderat sein,
+        sonst droht die Einordnung als verdecktes Arbeitsverhältnis.</li>
+    </ul>
+    <p>Teilzeit und Vollzeit sind für die Grower-Rolle in diesem System bewusst nicht vorgesehen.</p>
+
+    <h4>KCanG — Anbau für den Eigenbedarf</h4>
+    <ul>
+      <li>Eine Anbauvereinigung darf <strong>nur für den Eigenbedarf ihrer Mitglieder</strong> anbauen — kein Verkauf,
+        keine Weitergabe an Dritte, kein gewerblicher Überschuss.</li>
+      <li>Höchstens <span class="num-highlight">500 Mitglieder</span> je Anbauvereinigung.</li>
+      <li>Abgabe je Mitglied: max. <span class="num-highlight">25 g/Tag</span> und <span class="num-highlight">50 g/Monat</span>.
+        Für 18- bis 20-Jährige: max. <span class="num-highlight">30 g/Monat</span>.</li>
+      <li>Die geplante Jahresernte sollte sich am tatsächlichen Mitgliederbedarf orientieren. Eine Produktion deutlich über
+        der gesetzlichen Höchstmenge aller Mitglieder ist rechtlich heikel.</li>
+    </ul>
+
+    <p class="source-hint">Dieser Rechner liefert Planungs-Schätzungen und ist keine Rechtsberatung. Maßgeblich sind das
+      KCanG in der jeweils gültigen Fassung und die Auflagen der zuständigen Behörde.</p>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="saveModal" onclick="if(event.target===this)closeModal('saveModal')">
+  <div class="modal small">
+    <button class="close" onclick="closeModal('saveModal')">×</button>
+    <h3>Szenario speichern</h3>
+    <p>Gib dem aktuellen Stand einen Namen. Gespeichert wird lokal in diesem Browser.</p>
+    <input type="text" id="saveScenarioName" placeholder="z. B. Indoor 120 m², 300 Mitglieder">
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeModal('saveModal')">Abbrechen</button>
+      <button class="btn-primary" onclick="confirmSaveScenario()">Speichern</button>
+    </div>
+  </div>
+</div>
+</body>
+
+<script>
+// ============================================================================
+// Grow-Rechner v1 · Mariana Cannabis · Planungstool für den Anbau
+// ============================================================================
+const __GROW_BUILD = '2026-05-17T1530';
+
+const $ = id => document.getElementById(id);
+const V = id => +$(id).value;
+const fmt = (n, dec=2) => (isFinite(n) ? n : 0).toLocaleString('de-DE', {minimumFractionDigits: dec, maximumFractionDigits: dec});
+const fmtInt = n => Math.round(isFinite(n) ? n : 0).toLocaleString('de-DE');
+
+// ── Konstanten ──────────────────────────────────────────────────────────────
+// Für Grower nur Minijob + Ehrenamt (§17 KCanG-Logik des Systems).
+const TYPE_LABELS       = { minijob: 'Minijob', ehrenamt: 'Ehrenamt' };
+const TYPE_PAUSCHALE    = { minijob: 0.30, ehrenamt: 0.00 };
+const TYPE_DEFAULT_HOURS= { minijob: 40, ehrenamt: 24 };
+const MJ_GRENZE   = { 2026: 603, 2027: 633 };
+const MINDESTLOHN = { 2026: 13.90, 2027: 14.60 };
+const EHRENAMT_PAUSCHALE_MONAT = 70;   // 840 €/Jahr steuerfrei
+
+const ANBAU_PRESETS = {
+  indoor:       { zyklen: 4, ertrag: 420, pflegeH: 0.65 },
+  gewaechshaus: { zyklen: 2, ertrag: 350, pflegeH: 0.45 },
+  outdoor:      { zyklen: 1, ertrag: 500, pflegeH: 0.30 }
+};
+
+const TAGE        = ['mo','di','mi','do','fr','sa','so'];
+const TAGE_LABELS = ['Mo','Di','Mi','Do','Fr','Sa','So'];
+const TAGE_LANG   = ['Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag','Sonntag'];
+const HOUR_START  = 7;
+const HOUR_END    = 20;
+const HOURS = []; for (let h = HOUR_START; h <= HOUR_END; h++) HOURS.push(h);
+
+const STORAGE_KEY        = 'csc-grow-rechner-scenarios-v1';
+const GROW_IMPORT_KEY    = 'mariana_grow_rechner_import';
+const ALL_INPUT_IDS = ['flaeche','raeume','zyklen','ertrag','verlust','mitglieder','u21','abgabe','pflegeH','trimH','turnaroundH','krank','lohn','trimFenster'];
+const ALL_BOOL_IDS  = ['wochenende'];
+
+const H_PRO_PERSON_TAG = 6;   // produktive Stunden je Person und Tag
+
+let lohnJahr = 2026;
+let team = [];
+let nextId = 1;
+let scenarios = {};
+let currentScenarioName = '';
+let growImportData = null;
+
+// ── Team-Startdaten ─────────────────────────────────────────────────────────
+function initTeam() {
+  team = [
+    { id: nextId++, name: 'Grower 1', type: 'minijob', hours: 40, wage: 13.90,
+      avail: { mo:[8,9,10,11], di:[], mi:[8,9,10,11], do:[], fr:[8,9,10,11], sa:[9,10], so:[] } },
+    { id: nextId++, name: 'Grower 2', type: 'minijob', hours: 40, wage: 13.90,
+      avail: { mo:[], di:[14,15,16,17], mi:[], do:[14,15,16,17], fr:[], sa:[], so:[10,11,12] } },
+    { id: nextId++, name: 'Grower 3', type: 'ehrenamt', hours: 24, wage: 0,
+      avail: { mo:[], di:[9,10,11], mi:[], do:[9,10,11], fr:[], sa:[], so:[] } },
+    { id: nextId++, name: 'Grower 4', type: 'minijob', hours: 40, wage: 13.90,
+      avail: { mo:[16,17,18], di:[], mi:[16,17,18], do:[], fr:[15,16,17,18], sa:[], so:[14,15,16] } }
+  ];
+}
+
+// ── Modals ──────────────────────────────────────────────────────────────────
+function openModal(id)  { $(id).classList.add('open'); }
+function closeModal(id) { $(id).classList.remove('open'); }
+
+// ── Tabs ────────────────────────────────────────────────────────────────────
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    $('view-' + t.dataset.tab).classList.add('active');
+    if (t.dataset.tab === 'overview') renderOverview();
+  });
+});
+
+// ── Zurück zum Dashboard ────────────────────────────────────────────────────
+function zurueckZumDashboard() {
+  if (window.opener && !window.opener.closed) {
+    window.close();
+    setTimeout(() => { window.location.href = 'index.html'; }, 150);
+  } else {
+    window.location.href = 'index.html';
+  }
+}
+
+// ── Anbau-Presets ───────────────────────────────────────────────────────────
+function setAnbauPreset(name) {
+  const p = ANBAU_PRESETS[name];
+  if (!p) return;
+  $('zyklen').value  = p.zyklen;
+  $('ertrag').value  = p.ertrag;
+  $('pflegeH').value = p.pflegeH;
+  document.querySelectorAll('.preset-btn[data-anbau]').forEach(b => b.classList.toggle('active', b.dataset.anbau === name));
+}
+function checkAnbauMatch() {
+  let match = null;
+  for (const [name, p] of Object.entries(ANBAU_PRESETS)) {
+    if (p.zyklen === V('zyklen') && p.ertrag === V('ertrag') && Math.abs(p.pflegeH - V('pflegeH')) < 0.001) { match = name; break; }
+  }
+  document.querySelectorAll('.preset-btn[data-anbau]').forEach(b => b.classList.toggle('active', b.dataset.anbau === match));
+}
+document.querySelectorAll('.preset-btn[data-anbau]').forEach(btn => {
+  btn.addEventListener('click', () => { setAnbauPreset(btn.dataset.anbau); calc(); });
+});
+
+// ── Lohnjahr ────────────────────────────────────────────────────────────────
+document.querySelectorAll('#lohnJahrSeg button').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('#lohnJahrSeg button').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    lohnJahr = +b.dataset.jahr;
+    const ml = MINDESTLOHN[lohnJahr];
+    $('lohn').min = ml;
+    if (V('lohn') < ml) $('lohn').value = ml;
+    $('lohnHint').textContent = `Mindestlohn ${lohnJahr}: ${fmt(ml,2)} € · Minijob-Grenze ${MJ_GRENZE[lohnJahr]} €`;
+    calc();
+  });
+});
+
+// ── Team ────────────────────────────────────────────────────────────────────
+function resetTeam() {
+  if (!confirm('Grow-Team komplett zurücksetzen?')) return;
+  initTeam(); renderTeam(); calc();
+}
+function addMember(type) {
+  type = type || 'minijob';
+  team.push({
+    id: nextId++,
+    name: 'Grower ' + (team.length + 1),
+    type: type,
+    hours: TYPE_DEFAULT_HOURS[type],
+    wage: type === 'ehrenamt' ? 0 : MINDESTLOHN[lohnJahr],
+    avail: { mo:[], di:[], mi:[], do:[], fr:[], sa:[], so:[] }
+  });
+  renderTeam(); calc();
+}
+function removeMember(id) {
+  team = team.filter(m => m.id !== id);
+  renderTeam(); calc();
+}
+function updateMember(id, field, value) {
+  const m = team.find(x => x.id === id);
+  if (!m) return;
+  if (field === 'hours' || field === 'wage') m[field] = parseFloat(value) || 0;
+  else m[field] = value;
+  if (field === 'type') {
+    if (m.type === 'ehrenamt' && m.wage === MINDESTLOHN[lohnJahr]) m.wage = 0;
+    if (m.type === 'minijob' && m.wage < MINDESTLOHN[lohnJahr]) m.wage = MINDESTLOHN[lohnJahr];
+    renderTeam();
+  } else {
+    updateMemberStats(m);
+  }
+  calc();
+}
+function toggleHour(id, tag, hour) {
+  const m = team.find(x => x.id === id);
+  if (!m) return;
+  const idx = m.avail[tag].indexOf(hour);
+  if (idx >= 0) m.avail[tag].splice(idx, 1);
+  else m.avail[tag].push(hour);
+  const cell = document.querySelector(`[data-avail-id="${id}"][data-tag="${tag}"][data-hour="${hour}"]`);
+  if (cell) cell.classList.toggle('active', m.avail[tag].includes(hour));
+  updateMemberStats(m);
+  calc();
+}
+function clearAvail(id) {
+  const m = team.find(x => x.id === id);
+  if (!m) return;
+  TAGE.forEach(t => m.avail[t] = []);
+  renderTeam(); calc();
+}
+function fillVormittag(id) {
+  const m = team.find(x => x.id === id);
+  if (!m) return;
+  m.avail = { mo:[8,9,10,11], di:[8,9,10,11], mi:[8,9,10,11], do:[8,9,10,11], fr:[8,9,10,11], sa:[], so:[] };
+  renderTeam(); calc();
+}
+function fillTaeglich(id) {
+  const m = team.find(x => x.id === id);
+  if (!m) return;
+  m.avail = { mo:[9,10,11], di:[9,10,11], mi:[9,10,11], do:[9,10,11], fr:[9,10,11], sa:[9,10,11], so:[9,10,11] };
+  renderTeam(); calc();
+}
+
+function memberBrutto(m) { return m.hours * m.wage; }
+function memberAvailHoursWeek(m) {
+  let c = 0; TAGE.forEach(t => c += m.avail[t].length); return c;
+}
+
+function memberStatus(m) {
+  const grenze = MJ_GRENZE[lohnJahr];
+  const brutto = memberBrutto(m);
+  if (m.type === 'ehrenamt') {
+    if (brutto > EHRENAMT_PAUSCHALE_MONAT)
+      return { cls: 'warn', text: `⚠ über Ehrenamtspauschale (${EHRENAMT_PAUSCHALE_MONAT} €/M)` };
+    if (m.hours > 60)
+      return { cls: 'warn', text: '⚠ viele Stunden — Abgrenzung zum Minijob prüfen' };
+    return { cls: 'ok', text: '✓ Ehrenamt' };
+  }
+  if (brutto > grenze)       return { cls: 'over', text: `✗ über ${grenze} €` };
+  if (brutto > grenze * 0.9) return { cls: 'warn', text: `⚠ nah an ${grenze} €` };
+  return { cls: 'ok', text: '✓ Minijob-konform' };
+}
+
+function renderTeam() {
+  const grid = $('teamGrid');
+  grid.innerHTML = '';
+  team.forEach(m => grid.appendChild(buildMemberCard(m)));
+}
+
+function buildMemberCard(m) {
+  const div = document.createElement('div');
+  div.className = 'team-member';
+  div.dataset.id = m.id;
+  const headerCells = HOURS.map(h => `<div class="h-lbl">${h}</div>`).join('');
+  const rows = TAGE.map((t, i) => {
+    const cells = HOURS.map(h =>
+      `<div class="h-cell ${m.avail[t].includes(h)?'active':''}" data-avail-id="${m.id}" data-tag="${t}" data-hour="${h}" onclick="toggleHour(${m.id},'${t}',${h})" title="${TAGE_LABELS[i]} ${h}:00"></div>`
+    ).join('');
+    return `<div class="h-row"><div class="h-day">${TAGE_LABELS[i]}</div><div class="h-cells">${cells}</div></div>`;
+  }).join('');
+
+  div.innerHTML = `
+    <div class="tm-header">
+      <input type="text" value="${(m.name||'').replace(/"/g,'&quot;')}" onchange="updateMember(${m.id}, 'name', this.value)">
+      <button class="remove-btn" onclick="removeMember(${m.id})" title="Entfernen">×</button>
+    </div>
+    <div class="tm-fields">
+      <select onchange="updateMember(${m.id}, 'type', this.value)">
+        <option value="minijob" ${m.type==='minijob'?'selected':''}>Minijob</option>
+        <option value="ehrenamt" ${m.type==='ehrenamt'?'selected':''}>Ehrenamt</option>
+      </select>
+      <div class="input-wrap">
+        <input type="number" value="${m.hours}" min="1" max="200" step="1" onchange="updateMember(${m.id}, 'hours', this.value)">
+        <span class="u">h/M</span>
+      </div>
+      <div class="input-wrap">
+        <input type="number" value="${(+m.wage).toFixed(2)}" min="0" max="50" step="0.10" onchange="updateMember(${m.id}, 'wage', this.value)">
+        <span class="u">€/h</span>
+      </div>
+    </div>
+    <div class="tm-stats">
+      <span class="tm-brutto" data-brutto></span>
+      <span class="tm-status" data-status></span>
+    </div>
+    <div class="avail-matrix">
+      <div class="avail-title">
+        <span>Verfügbarkeit (${HOUR_START}–${HOUR_END+1} Uhr)</span>
+        <span class="avail-availh" data-availh></span>
+      </div>
+      <div class="avail-hours">
+        <div class="h-header">${headerCells}</div>
+        ${rows}
+      </div>
+      <div class="avail-actions">
+        <button onclick="fillVormittag(${m.id})">Mo-Fr 8-12</button>
+        <button onclick="fillTaeglich(${m.id})">Täglich 9-12</button>
+        <button onclick="clearAvail(${m.id})">Leeren</button>
+      </div>
+    </div>
+  `;
+  updateMemberStats(m, div);
+  return div;
+}
+
+function updateMemberStats(m, div) {
+  div = div || document.querySelector(`.team-member[data-id="${m.id}"]`);
+  if (!div) return;
+  const st = memberStatus(m);
+  const bruttoEl = div.querySelector('[data-brutto]');
+  const statusEl = div.querySelector('[data-status]');
+  const availhEl = div.querySelector('[data-availh]');
+  if (m.type === 'ehrenamt') {
+    bruttoEl.textContent = memberBrutto(m) > 0 ? fmtInt(memberBrutto(m)) + ' € Aufwand' : 'ohne Vergütung';
+  } else {
+    bruttoEl.textContent = fmtInt(memberBrutto(m)) + ' € brutto';
+  }
+  statusEl.textContent = st.text;
+  statusEl.className = 'tm-status ' + st.cls;
+  availhEl.textContent = memberAvailHoursWeek(m) + ' h/W';
+  div.classList.toggle('invalid', st.cls === 'warn');
+  div.classList.toggle('over', st.cls === 'over');
+}
+
+// ── Verfügbarkeits-Heatmap ──────────────────────────────────────────────────
+function renderAvailHeat() {
+  const counts = {};
+  TAGE.forEach(t => { counts[t] = {}; HOURS.forEach(h => counts[t][h] = 0); });
+  team.forEach(m => TAGE.forEach(t => m.avail[t].forEach(h => { if (counts[t][h] !== undefined) counts[t][h]++; })));
+
+  const heat = $('availHeat');
+  const header = `<div class="oh-header"><span style="width:30px;flex-shrink:0;"></span>` +
+    HOURS.map(h => `<div class="oh-hlbl">${h}</div>`).join('') + `</div>`;
+  const rows = TAGE.map((t, i) => {
+    const cells = HOURS.map(h => {
+      const c = counts[t][h];
+      let cls = '';
+      if (c === 1) cls = 'short';
+      else if (c === 2) cls = 'ok';
+      else if (c >= 3) cls = 'peak';
+      return `<div class="oh-cell ${cls}" title="${TAGE_LABELS[i]} ${h}:00 — ${c} verfügbar">${c||''}</div>`;
+    }).join('');
+    return `<div class="oh-row"><div class="oh-day">${TAGE_LABELS[i]}</div><div class="oh-cells">${cells}</div></div>`;
+  }).join('');
+  heat.innerHTML = header + rows;
+  return counts;
+}
+
+// ── Pflege-Dienstplan (Care-Roster) ─────────────────────────────────────────
+function buildCareRoster(activeDays) {
+  const load = {}; team.forEach(m => load[m.id] = 0);
+  const roster = [];
+  TAGE.forEach((t, i) => {
+    if (!activeDays.includes(i)) return;
+    const verfuegbar = team.filter(m => m.avail[t].length > 0);
+    if (verfuegbar.length === 0) {
+      roster.push({ tag: i, member: null });
+      return;
+    }
+    verfuegbar.sort((a, b) => load[a.id] - load[b.id]);
+    const pick = verfuegbar[0];
+    load[pick.id]++;
+    roster.push({ tag: i, member: pick });
+  });
+  return roster;
+}
+
+// ============================================================================
+// HAUPT-BERECHNUNG
+// ============================================================================
+function calc() {
+  const lohnMin = MINDESTLOHN[lohnJahr];
+  if (V('lohn') < lohnMin) $('lohn').value = lohnMin;
+
+  // Eingaben spiegeln
+  $('lblFlaeche').textContent     = fmtInt(V('flaeche'));
+  $('lblRaeume').textContent      = V('raeume');
+  $('lblZyklen').textContent      = V('zyklen');
+  $('lblErtrag').textContent      = fmtInt(V('ertrag'));
+  $('lblVerlust').textContent     = V('verlust');
+  $('lblMitglieder').textContent  = fmtInt(V('mitglieder'));
+  $('lblU21').textContent         = V('u21');
+  $('lblAbgabe').textContent      = V('abgabe');
+  $('lblPflegeH').textContent     = fmt(V('pflegeH'), 2);
+  $('lblTrimH').textContent       = fmt(V('trimH'), 1);
+  $('lblTurnaround').textContent  = V('turnaroundH');
+  $('lblKrank').textContent       = V('krank');
+  $('lblLohn').textContent        = fmt(V('lohn'), 2);
+  $('lblTrimFenster').textContent = V('trimFenster');
+  checkAnbauMatch();
+
+  const flaeche   = V('flaeche');
+  const raeume    = V('raeume');
+  const zyklen    = V('zyklen');
+  const ertrag    = V('ertrag');
+  const verlust   = V('verlust') / 100;
+  const mitglieder= V('mitglieder');
+  const u21       = V('u21') / 100;
+  const abgabe    = V('abgabe');
+  const pflegeH   = V('pflegeH');
+  const trimH     = V('trimH');
+  const turnaroundH = V('turnaroundH');
+  const krank     = V('krank') / 100;
+  const lohn      = V('lohn');
+  const trimFenster = V('trimFenster');
+  const wochenende  = $('wochenende').checked;
+
+  // ── Produktion & Bedarf ──────────────────────────────────────────────
+  const jahresErnteBruttoKg = flaeche * ertrag * zyklen / 1000;
+  const jahresErnteKg = jahresErnteBruttoKg * (1 - verlust);
+  const erntePerZyklusKg = zyklen > 0 ? jahresErnteKg / zyklen : 0;
+  const monatsErnteKg = jahresErnteKg / 12;
+
+  const u21Anz = mitglieder * u21;
+  const ue21Anz = mitglieder - u21Anz;
+  const bedarfKg = mitglieder * abgabe * 12 / 1000;
+  const bedarfMaxKg = (ue21Anz * 50 + u21Anz * 30) * 12 / 1000;
+  const deckungProd = bedarfKg > 0 ? jahresErnteKg / bedarfKg * 100 : 0;
+
+  $('rJahresernte').textContent = fmt(jahresErnteKg, 1);
+  $('rJahresernteSub').textContent = `${fmtInt(flaeche)} m² · ${zyklen} Zyklen · −${V('verlust')} % Verlust`;
+  $('rBedarf').textContent = fmt(bedarfKg, 1);
+  $('rBedarfSub').textContent = `${fmtInt(mitglieder)} Mitglieder · Ø ${abgabe} g/Monat`;
+  $('rErnteZyklus').textContent = fmt(erntePerZyklusKg, 1);
+  $('rErnteZyklusSub').textContent = `Ø ${fmt(monatsErnteKg,1)} kg/Monat`;
+  $('rDeckungProd').textContent = fmt(deckungProd, 0);
+
+  const prodStat = $('prodStat'), prodNote = $('prodNote');
+  if (bedarfKg === 0) {
+    prodStat.className = 'stat';
+    $('rDeckungProdSub').textContent = 'Mitglieder eintragen';
+    prodNote.className = 'notes';
+    $('prodNoteText').textContent = 'Trage Mitgliederzahl und Ø Abgabe ein, um die Produktions-Deckung zu sehen.';
+  } else if (deckungProd < 85) {
+    prodStat.className = 'stat danger';
+    $('rDeckungProdSub').textContent = 'Unterdeckung';
+    prodNote.className = 'notes danger';
+    const fehlKg = bedarfKg - jahresErnteKg;
+    prodNote.querySelector('span').textContent = `Der Anbau deckt den Bedarf nicht — es fehlen rund ${fmt(fehlKg,1)} kg/Jahr. Mehr Fläche, mehr Zyklen oder höherer Ertrag pro m² nötig.`;
+  } else if (deckungProd <= 115) {
+    prodStat.className = 'stat highlight';
+    $('rDeckungProdSub').textContent = 'gut austariert';
+    prodNote.className = 'notes';
+    $('prodNoteText').textContent = `Anbau und Mitgliederbedarf passen gut zusammen (${fmt(deckungProd,0)} % Deckung).`;
+  } else if (jahresErnteKg > bedarfMaxKg) {
+    prodStat.className = 'stat warn';
+    $('rDeckungProdSub').textContent = 'Überproduktion';
+    prodNote.className = 'notes warn';
+    $('prodNoteText').textContent = `Die Jahresernte (${fmt(jahresErnteKg,1)} kg) liegt über der gesetzlichen Höchstmenge aller Mitglieder (${fmt(bedarfMaxKg,1)} kg). Eine Anbauvereinigung darf nur für den Eigenbedarf anbauen — Fläche oder Zyklen reduzieren.`;
+  } else {
+    prodStat.className = 'stat accent';
+    $('rDeckungProdSub').textContent = 'Reserve eingeplant';
+    prodNote.className = 'notes';
+    $('prodNoteText').textContent = `Leichter Puffer über dem Planbedarf (${fmt(deckungProd,0)} %), noch innerhalb der gesetzlichen Höchstmenge aller Mitglieder.`;
+  }
+
+  // ── Arbeitsaufwand ───────────────────────────────────────────────────
+  const pflegeHWoche = flaeche * pflegeH;
+  const pflegeHMonat = pflegeHWoche * 4.33;
+  const pflegeHJahr  = pflegeHWoche * 52;
+  const trimHJahr    = jahresErnteKg * trimH;
+  const turnaroundHJahr = raeume * zyklen * turnaroundH;
+  const gesamtHJahr  = pflegeHJahr + trimHJahr + turnaroundHJahr;
+  const gesamtHMonat = gesamtHJahr / 12;
+
+  $('rPflege').textContent = fmtInt(pflegeHMonat);
+  $('rTrim').textContent = fmtInt(trimHJahr);
+  $('rTurnaround').textContent = fmtInt(turnaroundHJahr);
+  $('rGesamtMonat').textContent = fmtInt(gesamtHMonat);
+  $('rGesamtJahr').textContent = fmtInt(gesamtHJahr);
+  $('rGesamtJahrSub').textContent = `${fmtInt(gesamtHJahr)} h im Jahr`;
+
+  // ── Grower-Bedarf (Minijob-Basis) ────────────────────────────────────
+  const grenze = MJ_GRENZE[lohnJahr];
+  const maxHMinijob = grenze / lohn;
+  const growerBasis = Math.ceil(gesamtHMonat / maxHMinijob) || 0;
+  const growerFinal = Math.ceil(gesamtHMonat * (1 + krank) / maxHMinijob) || 0;
+  const bruttoMonat = gesamtHMonat * lohn;
+  const kostenMonat = bruttoMonat * 1.30;
+  const kostenJahr  = kostenMonat * 12;
+  const kostenMember = mitglieder > 0 ? kostenMonat / mitglieder : 0;
+
+  $('rGrowerBasis').textContent = growerBasis;
+  $('rGrowerBasisSub').textContent = `à max. ${fmtInt(maxHMinijob)} h/M`;
+  $('rGrowerFinal').textContent = growerFinal;
+  $('rGrowerFinalSub').textContent = `+${V('krank')} % Reserve · ${Math.max(0,growerFinal-growerBasis)} extra`;
+  $('rKostenMonat').textContent = fmtInt(kostenMonat);
+  $('rKostenJahr').textContent = fmtInt(kostenJahr);
+  $('rKostenMember').textContent = fmt(kostenMember, 2) + ' €';
+
+  const persNote = $('persNote');
+  persNote.className = 'notes';
+  $('persNoteText').textContent = `Grobe Schätzung auf Minijob-Basis: ${growerFinal} Grower decken ${fmtInt(gesamtHMonat)} h/Monat inkl. Reserve. Ein Teil kann ehrenamtlich besetzt werden — siehe Anstellungsformen-Vergleich.`;
+
+  // ── Team-Auswertung ──────────────────────────────────────────────────
+  team.forEach(m => updateMemberStats(m));
+  const teamStunden = team.reduce((s, m) => s + m.hours, 0);
+  const teamKosten  = team.reduce((s, m) => s + memberBrutto(m) * (1 + TYPE_PAUSCHALE[m.type]), 0);
+  const deckungTeam = gesamtHMonat > 0 ? teamStunden / gesamtHMonat * 100 : 0;
+  const differenz = teamStunden - gesamtHMonat;
+
+  $('tmStunden').textContent = fmtInt(teamStunden);
+  $('tmStundenSub').textContent = team.length + ' Grower';
+  $('tmSoll').textContent = fmtInt(gesamtHMonat);
+  $('tmDeckung').textContent = fmt(deckungTeam, 0);
+  $('tmDeckungSub').textContent = (differenz >= 0 ? '+' : '') + fmtInt(differenz) + ' h';
+  $('tmKosten').textContent = fmtInt(teamKosten);
+  $('tmKostenSub').textContent = mitglieder > 0 ? fmt(teamKosten/mitglieder, 2) + ' €/Mitglied' : '';
+
+  const covStat = $('coverageStat'), covBar = $('coverageBar'), teamNote = $('teamNote');
+  covBar.style.width = Math.min(deckungTeam, 100) + '%';
+  covBar.className = 'coverage-fill';
+  if (gesamtHMonat === 0) {
+    covStat.className = 'stat';
+    teamNote.className = 'notes';
+    $('teamNoteText').textContent = 'Stelle die Anbau-Eckdaten ein, um die Team-Deckung zu sehen.';
+  } else if (deckungTeam < 80) {
+    covStat.className = 'stat danger'; covBar.classList.add('under');
+    teamNote.className = 'notes danger';
+    const fehlt = gesamtHMonat - teamStunden;
+    const zusatz = Math.ceil(fehlt / maxHMinijob);
+    $('teamNoteText').textContent = `Unterdeckung: ${fmtInt(fehlt)} h/Monat fehlen. Lösung: +${zusatz} Grower (Minijob) oder mehr Ehrenamtliche.`;
+  } else if (deckungTeam < 95) {
+    covStat.className = 'stat warn'; covBar.classList.add('under');
+    teamNote.className = 'notes warn';
+    $('teamNoteText').textContent = `Knapp: ${fmt(deckungTeam,0)} % Deckung. Eng bei Krankheit oder Urlaub.`;
+  } else if (deckungTeam <= 120) {
+    covStat.className = 'stat highlight';
+    teamNote.className = 'notes';
+    $('teamNoteText').textContent = '✓ Das Team deckt den Aufwand. ' + (differenz > 0 ? '+' + fmtInt(differenz) + ' h Reserve.' : '');
+  } else {
+    covStat.className = 'stat accent'; covBar.classList.add('over');
+    teamNote.className = 'notes warn';
+    $('teamNoteText').textContent = `Überdeckung: +${fmtInt(differenz)} h. Mehr Team-Stunden als Arbeit vorhanden.`;
+  }
+
+  // ── Ernte-Spitze ─────────────────────────────────────────────────────
+  const trimHProZyklus = erntePerZyklusKg * trimH;
+  const trimHProTag = trimFenster > 0 ? trimHProZyklus / trimFenster : 0;
+  const pflegeHTag = pflegeHWoche / 7;
+  const spitzeHTag = trimHProTag + pflegeHTag;
+  const personenSpitze = Math.max(1, Math.ceil(spitzeHTag / H_PRO_PERSON_TAG));
+  const personenNormal = Math.max(1, Math.ceil(pflegeHTag / H_PRO_PERSON_TAG));
+
+  $('rTrimZyklus').textContent = fmtInt(trimHProZyklus);
+  $('rTrimZyklusSub').textContent = `${fmt(erntePerZyklusKg,1)} kg × ${fmt(trimH,1)} h`;
+  $('rSpitzeHTag').textContent = fmt(spitzeHTag, 1);
+  $('rSpitzePers').textContent = personenSpitze;
+  $('rSpitzePersSub').textContent = `Normal: ${personenNormal} Person${personenNormal>1?'en':''}`;
+  $('rNormalPers').textContent = personenNormal;
+
+  const spitzeStat = $('spitzePersStat'), spitzeNote = $('spitzeNote');
+  const extra = personenSpitze - personenNormal;
+  if (extra > 0) {
+    spitzeStat.className = 'stat warn';
+    spitzeNote.className = 'notes warn';
+    $('spitzeNoteText').textContent = `Zur Erntezeit werden rund ${personenSpitze} Personen pro Tag gebraucht — ${extra} mehr als im Normalbetrieb. Plane Aushilfen ein oder verlängere das Trim-Fenster.`;
+  } else {
+    spitzeStat.className = 'stat highlight';
+    spitzeNote.className = 'notes';
+    $('spitzeNoteText').textContent = `Auch zur Erntezeit reicht die normale Besetzung von ${personenNormal} Person${personenNormal>1?'en':''} pro Tag.`;
+  }
+
+  // ── Anstellungsformen-Vergleich ──────────────────────────────────────
+  renderCompare(gesamtHMonat, lohn, maxHMinijob);
+
+  // ── Einsatzplan ──────────────────────────────────────────────────────
+  renderAvailHeat();
+  const activeDays = wochenende ? [0,1,2,3,4,5,6] : [0,1,2,3,4];
+  const roster = buildCareRoster(activeDays);
+  const abgedeckt = roster.filter(r => r.member).length;
+  const kritisch = roster.filter(r => !r.member).map(r => TAGE_LABELS[r.tag]);
+  const verfHWoche = team.reduce((s, m) => s + memberAvailHoursWeek(m), 0);
+
+  $('rTageAbgedeckt').textContent = abgedeckt;
+  $('rTageAbgedecktU').textContent = '/' + activeDays.length;
+  $('rTageAbgedecktSub').textContent = wochenende ? 'inkl. Wochenende' : 'Mo–Fr';
+  $('rVerfH').textContent = verfHWoche;
+  $('rKritischeTage').textContent = kritisch.length ? kritisch.join(' · ') : '✓ keine';
+
+  const covDaysStat = $('coverageDaysStat');
+  covDaysStat.className = 'stat ' + (kritisch.length === 0 ? 'highlight' : (abgedeckt >= activeDays.length - 1 ? 'warn' : 'danger'));
+
+  const rosterEl = $('careRoster');
+  rosterEl.innerHTML = roster.map(r => {
+    if (r.member)
+      return `<div style="display:flex;gap:10px;font-size:13px;"><span class="ohs-day" style="width:90px;">${TAGE_LANG[r.tag]}</span><span class="ohs-h">${r.member.name}</span></div>`;
+    return `<div style="display:flex;gap:10px;font-size:13px;"><span style="width:90px;color:var(--danger);font-weight:600;">${TAGE_LANG[r.tag]}</span><span style="color:var(--danger);">niemand verfügbar — Pflege nicht abgedeckt</span></div>`;
+  }).join('');
+
+  const einsatzNote = $('einsatzNote');
+  if (kritisch.length === 0) {
+    einsatzNote.className = 'notes';
+    $('einsatzNoteText').textContent = '✓ Jeder Pflege-Tag ist mit mindestens einem Grower besetzt. Pflanzen werden zuverlässig versorgt.';
+  } else {
+    einsatzNote.className = 'notes danger';
+    $('einsatzNoteText').textContent = `An ${kritisch.length} Tag${kritisch.length>1?'en':''} (${kritisch.join(', ')}) ist kein Grower verfügbar. Pflanzen brauchen tägliche Kontrolle — Verfügbarkeiten erweitern oder Team vergrößern.`;
+  }
+
+  // Aufgaben-Rhythmus
+  $('aufgabenBody').innerHTML = [
+    ['Gießen, Kontrolle, Klima', 'täglich', 'Tagesdienst (Roster)', `${fmtInt(pflegeHWoche)} h/Woche gesamt`],
+    ['Düngen, Pflanzentraining, Entlauben', 'wöchentlich', 'Grow-Team', 'in der Pflege enthalten'],
+    ['Ernten, Trocknen, Trimmen, Curing', 'je Zyklus', 'Team + Aushilfen', `${fmtInt(trimHProZyklus)} h/Zyklus`],
+    ['Raum reinigen & neu bestücken', 'je Zyklus & Raum', 'Grow-Team', `${turnaroundH} h/Raum`]
+  ].map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join('');
+
+  // Daten für die Übersicht
+  window._calcData = {
+    flaeche, raeume, zyklen, ertrag, verlust: V('verlust'), mitglieder, u21: V('u21'), abgabe,
+    jahresErnteKg, bedarfKg, bedarfMaxKg, deckungProd, erntePerZyklusKg,
+    pflegeHMonat, trimHJahr, turnaroundHJahr, gesamtHMonat, gesamtHJahr,
+    growerBasis, growerFinal, kostenMonat, kostenJahr, kostenMember,
+    teamStunden, teamKosten, deckungTeam,
+    abgedeckt, activeDays: activeDays.length, kritisch, verfHWoche,
+    personenSpitze, personenNormal, trimHProZyklus, trimFenster
+  };
+}
+
+// ── Anstellungsformen-Vergleich ─────────────────────────────────────────────
+function renderCompare(gesamtHMonat, lohn, maxHMinijob) {
+  const ehrenamtH = 24;   // moderate Stundenzahl je Ehrenamt/Monat
+  const rows = [
+    {
+      modell: 'Alles Minijob',
+      hPro: maxHMinijob,
+      pers: Math.ceil(gesamtHMonat / maxHMinijob) || 0,
+      kosten: gesamtHMonat * lohn * 1.30,
+      hinweis: 'verlässlich, planbar'
+    },
+    {
+      modell: 'Alles Ehrenamt',
+      hPro: ehrenamtH,
+      pers: Math.ceil(gesamtHMonat / ehrenamtH) || 0,
+      kosten: (Math.ceil(gesamtHMonat / ehrenamtH) || 0) * EHRENAMT_PAUSCHALE_MONAT,
+      hinweis: 'viele Personen, nur bei echter Freiwilligkeit'
+    },
+    {
+      modell: 'Mix (Kern Minijob + Ehrenamt)',
+      hPro: 0,
+      pers: 0,
+      kosten: 0,
+      hinweis: 'in der Praxis meist sinnvoll'
+    }
+  ];
+  // Mix: 60 % der Stunden über Minijob, 40 % ehrenamtlich
+  const mjH = gesamtHMonat * 0.6, ehH = gesamtHMonat * 0.4;
+  const mjP = Math.ceil(mjH / maxHMinijob) || 0;
+  const ehP = Math.ceil(ehH / ehrenamtH) || 0;
+  rows[2].pers = mjP + ehP;
+  rows[2].kosten = mjH * lohn * 1.30 + ehP * EHRENAMT_PAUSCHALE_MONAT;
+
+  $('cmpTableBody').innerHTML = rows.map((r, i) => {
+    const hPro = r.hPro > 0 ? fmtInt(r.hPro) + ' h' : `${mjP}× MJ + ${ehP}× EA`;
+    return `<tr class="${i===2?'recommended':''}">
+      <td>${r.modell}</td>
+      <td>${hPro}</td>
+      <td>${r.pers}</td>
+      <td>${fmtInt(r.kosten)} €</td>
+      <td style="text-align:left;color:var(--text-dim);font-size:11px;">${r.hinweis}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Übersicht ───────────────────────────────────────────────────────────────
+function renderOverview() {
+  calc();
+  const d = window._calcData;
+  if (!d) return;
+  const now = new Date();
+  $('ov_meta').textContent = 'Stand: ' + now.toLocaleDateString('de-DE') + ' · ' + now.toLocaleTimeString('de-DE', {hour:'2-digit',minute:'2-digit'});
+
+  const A = [
+    ['Anbaufläche', fmtInt(d.flaeche) + ' m²'],
+    ['Grow-Räume', d.raeume],
+    ['Zyklen / Jahr', d.zyklen],
+    ['Ertrag', fmtInt(d.ertrag) + ' g/m²'],
+    ['Verlust', d.verlust + ' %'],
+    ['Mitglieder', fmtInt(d.mitglieder)],
+    ['Ø Abgabe', d.abgabe + ' g/Monat'],
+    ['Trim-Fenster', d.trimFenster + ' Tage']
+  ];
+  $('ov_assumptions').innerHTML = A.map(a =>
+    `<div class="assumption"><div class="a-lbl">${a[0]}</div><div class="a-val">${a[1]}</div></div>`).join('');
+
+  const R = [
+    ['Jahresernte (netto)', fmt(d.jahresErnteKg,1) + ' kg'],
+    ['Mitgliederbedarf', fmt(d.bedarfKg,1) + ' kg/Jahr'],
+    ['Produktions-Deckung', fmt(d.deckungProd,0) + ' %'],
+    ['Arbeit gesamt', fmtInt(d.gesamtHMonat) + ' h/Monat'],
+    ['Grower empfohlen', d.growerFinal],
+    ['Kosten (Minijob-Basis)', fmtInt(d.kostenMonat) + ' €/Monat'],
+    ['Team-Deckung', fmt(d.deckungTeam,0) + ' %'],
+    ['Pflege-Tage abgedeckt', d.abgedeckt + ' / ' + d.activeDays]
+  ];
+  $('ov_results').innerHTML = R.map(a =>
+    `<div class="assumption"><div class="a-lbl">${a[0]}</div><div class="a-val">${a[1]}</div></div>`).join('');
+
+  $('ov_teamhint').textContent = `${team.length} Grower · ${fmtInt(d.teamStunden)} h/Monat Soll · ${fmtInt(d.teamKosten)} € Kosten`;
+  $('ov_team').innerHTML =
+    `<div class="team-list-compact-header team-list-compact-row"><span>Name</span><span class="val">Typ</span><span class="val">h/M</span><span class="val">€/h</span><span class="val">Aufwand</span><span class="val">Verfügbar</span></div>` +
+    team.map(m => `<div class="team-list-compact-row">
+      <span class="name">${(m.name||'').replace(/</g,'&lt;')}</span>
+      <span class="val"><span class="typ-pill">${TYPE_LABELS[m.type]}</span></span>
+      <span class="val">${m.hours}</span>
+      <span class="val">${fmt(m.wage,2)}</span>
+      <span class="val">${fmtInt(memberBrutto(m))} €</span>
+      <span class="val">${memberAvailHoursWeek(m)} h/W</span>
+    </div>`).join('');
+
+  // Wochentags-Verfügbarkeit
+  const perDay = TAGE.map(t => team.reduce((s, m) => s + m.avail[t].length, 0));
+  const maxDay = Math.max(1, ...perDay);
+  $('ov_weekbars').innerHTML = TAGE.map((t, i) => {
+    const h = perDay[i];
+    const cls = h === 0 ? 'leer' : (h <= 2 ? 'duenn' : 'ok');
+    return `<div class="ov-weekbar">
+      <span class="ov-wb-day">${TAGE_LABELS[i]}</span>
+      <div class="ov-wb-track"><div class="ov-wb-fill ${cls}" style="width:${h/maxDay*100}%"></div></div>
+      <span class="ov-wb-val">${h} h</span>
+    </div>`;
+  }).join('');
+
+  const fz = $('ov_fazit');
+  const probleme = [];
+  if (d.deckungProd < 85) probleme.push('der Anbau deckt den Mitgliederbedarf nicht');
+  if (d.jahresErnteKg > d.bedarfMaxKg && d.bedarfMaxKg > 0) probleme.push('die Ernte liegt über der gesetzlichen Höchstmenge');
+  if (d.deckungTeam < 95) probleme.push('das Team deckt den Arbeitsaufwand nicht sicher');
+  if (d.kritisch.length > 0) probleme.push(`an ${d.kritisch.length} Tag(en) fehlt die Pflege-Abdeckung`);
+  if (probleme.length === 0) {
+    fz.className = 'notes';
+    $('ov_fazitText').textContent = '✓ Anbau, Personal und Einsatzplan passen zusammen. Produktion deckt den Bedarf, das Team trägt den Aufwand, jeder Pflege-Tag ist besetzt.';
+  } else {
+    fz.className = 'notes warn';
+    $('ov_fazitText').textContent = 'Offene Punkte: ' + probleme.join('; ') + '.';
+  }
+}
+
+// ── Szenarien (LocalStorage) ────────────────────────────────────────────────
+function getCurrentState() {
+  const state = { inputs: {}, bools: {}, lohnJahr: lohnJahr, team: [] };
+  ALL_INPUT_IDS.forEach(id => { state.inputs[id] = $(id).value; });
+  ALL_BOOL_IDS.forEach(id => { state.bools[id] = $(id).checked; });
+  state.team = team.map(m => ({ name: m.name, type: m.type, hours: m.hours, wage: m.wage, avail: m.avail }));
+  return state;
+}
+function applyState(state) {
+  if (!state) return;
+  if (state.lohnJahr) {
+    lohnJahr = state.lohnJahr;
+    document.querySelectorAll('#lohnJahrSeg button').forEach(b => b.classList.toggle('active', +b.dataset.jahr === lohnJahr));
+    const ml = MINDESTLOHN[lohnJahr];
+    $('lohn').min = ml;
+    $('lohnHint').textContent = `Mindestlohn ${lohnJahr}: ${fmt(ml,2)} € · Minijob-Grenze ${MJ_GRENZE[lohnJahr]} €`;
+  }
+  if (state.inputs) Object.entries(state.inputs).forEach(([id, v]) => { if ($(id)) $(id).value = v; });
+  if (state.bools)  Object.entries(state.bools).forEach(([id, v]) => { if ($(id)) $(id).checked = !!v; });
+  if (state.team && Array.isArray(state.team)) {
+    team = state.team.map(m => ({
+      id: nextId++,
+      name: m.name || 'Grower',
+      type: (m.type === 'ehrenamt') ? 'ehrenamt' : 'minijob',
+      hours: +m.hours || 0,
+      wage: +m.wage || 0,
+      avail: { mo:[], di:[], mi:[], do:[], fr:[], sa:[], so:[], ...(m.avail || {}) }
+    }));
+    renderTeam();
+  }
+}
+function loadScenarios() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    scenarios = raw ? JSON.parse(raw) : {};
+  } catch (e) { scenarios = {}; }
+  renderScenarioSelect();
+}
+function saveScenarios() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(scenarios)); }
+  catch (e) { alert('Konnte nicht speichern: ' + e.message); }
+}
+function renderScenarioSelect() {
+  const sel = $('scenarioSelect');
+  const names = Object.keys(scenarios).sort();
+  sel.innerHTML = '<option value="">— neu —</option>' +
+    names.map(n => `<option value="${n.replace(/"/g,'&quot;')}" ${n===currentScenarioName?'selected':''}>${n}</option>`).join('');
+}
+function openSaveScenarioModal() {
+  $('saveScenarioName').value = currentScenarioName || '';
+  openModal('saveModal');
+  setTimeout(() => $('saveScenarioName').focus(), 50);
+}
+function confirmSaveScenario() {
+  const name = $('saveScenarioName').value.trim();
+  if (!name) { alert('Bitte einen Namen vergeben.'); return; }
+  if (scenarios[name] && name !== currentScenarioName) {
+    if (!confirm(`Szenario „${name}" existiert bereits. Überschreiben?`)) return;
+  }
+  scenarios[name] = getCurrentState();
+  currentScenarioName = name;
+  saveScenarios();
+  renderScenarioSelect();
+  closeModal('saveModal');
+}
+function loadScenario(name) {
+  if (!name) { currentScenarioName = ''; return; }
+  const s = scenarios[name];
+  if (!s) return;
+  currentScenarioName = name;
+  applyState(s);
+  calc();
+}
+function deleteCurrentScenario() {
+  if (!currentScenarioName) { alert('Kein Szenario ausgewählt.'); return; }
+  if (!confirm(`Szenario „${currentScenarioName}" wirklich löschen?`)) return;
+  delete scenarios[currentScenarioName];
+  currentScenarioName = '';
+  saveScenarios();
+  renderScenarioSelect();
+}
+
+// ── Import aus dem Dashboard ────────────────────────────────────────────────
+function pruefeGrowImport() {
+  let raw = null;
+  try { raw = localStorage.getItem(GROW_IMPORT_KEY); } catch (e) { return; }
+  if (!raw) return;
+  let data;
+  try { data = JSON.parse(raw); } catch (e) { return; }
+  if (!data || !Array.isArray(data.team) || data.team.length === 0) return;
+  growImportData = data;
+
+  $('growImportKarte').style.display = '';
+  const verein = data.verein ? ` aus „${data.verein}"` : '';
+  $('growImportInfo').textContent = `${data.team.length} Grow-Bewerber${verein} stehen zur Übernahme bereit.`;
+  $('growImportListe').innerHTML = data.team.map(m =>
+    `<div style="font-size:13px;color:var(--text);background:var(--bg-2);border:1px solid var(--line);border-radius:6px;padding:6px 10px;">
+      ${(m.name||'Bewerber').replace(/</g,'&lt;')} <span style="color:var(--text-mute);">· ${TYPE_LABELS[(m.type==='ehrenamt')?'ehrenamt':'minijob']}</span>
+    </div>`).join('');
+
+  if (data.stammdaten && data.stammdaten.mitglieder) {
+    $('mitglieder').value = Math.min(500, data.stammdaten.mitglieder);
+  }
+}
+function importiereGrowBewerber() {
+  if (!growImportData) return;
+  growImportData.team.forEach(m => {
+    const type = (m.type === 'ehrenamt') ? 'ehrenamt' : 'minijob';
+    team.push({
+      id: nextId++,
+      name: m.name || 'Grower',
+      type: type,
+      hours: TYPE_DEFAULT_HOURS[type],
+      wage: type === 'ehrenamt' ? 0 : MINDESTLOHN[lohnJahr],
+      avail: { mo:[], di:[], mi:[], do:[], fr:[], sa:[], so:[], ...(m.avail || {}) }
+    });
+  });
+  verwerfeGrowImport();
+  renderTeam();
+  calc();
+}
+function verwerfeGrowImport() {
+  growImportData = null;
+  try { localStorage.removeItem(GROW_IMPORT_KEY); } catch (e) {}
+  $('growImportKarte').style.display = 'none';
+}
+
+// ── Init ────────────────────────────────────────────────────────────────────
+function init() {
+  initTeam();
+  renderTeam();
+  loadScenarios();
+  pruefeGrowImport();
+  $('lohnHint').textContent = `Mindestlohn ${lohnJahr}: ${fmt(MINDESTLOHN[lohnJahr],2)} € · Minijob-Grenze ${MJ_GRENZE[lohnJahr]} €`;
+  calc();
+  console.log('Grow-Rechner Build', __GROW_BUILD);
+}
+init();
+
+</script>
+</html>

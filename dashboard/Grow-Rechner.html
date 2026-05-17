@@ -595,18 +595,18 @@
             <button class="preset-btn" data-anbau="outdoor">Outdoor</button>
           </div>
           <div class="field">
-            <label>Anbaufläche (Canopy)<span class="info-i" data-tip="Reine Pflanzen-/Lichtfläche, nicht die gesamte Raumfläche. Pflege-Aufwand und Ertrag rechnen sich pro m² Canopy.">i</span><span class="val"><span id="lblFlaeche">70</span> m²</span></label>
-            <input type="range" id="flaeche" min="10" max="400" step="5" value="70" oninput="calc()">
+            <label>Anbaufläche (Canopy)<span class="info-i" data-tip="Reine Pflanzen-/Lichtfläche, nicht die gesamte Raumfläche. Pflege-Aufwand und Ertrag rechnen sich pro m² Canopy.">i</span><span class="val"><span id="lblFlaeche">140</span> m²</span></label>
+            <input type="range" id="flaeche" min="10" max="400" step="5" value="140" oninput="calc()">
             <div class="hint">Beleuchtete Pflanzenfläche der gesamten Anlage.</div>
           </div>
           <div class="field">
-            <label>Grow-Räume / Zonen<span class="info-i" data-tip="Getrennt steuerbare Räume oder Zelte. Mehr Räume = mehr Reinigungs- und Umrüst-Aufwand zwischen den Zyklen, aber auch versetzte Ernten.">i</span><span class="val"><span id="lblRaeume">3</span></span></label>
-            <input type="range" id="raeume" min="1" max="12" step="1" value="3" oninput="calc()">
+            <label>Grow-Räume / Zonen<span class="info-i" data-tip="Getrennt steuerbare Räume oder Zelte. Mehr Räume = mehr Reinigungs- und Umrüst-Aufwand zwischen den Zyklen, aber auch versetzte Ernten.">i</span><span class="val"><span id="lblRaeume">1</span></span></label>
+            <input type="range" id="raeume" min="1" max="12" step="1" value="1" oninput="calc()">
             <div class="hint">Versetzte Räume glätten die Ernte-Spitzen.</div>
           </div>
           <div class="field">
-            <label>Zyklen pro Jahr<span class="info-i" data-tip="Wie oft pro Jahr die gesamte Fläche durchläuft (Aussaat bis Ernte). Indoor typisch 3–5, Gewächshaus 2–3, Outdoor 1.">i</span><span class="val"><span id="lblZyklen">4</span></span></label>
-            <input type="range" id="zyklen" min="1" max="6" step="1" value="4" oninput="calc()">
+            <label>Zyklen pro Jahr<span class="info-i" data-tip="Wie oft pro Jahr die gesamte Fläche durchläuft (Aussaat bis Ernte). Indoor typisch 3–5, Gewächshaus 2–3, Outdoor 1.">i</span><span class="val"><span id="lblZyklen">6</span></span></label>
+            <input type="range" id="zyklen" min="1" max="6" step="1" value="6" oninput="calc()">
             <div class="hint">Mehr Zyklen = mehr Jahresertrag, aber mehr Ernte- und Umrüst-Arbeit.</div>
           </div>
         </div>
@@ -620,13 +620,13 @@
             <div class="hint">Trockenertrag pro Zyklus. Konservativ rechnen.</div>
           </div>
           <div class="field">
-            <label>Ausfall / Verlust<span class="info-i" data-tip="Anteil der Ernte, der durch Schädlinge, Schimmel, Untauglichkeit oder Qualitätsmängel wegfällt. 10–20 % sind realistisch.">i</span><span class="val"><span id="lblVerlust">12</span> %</span></label>
-            <input type="range" id="verlust" min="0" max="35" step="1" value="12" oninput="calc()">
+            <label>Ausfall / Verlust<span class="info-i" data-tip="Anteil der Ernte, der durch Schädlinge, Schimmel, Untauglichkeit oder Qualitätsmängel wegfällt. 10–20 % sind realistisch.">i</span><span class="val"><span id="lblVerlust">15</span> %</span></label>
+            <input type="range" id="verlust" min="0" max="35" step="1" value="15" oninput="calc()">
             <div class="hint">Wird vom Bruttoertrag abgezogen.</div>
           </div>
           <div class="field">
-            <label>Mitglieder<span class="info-i" data-tip="Anzahl der Vereinsmitglieder. Nach KCanG max. 500 je Anbauvereinigung. Bestimmt den Gesamtbedarf.">i</span><span class="val"><span id="lblMitglieder">300</span></span></label>
-            <input type="range" id="mitglieder" min="0" max="500" step="10" value="300" oninput="calc()">
+            <label>Mitglieder<span class="info-i" data-tip="Anzahl der Vereinsmitglieder. Nach KCanG max. 500 je Anbauvereinigung. Bestimmt den Gesamtbedarf.">i</span><span class="val"><span id="lblMitglieder">500</span></span></label>
+            <input type="range" id="mitglieder" min="0" max="500" step="10" value="500" oninput="calc()">
             <div class="hint">KCanG-Höchstgrenze: 500 Mitglieder.</div>
           </div>
           <div class="field">
@@ -635,9 +635,9 @@
             <div class="hint">U21: max. 30 g/Monat · Ü21: max. 50 g/Monat.</div>
           </div>
           <div class="field">
-            <label>Ø Abgabe je Mitglied / Monat<span class="info-i" data-tip="Realistische Planungsannahme, wie viel ein Mitglied im Schnitt monatlich abnimmt — nicht jeder schöpft die 50 g aus. Erfahrungswert eher 20–35 g.">i</span><span class="val"><span id="lblAbgabe">28</span> g</span></label>
-            <input type="range" id="abgabe" min="5" max="50" step="1" value="28" oninput="calc()">
-            <div class="hint">Planungswert für den realistischen Bedarf.</div>
+            <label>Ø Abgabe je Mitglied / Monat<span class="info-i" data-tip="Geplante Abgabemenge je Mitglied und Monat. Auf 50 g gesetzt heißt: der Anbau wird so geplant, dass jedes Mitglied die gesetzliche Höchstmenge beziehen kann. Für den realistischen Schnitt wählt man eher 20–35 g.">i</span><span class="val"><span id="lblAbgabe">50</span> g</span></label>
+            <input type="range" id="abgabe" min="5" max="50" step="1" value="50" oninput="calc()">
+            <div class="hint">Planungswert für den Bedarf. 50 g = volle Höchstmenge je Mitglied.</div>
           </div>
         </div>
 
@@ -645,13 +645,13 @@
         <div class="card">
           <h2>⏱ Schritt 4 · Arbeitsaufwand &amp; Lohn<span class="info-i" data-tip="Wie viel Arbeitszeit der Anbau bindet. Diese Werte bestimmen, wie viele Grower nötig sind.">i</span></h2>
           <div class="field">
-            <label>Pflege je m² &amp; Woche<span class="info-i" data-tip="Laufende Arbeit pro m² Canopy und Woche: Gießen, Düngen, Pflanzentraining, Entlauben, Klima- und Schädlingskontrolle. Erfahrungswert 0,4–0,8 h/m².">i</span><span class="val"><span id="lblPflegeH">0,65</span> h/m²</span></label>
-            <input type="range" id="pflegeH" min="0.1" max="1.5" step="0.05" value="0.65" oninput="calc()">
+            <label>Pflege je m² &amp; Woche<span class="info-i" data-tip="Laufende Hand-Arbeit pro m² Canopy und Woche: Pflanzentraining, Entlauben, Sicht- und Schädlingskontrolle. Bei viel Handarbeit 0,4–0,8 h/m², in hoch automatisierten Anlagen (Bewässerung, Düngung, Klima automatisch) deutlich weniger.">i</span><span class="val"><span id="lblPflegeH">0,20</span> h/m²</span></label>
+            <input type="range" id="pflegeH" min="0.1" max="1.5" step="0.05" value="0.2" oninput="calc()">
             <div class="hint">Tägliche und wöchentliche Pflanzenpflege.</div>
           </div>
           <div class="field">
-            <label>Ernte &amp; Trimmen je kg<span class="info-i" data-tip="Arbeitszeit pro kg Ernte für Schneiden, Trocknen überwachen, Trimmen und Curing. Handtrimmen 3–6 h/kg, mit Trimmaschine deutlich weniger.">i</span><span class="val"><span id="lblTrimH">4,0</span> h/kg</span></label>
-            <input type="range" id="trimH" min="1" max="10" step="0.5" value="4" oninput="calc()">
+            <label>Ernte &amp; Trimmen je kg<span class="info-i" data-tip="Arbeitszeit pro kg Ernte für Schneiden, Trocknen überwachen, Trimmen und Curing. Handtrimmen 3–6 h/kg, mit Trimmaschine deutlich weniger.">i</span><span class="val"><span id="lblTrimH">2,0</span> h/kg</span></label>
+            <input type="range" id="trimH" min="1" max="10" step="0.5" value="2" oninput="calc()">
             <div class="hint">Größter Einzelposten zur Erntezeit.</div>
           </div>
           <div class="field">
@@ -682,7 +682,7 @@
               <span class="desc">Pflanzen brauchen tägliche Kontrolle — auch Sa/So</span>
             </div>
             <label class="switch">
-              <input type="checkbox" id="wochenende" checked onchange="calc()">
+              <input type="checkbox" id="wochenende" onchange="calc()">
               <span class="slider-sw"></span>
             </label>
           </div>
@@ -1024,7 +1024,7 @@ const MINDESTLOHN = { 2026: 13.90, 2027: 14.60 };
 const EHRENAMT_PAUSCHALE_MONAT = 70;   // 840 €/Jahr steuerfrei
 
 const ANBAU_PRESETS = {
-  indoor:       { zyklen: 4, ertrag: 420, pflegeH: 0.65 },
+  indoor:       { zyklen: 6, ertrag: 420, pflegeH: 0.20 },
   gewaechshaus: { zyklen: 2, ertrag: 350, pflegeH: 0.45 },
   outdoor:      { zyklen: 1, ertrag: 500, pflegeH: 0.30 }
 };

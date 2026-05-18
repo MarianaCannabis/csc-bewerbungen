@@ -2925,6 +2925,8 @@ async function selectBewerbung(id) {
       </div>` : ''}
     </div>
     
+    <div id="vertragsdaten-section"></div>
+
     <div class="section">
       <div class="section-title">Bewerbung &amp; Rolle<span class="info-i" data-tip="Welche Rollen und Anstellungsformen sich die Person gewünscht hat.">i</span><button class="edit-btn" onclick="openEditModal('bewerbung')">Bearbeiten</button></div>
       <div class="field"><div class="field-label">Rolle(n)</div><div class="tag-list">${fmtRoles(b.rollen)}</div></div>
@@ -3144,6 +3146,81 @@ async function selectBewerbung(id) {
   loadNotizVerlauf(id);
   // Anhang-Thumbnails async laden
   loadAnhangThumbnails();
+  // Vertragsdaten (nur fuer Admins)
+  loadVertragsdatenPanel(id);
+}
+
+// ============================================================================
+// VERTRAGSDATEN  (nur fuer Hauptverein-Admins sichtbar)
+// ============================================================================
+const VD_LABELS = {
+  familienstand: { ledig:'ledig', verheiratet:'verheiratet', eingetragene_lebenspartnerschaft:'eingetragene Lebenspartnerschaft', geschieden:'geschieden', verwitwet:'verwitwet' },
+  steuerklasse:  { '1':'I', '2':'II', '3':'III', '4':'IV', '5':'V', '6':'VI', unbekannt:'weiß ich nicht' },
+  konfession:    { keine:'keine / konfessionslos', evangelisch:'evangelisch', roemisch_katholisch:'römisch-katholisch', andere:'andere' },
+  kv_art:        { gesetzlich:'gesetzlich', privat:'privat' },
+  rv_befreiung:  { nein:'Nein — zahlt Beiträge', ja:'Ja — Befreiung gewünscht', unbekannt:'weiß noch nicht', trifft_nicht_zu:'trifft nicht zu' },
+  schulabschluss:{ ohne:'ohne Schulabschluss', haupt_volksschule:'Haupt-/Volksschulabschluss', mittlere_reife:'Mittlere Reife', abitur_fachabitur:'Abitur / Fachhochschulreife' },
+  berufsausbildung: { ohne:'ohne abgeschl. Berufsausbildung', anerkannte_ausbildung:'anerkannte Berufsausbildung', meister_techniker:'Meister / Techniker / Fachschule', bachelor:'Bachelor', diplom_master:'Diplom / Master / Staatsexamen', promotion:'Promotion' },
+  weitere_beschaeftigung: { nein:'Nein', ja:'Ja' }
+};
+
+async function loadVertragsdatenPanel(id) {
+  const host = document.getElementById('vertragsdaten-section');
+  if (!host) return;
+  if (!userContext || !userContext.ist_admin) return;   // nur Admin
+  try {
+    const { data, error } = await sb.from('csc_vertragsdaten')
+      .select('*').eq('bewerbung_id', id).maybeSingle();
+    if (error) { console.error('[Vertragsdaten]', error); return; }
+    host.innerHTML = renderVertragsdaten(id, data);
+  } catch (e) { console.error('[Vertragsdaten]', e); }
+}
+
+function renderVertragsdaten(id, d) {
+  const head = '<div class="section-title">🔒 Vertragsdaten <span style="font-weight:400;color:var(--tx-mute);font-size:12px">— nur für Admins</span></div>';
+  if (!d) {
+    return `<div class="section">${head}
+      <div class="field-value" style="color:var(--tx-mute)">Noch keine Vertragsdaten. Der Bewerber füllt das Formular „Daten für den Arbeitsvertrag" auf seiner persönlichen Status-Seite aus — verfügbar, sobald der Status auf „Angenommen" steht.</div>
+    </div>`;
+  }
+  const lbl = (map, v) => {
+    if (!v) return '—';
+    const m = VD_LABELS[map];
+    return (m && m[v]) ? m[v] : escapeHtml(String(v));
+  };
+  const raw = v => (v !== null && v !== undefined && v !== '') ? escapeHtml(String(v)) : '—';
+  const F = (label, value) => `<div class="field"><div class="field-label">${label}</div><div class="field-value">${value}</div></div>`;
+  const grp = (titel, inner) => `<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border)"><div class="field-label" style="margin-bottom:8px">${titel}</div><div class="field-grid">${inner}</div></div>`;
+  const dt = v => v ? new Date(v).toLocaleString('de-DE', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
+
+  return `<div class="section">${head}
+    ${grp('Persönlich', F('Geburtsname', raw(d.geburtsname)) + F('Familienstand', lbl('familienstand', d.familienstand)) + F('Anzahl Kinder', raw(d.kinder_anzahl)))}
+    ${grp('Steuer', F('Steuer-ID', raw(d.steuer_id)) + F('Steuerklasse', lbl('steuerklasse', d.steuerklasse)) + F('Konfession', lbl('konfession', d.konfession)))}
+    ${grp('Sozialversicherung', F('SV-Nummer', raw(d.sv_nummer)) + F('Krankenversicherung', lbl('kv_art', d.kv_art)) + F('Krankenkasse', raw(d.kk_name)) + F('Mitgliedsnummer', raw(d.kk_mitgl)) + F('RV-Befreiung (Minijob)', lbl('rv_befreiung', d.rv_befreiung)))}
+    ${grp('Bankverbindung', F('IBAN', raw(d.iban)) + F('Kontoinhaber', raw(d.kontoinhaber)))}
+    ${grp('Schul- &amp; Berufsausbildung', F('Schulabschluss', lbl('schulabschluss', d.schulabschluss)) + F('Berufsausbildung', lbl('berufsausbildung', d.berufsausbildung)))}
+    ${grp('Weitere Beschäftigungen', F('Weitere Beschäftigung', lbl('weitere_beschaeftigung', d.weitere_beschaeftigung)) + (d.weitere_beschaeftigung_details ? F('Details', escapeHtml(d.weitere_beschaeftigung_details)) : ''))}
+    ${grp('Notfallkontakt', F('Name', raw(d.notfall_name)) + F('Telefon', raw(d.notfall_telefon)))}
+    <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+      <div style="font-size:12px;color:var(--tx-mute)">Eingereicht ${dt(d.eingereicht_am)} · zuletzt aktualisiert ${dt(d.aktualisiert_am)}</div>
+      <button class="edit-btn" style="color:var(--red);border-color:var(--red)" onclick="deleteVertragsdaten('${id}')">Vertragsdaten löschen</button>
+    </div>
+  </div>`;
+}
+
+async function deleteVertragsdaten(id) {
+  const ok = await appConfirm(
+    'Vertragsdaten dieses Bewerbers endgültig löschen?\n\nNutze das, sobald der Arbeitsvertrag erstellt und die Daten an die Lohnabrechnung übergeben wurden.',
+    { title: 'Vertragsdaten löschen?', okLabel: 'Löschen' });
+  if (!ok) return;
+  try {
+    const { error } = await sb.from('csc_vertragsdaten').delete().eq('bewerbung_id', id);
+    if (error) throw error;
+    toast('Vertragsdaten gelöscht');
+    loadVertragsdatenPanel(id);
+  } catch (e) {
+    toast('Löschen fehlgeschlagen: ' + (e.message || e), true);
+  }
 }
 
 // ============================================================================
@@ -5553,7 +5630,11 @@ herzlich willkommen bei {verein_name}!
 
 Wir freuen uns, dich für folgende Position(en) an Bord zu holen: {positionen}.
 
-Die nächsten Schritte – Vertrag und Onboarding – besprechen wir in Kürze mit dir.
+Damit wir deinen Arbeitsvertrag vorbereiten können, brauchen wir noch ein paar Angaben von dir. Bitte öffne dazu deine persönliche Status-Seite und fülle dort das Formular „Daten für den Arbeitsvertrag" aus:
+
+{status_link}
+
+Die nächsten Schritte – Vertrag und Onboarding – besprechen wir dann mit dir.
 
 Grüne Grüße
 {verein_name}`,
@@ -5607,6 +5688,11 @@ function applyMailPlaceholders(text, b, v) {
   }
   const positionen = teile.length ? teile.join(', ') : '(Position noch offen)';
 
+  // Persoenlicher Status-Link des Bewerbers (Status-Seite mit Vertragsdaten-Formular)
+  const statusLink = b.bewerber_token
+    ? new URL('../status/', location.href).href + '?token=' + encodeURIComponent(b.bewerber_token)
+    : '(Status-Link nicht verfuegbar)';
+
   return text
     .replaceAll('{vorname}', vorname)
     .replaceAll('{nachname}', nachname)
@@ -5614,13 +5700,14 @@ function applyMailPlaceholders(text, b, v) {
     .replaceAll('{rolle}', rolle)
     .replaceAll('{datum}', datum)
     .replaceAll('{positionen}', positionen)
+    .replaceAll('{status_link}', statusLink)
     .replaceAll('{vertrag}', vertragLabel || (growR.length ? 'Minijob' : '(Vertrag noch offen)'));
 }
 
 function plainToHtml(text, b, v) {
   // wandelt Plain-Text in branded HTML mit Mariana-Look
   const escaped = String(text).replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
-  const paragraphs = escaped.split(/\n\n+/).map(p => `<p style="margin:0 0 14px 0;line-height:1.65;color:#1a1a1a">${p.replace(/\n/g, '<br>')}</p>`).join('');
+  const paragraphs = escaped.split(/\n\n+/).map(p => `<p style="margin:0 0 14px 0;line-height:1.65;color:#1a1a1a">${p.replace(/\n/g, '<br>').replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" style="color:#2d7a4a;font-weight:600">$1</a>')}</p>`).join('');
   const vereinName = v?.name || 'Mariana Cannabis';
   const vereinEmail = v?.email || 'communityrecruiting@mariana-cannabis.de';
   return `<!DOCTYPE html>

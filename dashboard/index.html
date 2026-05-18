@@ -2925,8 +2925,6 @@ async function selectBewerbung(id) {
       </div>` : ''}
     </div>
     
-    <div id="vertragsdaten-section"></div>
-
     <div class="section">
       <div class="section-title">Bewerbung &amp; Rolle<span class="info-i" data-tip="Welche Rollen und Anstellungsformen sich die Person gewünscht hat.">i</span><button class="edit-btn" onclick="openEditModal('bewerbung')">Bearbeiten</button></div>
       <div class="field"><div class="field-label">Rolle(n)</div><div class="tag-list">${fmtRoles(b.rollen)}</div></div>
@@ -3006,15 +3004,7 @@ async function selectBewerbung(id) {
     </div>
     ` : ''}
     
-    <div class="section">
-      <div class="section-title">Personalien für Anstellung<span class="info-i" data-tip="Wird erst kurz vor der Einstellung benötigt, etwa für den Arbeitsvertrag.">i</span><button class="edit-btn" onclick="openEditModal('personalien')">Bearbeiten</button></div>
-      <div class="field-grid">
-        <div class="field"><div class="field-label">Steuer-ID</div><div class="field-value mono">${fmt(b.steuer_id)}</div></div>
-        <div class="field"><div class="field-label">Sozialversicherungs-Nr.</div><div class="field-value mono">${fmt(b.sv_nummer)}</div></div>
-        <div class="field"><div class="field-label">Krankenkasse</div><div class="field-value">${b.krankenkasse?.name ? escapeHtml(b.krankenkasse.name) + ((b.krankenkasse.mitgliedsnummer || b.krankenkasse.mitglied_nr) ? ' <span class="mono" style="color:var(--tx-mute)">(Mitgl.-Nr. ' + escapeHtml(b.krankenkasse.mitgliedsnummer || b.krankenkasse.mitglied_nr) + ')</span>' : '') : '–'}</div></div>
-        <div class="field"><div class="field-label">IBAN</div><div class="field-value mono">${fmt(b.iban)}</div></div>
-      </div>
-    </div>
+    <div id="vertragsdaten-section"></div>
     
     <div class="section">
       <div class="section-title">Compliance &amp; Audit<span class="info-i" data-tip="Protokoll aller Änderungen an dieser Bewerbung, mit Zeitstempel und Bearbeiter.">i</span></div>
@@ -4394,7 +4384,6 @@ function exportCsv() {
     'Sachkunde Prävention', 'Sicherheits-Nachweis',
     'Sucht relevant', 'Sucht Details',
     'Schwerbehinderung', 'GdB', 'Einschränkungen', 'Anpassungen',
-    'Steuer-ID', 'SV-Nr.', 'Krankenkasse', 'IBAN',
     'DSGVO-Zustimmung', 'DSGVO-Zeitstempel',
     'Notiz', 'Notiz geändert am', 'Notiz von',
     'Status geändert am', 'Status geändert von'
@@ -4452,9 +4441,6 @@ function exportCsv() {
       b.sucht_relevant || '', b.sucht_details || '',
       b.schwerbehinderung || '', b.schwerbehinderung_gdb || '',
       b.schwerbehinderung_einschr || '', b.schwerbehinderung_anpassungen || '',
-      b.steuer_id || '', b.sv_nummer || '', 
-      (b.krankenkasse?.name || '') + ((b.krankenkasse?.mitgliedsnummer || b.krankenkasse?.mitglied_nr) ? ' (' + (b.krankenkasse.mitgliedsnummer || b.krankenkasse.mitglied_nr) + ')' : ''),
-      b.iban || '',
       b.dsgvo_zustimmung === true ? 'Ja' : '',
       b.dsgvo_zeitstempel ? new Date(b.dsgvo_zeitstempel).toLocaleString('de-DE') : '',
       b.vorstand_notiz || '',
@@ -6166,16 +6152,8 @@ function generatePrintHtml(b, v) {
     <tr><td>Notwendige Anpassungen</td><td style="white-space:pre-wrap">${fmt(b.schwerbehinderung_anpassungen)}</td></tr>` : ''}
   </table>
 
-  <h2>${b.mitteilung ? '8' : '7'}. Personalien (für Anstellung)</h2>
-  <table class="kv">
-    <tr><td>Steuer-ID</td><td>${fmt(b.steuer_id)}</td></tr>
-    <tr><td>Sozialversicherungs-Nr.</td><td>${fmt(b.sv_nummer)}</td></tr>
-    <tr><td>IBAN</td><td>${fmt(b.iban)}</td></tr>
-    <tr><td>Krankenkasse</td><td>${fmt(b.krankenkasse?.name)}${(b.krankenkasse?.mitgliedsnummer || b.krankenkasse?.mitglied_nr) ? ' (Mitgl.-Nr. ' + E(b.krankenkasse.mitgliedsnummer || b.krankenkasse.mitglied_nr) + ')' : ''}</td></tr>
-  </table>
-
   ${b.vorstand_notiz ? `
-  <h2>${b.mitteilung ? '9' : '8'}. Vorstand-Notizen (intern)</h2>
+  <h2>${b.mitteilung ? '8' : '7'}. Vorstand-Notizen (intern)</h2>
   <div class="notiz-box">${fmt(b.vorstand_notiz)}</div>
   ${b.notiz_geaendert_am ? `<div style="font-size:8pt;color:#999;margin-top:4px">zuletzt geändert: ${E(new Date(b.notiz_geaendert_am).toLocaleString('de-DE'))}${b.notiz_geaendert_von ? ' · ' + E(b.notiz_geaendert_von) : ''}</div>` : ''}
   ` : ''}
@@ -7828,18 +7806,6 @@ const EDIT_SECTIONS = {
         { k:'schwerbehinderung_einschr', l:'Einschränkungen', t:'textarea' },
         { k:'schwerbehinderung_anpassungen', l:'Notwendige Anpassungen', t:'textarea' },
       ]},
-    ]
-  },
-  personalien: {
-    title: 'Personalien für Anstellung',
-    groups: [
-      { fields: [
-        { k:'steuer_id', l:'Steuer-Identifikationsnummer', t:'text', inputmode:'numeric', maxlength:11 },
-        { k:'sv_nummer', l:'Sozialversicherungs-Nr.', t:'text', maxlength:12 },
-        { k:'iban', l:'IBAN', t:'text' },
-        { k:'krankenkasse.name', l:'Krankenkasse', t:'text', row:'kk' },
-        { k:'krankenkasse.mitgliedsnummer', l:'Mitgliedsnummer KK', t:'text', row:'kk' },
-      ]}
     ]
   }
 };

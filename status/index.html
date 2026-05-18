@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Bewerbung — Status · Mariana Cannabis</title>
-<!-- STATUS_BUILD: 2026-05-18T1300 (Vertragsdaten-Formular für angenommene Bewerber) -->
-<script>window.__STATUS_BUILD = '2026-05-18T1300';</script>
+<!-- STATUS_BUILD: 2026-05-18T1500 (Vertragsdaten-Formular für angenommene Bewerber) -->
+<script>window.__STATUS_BUILD = '2026-05-18T1500';</script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -87,6 +87,13 @@
   .btn-vd:disabled { opacity: 0.5; cursor: not-allowed; }
   .vd-hint { color: var(--tx-mute); font-size: 12px; margin-top: 12px; line-height: 1.55; }
   @media (max-width: 480px) { .vd-grid { grid-template-columns: 1fr; } }
+  .vd-section { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border); }
+  .vd-section:first-of-type { margin-top: 6px; }
+  .vd-sec-h { font-weight: 700; color: var(--tx); font-size: 14px; margin-bottom: 3px; }
+  .vd-sec-hint { color: var(--tx-mute); font-size: 12px; line-height: 1.5; margin-bottom: 12px; }
+  .vd-field-hint { color: var(--tx-mute); font-size: 11.5px; line-height: 1.45; margin-top: 4px; }
+  select.vd-input { cursor: pointer; }
+  .vd-textarea { resize: vertical; min-height: 52px; font-family: inherit; }
   
   /* Modal */
   .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100; align-items: center; justify-content: center; padding: 20px; }
@@ -273,40 +280,207 @@
       </div>
       ${status === 'angenommen' ? `
       <div class="card vd-card">
-        <div class="vd-title">\ud83d\udcc4 Daten f\u00fcr deinen Arbeitsvertrag</div>
+        <div class="vd-title">📄 Daten für deinen Arbeitsvertrag</div>
         <p class="vd-intro">
-          Du wurdest angenommen \u2014 herzlichen Gl\u00fcckwunsch! Damit der Verein deinen
-          Arbeitsvertrag vorbereiten kann, brauchen wir noch ein paar Angaben.
-          Diese Daten werden getrennt von deiner Bewerbung gespeichert und sind nur
-          f\u00fcr die Vertrags-Abwicklung einsehbar.
+          Du wurdest angenommen — herzlichen Glückwunsch! Damit der Verein deinen
+          Arbeitsvertrag und die Lohnabrechnung vorbereiten kann, brauchen wir noch
+          einige Angaben. Sie werden getrennt von deiner Bewerbung gespeichert und
+          sind nur für die Vertrags-Abwicklung einsehbar. Pflicht ist nichts davon —
+          je vollständiger, desto schneller geht es.
         </p>
-        <div class="vd-grid">
-          <div class="vd-field">
-            <label class="vd-label">Steuer-Identifikationsnummer</label>
-            <input class="vd-input" id="vd-steuer-id" inputmode="numeric" maxlength="11" autocomplete="off" placeholder="11-stellig">
-          </div>
-          <div class="vd-field">
-            <label class="vd-label">Sozialversicherungsnummer</label>
-            <input class="vd-input" id="vd-sv-nummer" maxlength="12" autocomplete="off" autocapitalize="characters" placeholder="12-stellig">
-          </div>
-          <div class="vd-field vd-full">
-            <label class="vd-label">IBAN</label>
-            <input class="vd-input" id="vd-iban" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="DE\u2026">
-          </div>
-          <div class="vd-field">
-            <label class="vd-label">Krankenkasse</label>
-            <input class="vd-input" id="vd-kk-name" autocomplete="off">
-          </div>
-          <div class="vd-field">
-            <label class="vd-label">Mitgliedsnummer Krankenkasse</label>
-            <input class="vd-input" id="vd-kk-mitgl" autocomplete="off" spellcheck="false">
+
+        <div class="vd-section">
+          <div class="vd-sec-h">Persönliche Angaben</div>
+          <p class="vd-sec-hint">Diese Angaben stehen so in deinem Arbeitsvertrag.</p>
+          <div class="vd-grid">
+            <div class="vd-field">
+              <label class="vd-label">Geburtsname</label>
+              <input class="vd-input" id="vd-geburtsname" autocomplete="off" placeholder="nur falls abweichend">
+            </div>
+            <div class="vd-field">
+              <label class="vd-label">Familienstand</label>
+              <select class="vd-input" id="vd-familienstand">
+                <option value="">— bitte wählen —</option>
+                <option value="ledig">ledig</option>
+                <option value="verheiratet">verheiratet</option>
+                <option value="eingetragene_lebenspartnerschaft">eingetragene Lebenspartnerschaft</option>
+                <option value="geschieden">geschieden</option>
+                <option value="verwitwet">verwitwet</option>
+              </select>
+            </div>
+            <div class="vd-field">
+              <label class="vd-label">Anzahl Kinder</label>
+              <input class="vd-input" id="vd-kinder-anzahl" type="number" min="0" max="20" inputmode="numeric" placeholder="0">
+            </div>
           </div>
         </div>
+
+        <div class="vd-section">
+          <div class="vd-sec-h">Steuer</div>
+          <p class="vd-sec-hint">
+            Für die korrekte Lohnsteuer. Steuerklasse und Konfession ruft der Verein
+            in der Regel elektronisch über ELStAM ab — deine Angabe hier hilft bei der
+            Vorbereitung.
+          </p>
+          <div class="vd-grid">
+            <div class="vd-field">
+              <label class="vd-label">Steuer-Identifikationsnummer</label>
+              <input class="vd-input" id="vd-steuer-id" inputmode="numeric" maxlength="11" autocomplete="off" placeholder="11-stellig">
+            </div>
+            <div class="vd-field">
+              <label class="vd-label">Steuerklasse</label>
+              <select class="vd-input" id="vd-steuerklasse">
+                <option value="">— bitte wählen —</option>
+                <option value="1">I</option>
+                <option value="2">II</option>
+                <option value="3">III</option>
+                <option value="4">IV</option>
+                <option value="5">V</option>
+                <option value="6">VI</option>
+                <option value="unbekannt">weiß ich nicht</option>
+              </select>
+            </div>
+            <div class="vd-field vd-full">
+              <label class="vd-label">Konfession (für die Kirchensteuer)</label>
+              <select class="vd-input" id="vd-konfession">
+                <option value="">— bitte wählen —</option>
+                <option value="keine">keine / konfessionslos</option>
+                <option value="evangelisch">evangelisch</option>
+                <option value="roemisch_katholisch">römisch-katholisch</option>
+                <option value="andere">andere</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="vd-section">
+          <div class="vd-sec-h">Sozialversicherung</div>
+          <p class="vd-sec-hint">Für die Anmeldung bei der Sozialversicherung und die richtige Beitragsabrechnung.</p>
+          <div class="vd-grid">
+            <div class="vd-field">
+              <label class="vd-label">Sozialversicherungsnummer</label>
+              <input class="vd-input" id="vd-sv-nummer" maxlength="12" autocomplete="off" autocapitalize="characters" placeholder="12-stellig, falls vorhanden">
+            </div>
+            <div class="vd-field">
+              <label class="vd-label">Art der Krankenversicherung</label>
+              <select class="vd-input" id="vd-kv-art">
+                <option value="">— bitte wählen —</option>
+                <option value="gesetzlich">gesetzlich</option>
+                <option value="privat">privat</option>
+              </select>
+            </div>
+            <div class="vd-field">
+              <label class="vd-label">Krankenkasse</label>
+              <input class="vd-input" id="vd-kk-name" autocomplete="off">
+            </div>
+            <div class="vd-field">
+              <label class="vd-label">Mitgliedsnummer Krankenkasse</label>
+              <input class="vd-input" id="vd-kk-mitgl" autocomplete="off" spellcheck="false">
+            </div>
+            <div class="vd-field vd-full">
+              <label class="vd-label">Befreiung von der Rentenversicherungspflicht (nur bei Minijob)</label>
+              <select class="vd-input" id="vd-rv-befreiung">
+                <option value="">— bitte wählen —</option>
+                <option value="nein">Nein, ich zahle Rentenversicherungsbeiträge</option>
+                <option value="ja">Ja, ich möchte mich befreien lassen</option>
+                <option value="unbekannt">weiß ich noch nicht</option>
+                <option value="trifft_nicht_zu">trifft nicht zu (kein Minijob)</option>
+              </select>
+              <p class="vd-field-hint">
+                Bei einem Minijob bist du automatisch rentenversichert. Du kannst dich auf
+                Wunsch befreien lassen — dann zahlst du keine eigenen Beiträge, erwirbst
+                aber auch weniger Rentenansprüche.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="vd-section">
+          <div class="vd-sec-h">Bankverbindung</div>
+          <p class="vd-sec-hint">Auf dieses Konto wird dein Gehalt überwiesen.</p>
+          <div class="vd-grid">
+            <div class="vd-field vd-full">
+              <label class="vd-label">IBAN</label>
+              <input class="vd-input" id="vd-iban" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="DE…">
+            </div>
+            <div class="vd-field vd-full">
+              <label class="vd-label">Kontoinhaber/in</label>
+              <input class="vd-input" id="vd-kontoinhaber" autocomplete="off" placeholder="nur falls nicht du selbst">
+            </div>
+          </div>
+        </div>
+
+        <div class="vd-section">
+          <div class="vd-sec-h">Schul- &amp; Berufsausbildung</div>
+          <p class="vd-sec-hint">
+            Der Verein muss bei der Meldung zur Sozialversicherung deinen höchsten
+            Schul- und Berufsabschluss angeben.
+          </p>
+          <div class="vd-grid">
+            <div class="vd-field vd-full">
+              <label class="vd-label">Höchster Schulabschluss</label>
+              <select class="vd-input" id="vd-schulabschluss">
+                <option value="">— bitte wählen —</option>
+                <option value="ohne">ohne Schulabschluss</option>
+                <option value="haupt_volksschule">Haupt-/Volksschulabschluss</option>
+                <option value="mittlere_reife">Mittlere Reife / gleichwertiger Abschluss</option>
+                <option value="abitur_fachabitur">Abitur / Fachhochschulreife</option>
+              </select>
+            </div>
+            <div class="vd-field vd-full">
+              <label class="vd-label">Höchste Berufsausbildung</label>
+              <select class="vd-input" id="vd-berufsausbildung">
+                <option value="">— bitte wählen —</option>
+                <option value="ohne">ohne abgeschlossene Berufsausbildung</option>
+                <option value="anerkannte_ausbildung">abgeschlossene anerkannte Berufsausbildung</option>
+                <option value="meister_techniker">Meister / Techniker / Fachschulabschluss</option>
+                <option value="bachelor">Bachelor</option>
+                <option value="diplom_master">Diplom / Master / Magister / Staatsexamen</option>
+                <option value="promotion">Promotion</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="vd-section">
+          <div class="vd-sec-h">Weitere Beschäftigungen</div>
+          <p class="vd-sec-hint">Wichtig für die sozialversicherungsrechtliche Einordnung — besonders bei einem Minijob.</p>
+          <div class="vd-grid">
+            <div class="vd-field vd-full">
+              <label class="vd-label">Übst du neben dieser Stelle weitere Beschäftigungen aus?</label>
+              <select class="vd-input" id="vd-weitere-besch" onchange="window.vdToggleWeitere()">
+                <option value="">— bitte wählen —</option>
+                <option value="nein">Nein</option>
+                <option value="ja">Ja</option>
+              </select>
+            </div>
+            <div class="vd-field vd-full" id="vd-weitere-details-wrap" style="display:none">
+              <label class="vd-label">Welche? (Art der Beschäftigung und ungefährer Umfang)</label>
+              <textarea class="vd-input vd-textarea" id="vd-weitere-details" rows="2" placeholder="z. B. Hauptbeschäftigung in Vollzeit bei …, oder weiterer Minijob bei …"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="vd-section">
+          <div class="vd-sec-h">Notfallkontakt</div>
+          <p class="vd-sec-hint">Wen sollen wir im Notfall während deiner Arbeit erreichen? Die Angabe ist freiwillig.</p>
+          <div class="vd-grid">
+            <div class="vd-field">
+              <label class="vd-label">Name</label>
+              <input class="vd-input" id="vd-notfall-name" autocomplete="off">
+            </div>
+            <div class="vd-field">
+              <label class="vd-label">Telefon</label>
+              <input class="vd-input" id="vd-notfall-telefon" autocomplete="off" inputmode="tel">
+            </div>
+          </div>
+        </div>
+
         <div class="vd-msg" id="vd-msg" style="display:none"></div>
         <button class="btn-vd" id="vd-save-btn" onclick="window.saveVertragsdaten()">Daten speichern</button>
         <p class="vd-hint">
-          Du kannst die Angaben jetzt oder sp\u00e4ter eintragen und jederzeit aktualisieren.
-          Fehlende Angaben holt der Verein bei Vertragsabschluss nach.
+          Fehlende Angaben holt der Verein bei Vertragsabschluss nach. Du kannst die
+          Daten hier jederzeit ergänzen und aktualisieren.
         </p>
       </div>` : ''}
       
@@ -325,21 +499,39 @@
     if (status === 'angenommen') loadVertragsdaten();
   }
   
+  // ── Vertragsdaten-Formular ────────────────────────────────────────────────
+  const VD_FIELDS = {
+    'steuer_id':'vd-steuer-id', 'sv_nummer':'vd-sv-nummer', 'iban':'vd-iban',
+    'kk_name':'vd-kk-name', 'kk_mitgl':'vd-kk-mitgl', 'geburtsname':'vd-geburtsname',
+    'familienstand':'vd-familienstand', 'kinder_anzahl':'vd-kinder-anzahl',
+    'steuerklasse':'vd-steuerklasse', 'konfession':'vd-konfession', 'kv_art':'vd-kv-art',
+    'rv_befreiung':'vd-rv-befreiung', 'kontoinhaber':'vd-kontoinhaber',
+    'schulabschluss':'vd-schulabschluss', 'berufsausbildung':'vd-berufsausbildung',
+    'weitere_beschaeftigung':'vd-weitere-besch',
+    'weitere_beschaeftigung_details':'vd-weitere-details',
+    'notfall_name':'vd-notfall-name', 'notfall_telefon':'vd-notfall-telefon'
+  };
+
+  window.vdToggleWeitere = function() {
+    const sel = document.getElementById('vd-weitere-besch');
+    const wrap = document.getElementById('vd-weitere-details-wrap');
+    if (sel && wrap) wrap.style.display = (sel.value === 'ja') ? '' : 'none';
+  };
+
   async function loadVertragsdaten() {
     try {
       const { data, error } = await sb.rpc('get_vertragsdaten_status', { p_token: token });
       if (error || !data || !data.ok || !data.erfasst) return;
-      const set = (id, v) => { const e = document.getElementById(id); if (e) e.value = v || ''; };
-      set('vd-steuer-id', data.steuer_id);
-      set('vd-sv-nummer', data.sv_nummer);
-      set('vd-iban', data.iban);
-      set('vd-kk-name', data.kk_name);
-      set('vd-kk-mitgl', data.kk_mitgl);
+      for (const col in VD_FIELDS) {
+        const el = document.getElementById(VD_FIELDS[col]);
+        if (el && data[col] != null) el.value = data[col];
+      }
+      window.vdToggleWeitere();
       const msg = document.getElementById('vd-msg');
       if (msg) {
         msg.className = 'vd-msg ok';
         msg.style.display = 'block';
-        msg.textContent = '✓ Deine Daten sind gespeichert — du kannst sie hier jederzeit aktualisieren.';
+        msg.textContent = '\u2713 Deine Daten sind gespeichert \u2014 du kannst sie hier jederzeit aktualisieren.';
       }
     } catch (e) { console.error('[loadVertragsdaten]', e); }
   }
@@ -347,25 +539,23 @@
   window.saveVertragsdaten = async function() {
     const btn = document.getElementById('vd-save-btn');
     const msg = document.getElementById('vd-msg');
-    const v = id => (document.getElementById(id)?.value || '').trim();
-    btn.disabled = true; btn.textContent = 'Speichere…';
+    btn.disabled = true; btn.textContent = 'Speichere\u2026';
     try {
-      const { data, error } = await sb.rpc('save_vertragsdaten', {
-        p_token: token,
-        p_steuer_id: v('vd-steuer-id'),
-        p_sv_nummer: v('vd-sv-nummer'),
-        p_iban:      v('vd-iban'),
-        p_kk_name:   v('vd-kk-name'),
-        p_kk_mitgl:  v('vd-kk-mitgl')
-      });
+      const p_data = {};
+      for (const col in VD_FIELDS) {
+        const el = document.getElementById(VD_FIELDS[col]);
+        p_data[col] = el ? String(el.value || '').trim() : '';
+      }
+      const { data, error } = await sb.rpc('save_vertragsdaten', { p_token: token, p_data: p_data });
       if (error) throw error;
       if (data && data.ok) {
         msg.className = 'vd-msg ok'; msg.style.display = 'block';
-        msg.textContent = '✓ Vielen Dank — deine Daten wurden gespeichert.';
+        msg.textContent = '\u2713 Vielen Dank \u2014 deine Daten wurden gespeichert.';
+        try { msg.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) {}
       } else {
         const err = (data && data.error) || 'unbekannter Fehler';
         msg.className = 'vd-msg err'; msg.style.display = 'block';
-        msg.textContent = 'Speichern nicht möglich (' + err + '). Bitte später erneut versuchen.';
+        msg.textContent = 'Speichern nicht m\u00f6glich (' + err + '). Bitte sp\u00e4ter erneut versuchen.';
       }
     } catch (e) {
       msg.className = 'vd-msg err'; msg.style.display = 'block';
@@ -375,7 +565,7 @@
     }
   };
 
-  window.openWithdrawModal = function() {
+    window.openWithdrawModal = function() {
     document.getElementById('withdraw-modal').classList.add('open');
     document.getElementById('confirm-input').value = '';
     document.getElementById('confirm-delete-btn').disabled = true;

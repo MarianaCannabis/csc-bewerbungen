@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Bewerbung — Status · Mariana Cannabis</title>
-<!-- STATUS_BUILD: 2026-05-15T2245 (Selbst-Token-Leak gefixt: SELECT über Edge Function) -->
-<script>window.__STATUS_BUILD = '2026-05-15T2245';</script>
+<!-- STATUS_BUILD: 2026-05-18T1300 (Vertragsdaten-Formular für angenommene Bewerber) -->
+<script>window.__STATUS_BUILD = '2026-05-18T1300';</script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -69,6 +69,24 @@
   }
   .btn-withdraw:hover { background: var(--red); color: white; }
   .btn-withdraw:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* Vertragsdaten-Formular (nur bei Status angenommen) */
+  .vd-title { font-weight: 700; color: var(--green); margin-bottom: 8px; font-size: 16px; }
+  .vd-intro { color: var(--tx-mute); font-size: 13px; line-height: 1.6; margin-bottom: 16px; }
+  .vd-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .vd-field { display: flex; flex-direction: column; gap: 4px; }
+  .vd-field.vd-full { grid-column: 1 / -1; }
+  .vd-label { font-size: 12px; color: var(--tx-mute); }
+  .vd-input { width: 100%; background: var(--bg-elev); border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; color: var(--tx); font-family: inherit; font-size: 14px; }
+  .vd-input:focus { outline: none; border-color: var(--green); }
+  .vd-msg { margin-top: 14px; padding: 10px 12px; border-radius: 6px; font-size: 13px; line-height: 1.5; }
+  .vd-msg.ok { background: rgba(76,175,106,0.12); color: var(--green); }
+  .vd-msg.err { background: rgba(236,100,100,0.12); color: var(--red); }
+  .btn-vd { margin-top: 14px; background: var(--green); color: #08120b; border: none; padding: 11px 22px; border-radius: 6px; font-family: inherit; font-size: 14px; font-weight: 700; cursor: pointer; transition: filter 0.15s; }
+  .btn-vd:hover { filter: brightness(1.08); }
+  .btn-vd:disabled { opacity: 0.5; cursor: not-allowed; }
+  .vd-hint { color: var(--tx-mute); font-size: 12px; margin-top: 12px; line-height: 1.55; }
+  @media (max-width: 480px) { .vd-grid { grid-template-columns: 1fr; } }
   
   /* Modal */
   .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100; align-items: center; justify-content: center; padding: 20px; }
@@ -253,8 +271,46 @@
           <span class="info-value">${geaendert}</span>
         </div>` : ''}
       </div>
+      ${status === 'angenommen' ? `
+      <div class="card vd-card">
+        <div class="vd-title">\ud83d\udcc4 Daten f\u00fcr deinen Arbeitsvertrag</div>
+        <p class="vd-intro">
+          Du wurdest angenommen \u2014 herzlichen Gl\u00fcckwunsch! Damit der Verein deinen
+          Arbeitsvertrag vorbereiten kann, brauchen wir noch ein paar Angaben.
+          Diese Daten werden getrennt von deiner Bewerbung gespeichert und sind nur
+          f\u00fcr die Vertrags-Abwicklung einsehbar.
+        </p>
+        <div class="vd-grid">
+          <div class="vd-field">
+            <label class="vd-label">Steuer-Identifikationsnummer</label>
+            <input class="vd-input" id="vd-steuer-id" inputmode="numeric" maxlength="11" autocomplete="off" placeholder="11-stellig">
+          </div>
+          <div class="vd-field">
+            <label class="vd-label">Sozialversicherungsnummer</label>
+            <input class="vd-input" id="vd-sv-nummer" maxlength="12" autocomplete="off" autocapitalize="characters" placeholder="12-stellig">
+          </div>
+          <div class="vd-field vd-full">
+            <label class="vd-label">IBAN</label>
+            <input class="vd-input" id="vd-iban" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="DE\u2026">
+          </div>
+          <div class="vd-field">
+            <label class="vd-label">Krankenkasse</label>
+            <input class="vd-input" id="vd-kk-name" autocomplete="off">
+          </div>
+          <div class="vd-field">
+            <label class="vd-label">Mitgliedsnummer Krankenkasse</label>
+            <input class="vd-input" id="vd-kk-mitgl" autocomplete="off" spellcheck="false">
+          </div>
+        </div>
+        <div class="vd-msg" id="vd-msg" style="display:none"></div>
+        <button class="btn-vd" id="vd-save-btn" onclick="window.saveVertragsdaten()">Daten speichern</button>
+        <p class="vd-hint">
+          Du kannst die Angaben jetzt oder sp\u00e4ter eintragen und jederzeit aktualisieren.
+          Fehlende Angaben holt der Verein bei Vertragsabschluss nach.
+        </p>
+      </div>` : ''}
       
-      <!-- DSGVO: Bewerbung zurückziehen -->
+      <!-- DSGVO: Bewerbung zur\u00fcckziehen -->
       <div class="withdraw-section">
         <div class="withdraw-title">🗑 Bewerbung zurückziehen / Daten löschen</div>
         <p class="withdraw-text">
@@ -266,8 +322,59 @@
         </button>
       </div>
     `;
+    if (status === 'angenommen') loadVertragsdaten();
   }
   
+  async function loadVertragsdaten() {
+    try {
+      const { data, error } = await sb.rpc('get_vertragsdaten_status', { p_token: token });
+      if (error || !data || !data.ok || !data.erfasst) return;
+      const set = (id, v) => { const e = document.getElementById(id); if (e) e.value = v || ''; };
+      set('vd-steuer-id', data.steuer_id);
+      set('vd-sv-nummer', data.sv_nummer);
+      set('vd-iban', data.iban);
+      set('vd-kk-name', data.kk_name);
+      set('vd-kk-mitgl', data.kk_mitgl);
+      const msg = document.getElementById('vd-msg');
+      if (msg) {
+        msg.className = 'vd-msg ok';
+        msg.style.display = 'block';
+        msg.textContent = '✓ Deine Daten sind gespeichert — du kannst sie hier jederzeit aktualisieren.';
+      }
+    } catch (e) { console.error('[loadVertragsdaten]', e); }
+  }
+
+  window.saveVertragsdaten = async function() {
+    const btn = document.getElementById('vd-save-btn');
+    const msg = document.getElementById('vd-msg');
+    const v = id => (document.getElementById(id)?.value || '').trim();
+    btn.disabled = true; btn.textContent = 'Speichere…';
+    try {
+      const { data, error } = await sb.rpc('save_vertragsdaten', {
+        p_token: token,
+        p_steuer_id: v('vd-steuer-id'),
+        p_sv_nummer: v('vd-sv-nummer'),
+        p_iban:      v('vd-iban'),
+        p_kk_name:   v('vd-kk-name'),
+        p_kk_mitgl:  v('vd-kk-mitgl')
+      });
+      if (error) throw error;
+      if (data && data.ok) {
+        msg.className = 'vd-msg ok'; msg.style.display = 'block';
+        msg.textContent = '✓ Vielen Dank — deine Daten wurden gespeichert.';
+      } else {
+        const err = (data && data.error) || 'unbekannter Fehler';
+        msg.className = 'vd-msg err'; msg.style.display = 'block';
+        msg.textContent = 'Speichern nicht möglich (' + err + '). Bitte später erneut versuchen.';
+      }
+    } catch (e) {
+      msg.className = 'vd-msg err'; msg.style.display = 'block';
+      msg.textContent = 'Fehler beim Speichern: ' + (e.message || e);
+    } finally {
+      btn.disabled = false; btn.textContent = 'Daten speichern';
+    }
+  };
+
   window.openWithdrawModal = function() {
     document.getElementById('withdraw-modal').classList.add('open');
     document.getElementById('confirm-input').value = '';

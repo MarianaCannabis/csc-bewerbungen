@@ -380,6 +380,32 @@
     color: var(--bg); font-weight: 600; }
   .se-btn-primary:hover { color: var(--bg); }
 
+  /* Mitarbeiter-Editor (Stunden + Verfügbarkeit) */
+  .shift-total.editable { cursor: pointer; }
+  .shift-total.editable:hover { border-color: var(--green-soft); }
+  .member-editor-box { width: 470px; }
+  .member-editor-box .h-cell { height: 20px; }
+  .me-field { margin-bottom: 14px; }
+  .me-field label { display: block; font-size: 12px; color: var(--text-dim); margin-bottom: 5px; }
+  .me-field input { width: 100%; padding: 8px 10px; background: var(--bg); border: 1px solid var(--line);
+    border-radius: 7px; color: var(--text); font-size: 14px; box-sizing: border-box; }
+  .me-availlabel { font-size: 12px; color: var(--text-dim); margin-bottom: 8px; }
+  .me-availsum { font-size: 12px; color: var(--text-dim); margin-top: 10px; }
+  .cr-name-link { cursor: pointer; text-decoration: underline; text-decoration-style: dotted;
+    text-underline-offset: 3px; }
+  .cr-name-link:hover { color: var(--green-soft); }
+
+  /* Pflege-Dienstplan: editierbare Tageszeilen */
+  .cr-row { display: flex; gap: 10px; align-items: center; font-size: 13px;
+    padding: 6px 8px; border-radius: 6px; cursor: pointer; position: relative; }
+  .cr-row:hover { background: var(--bg); }
+  .cr-edit { position: absolute; right: 8px; font-size: 10px; color: var(--text-mute);
+    opacity: 0; transition: opacity 0.12s; }
+  .cr-row:hover .cr-edit { opacity: 0.75; }
+  .cr-tag { font-size: 10px; color: var(--warn); text-transform: uppercase; letter-spacing: 0.04em; }
+  .cr-radio { color: var(--green-soft); font-size: 12px; width: 14px; display: inline-block; }
+  .se-row.cr-sel { background: rgba(76,175,106,0.12); }
+
   /* Anstellungs-Vergleich */
   .compare-table { width: 100%; border-collapse: collapse; font-size: 12px; }
   .compare-table th, .compare-table td { padding: 8px 10px; text-align: right; border-bottom: 1px solid var(--line); }
@@ -694,6 +720,8 @@
     <!-- Slot-Editor (Schichtplan manuell bearbeiten) -->
     <div id="slotEditor" class="slot-editor-overlay" style="display:none"
          onclick="if(event.target===this)closeSlotEditor()"></div>
+    <div id="memberEditor" class="slot-editor-overlay" style="display:none"
+         onclick="if(event.target===this)closeMemberEditor()"></div>
 
     <!-- 3. BEDARFSPLANUNG -->
     <div class="grid-main card-spacer">
@@ -1957,7 +1985,9 @@ function renderShiftPlan(shiftData) {
     const auslastung = zielMonat > 0 ? (istMonat / zielMonat) * 100 : 0;
     const barCls = auslastung > 115 ? 'over' : (auslastung < 70 ? 'under' : '');
     const div = document.createElement('div');
-    div.className = 'shift-total';
+    div.className = 'shift-total editable';
+    div.title = 'Klicken: Soll-Stunden und Verfügbarkeit bearbeiten';
+    div.onclick = () => openMemberEditor(m.id);
     div.innerHTML = `
       <div class="stl-name">${m.name}</div>
       <div class="stl-bar-bg"><div class="stl-bar ${barCls}" style="width:${Math.min(100,auslastung)}%"></div></div>
@@ -2104,6 +2134,97 @@ function clearSlot() {
   recomputeShiftLoad(lastShiftPlan);
   renderShiftPlan(lastShiftPlan);
   openSlotEditor(dIdx, h);
+}
+
+// ============ MITARBEITER-EDITOR (Stunden + Verfügbarkeit) ============
+let currentMemberEdit = null;
+
+function memberEditAvailGrid(m) {
+  const headerCells = HOURS.map(h => `<div class="h-lbl">${h}</div>`).join('');
+  const rows = TAGE.map((t, i) => {
+    const cells = HOURS.map(h =>
+      `<div class="h-cell ${m.avail[t].includes(h) ? 'active' : ''}" onclick="memberEditToggle(${m.id},'${t}',${h})" title="${TAGE_LABELS[i]} ${h}:00"></div>`
+    ).join('');
+    return `<div class="h-row"><div class="h-day">${TAGE_LABELS[i]}</div><div class="h-cells">${cells}</div></div>`;
+  }).join('');
+  return `<div class="avail-hours"><div class="h-header">${headerCells}</div>${rows}</div>`;
+}
+
+function updateMemberEditSum(m) {
+  const el = $('memberEditSum');
+  if (el) el.innerHTML = `<strong>${memberAvailHoursWeek(m)} h/Woche</strong> verfügbar · Soll ${m.hours} h/Monat`;
+}
+
+function openMemberEditor(id) {
+  const m = team.find(x => x.id === id);
+  if (!m) return;
+  currentMemberEdit = id;
+  $('memberEditor').innerHTML = `
+    <div class="slot-editor-box member-editor-box">
+      <div class="se-head">
+        <div>
+          <div class="se-title">Mitarbeiter bearbeiten</div>
+          <div class="se-sub">${(m.name || '').replace(/</g, '&lt;')}</div>
+        </div>
+        <button class="se-x" onclick="closeMemberEditor()" title="Schließen">✕</button>
+      </div>
+      <div class="me-field">
+        <label for="memberEditHoursInput">Soll-Stunden pro Monat</label>
+        <input type="number" id="memberEditHoursInput" min="1" max="200" step="1" value="${m.hours}"
+               onchange="memberEditHours(${m.id}, this.value)">
+      </div>
+      <div class="me-availlabel">Verfügbarkeit (${HOUR_START}–${HOUR_END + 1} Uhr) — klicken zum Umschalten</div>
+      <div id="memberEditGrid">${memberEditAvailGrid(m)}</div>
+      <div class="me-availsum" id="memberEditSum"></div>
+      <div class="se-foot">
+        <button class="se-btn" onclick="memberEditClear()">Verfügbarkeit leeren</button>
+        <button class="se-btn se-btn-primary" onclick="closeMemberEditor()">Fertig</button>
+      </div>
+    </div>`;
+  updateMemberEditSum(m);
+  $('memberEditor').style.display = 'flex';
+}
+
+function closeMemberEditor() {
+  $('memberEditor').style.display = 'none';
+  currentMemberEdit = null;
+}
+
+function memberEditHours(id, val) {
+  const m = team.find(x => x.id === id);
+  if (!m) return;
+  m._beispiel = false;
+  m.hours = parseFloat(val) || 0;
+  renderTeam();
+  calc();
+  updateMemberEditSum(m);
+}
+
+function memberEditToggle(id, tag, hour) {
+  const m = team.find(x => x.id === id);
+  if (!m) return;
+  m._beispiel = false;
+  const idx = m.avail[tag].indexOf(hour);
+  if (idx >= 0) m.avail[tag].splice(idx, 1);
+  else m.avail[tag].push(hour);
+  renderTeam();
+  calc();
+  const g = $('memberEditGrid');
+  if (g) g.innerHTML = memberEditAvailGrid(m);
+  updateMemberEditSum(m);
+}
+
+function memberEditClear() {
+  if (currentMemberEdit === null) return;
+  const m = team.find(x => x.id === currentMemberEdit);
+  if (!m) return;
+  m._beispiel = false;
+  TAGE.forEach(t => m.avail[t] = []);
+  renderTeam();
+  calc();
+  const g = $('memberEditGrid');
+  if (g) g.innerHTML = memberEditAvailGrid(m);
+  updateMemberEditSum(m);
 }
 
 // ============ KERN-BERECHNUNG ============

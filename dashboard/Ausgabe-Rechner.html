@@ -1254,13 +1254,13 @@ let lastShiftPlan = null;
 
 function initTeam() {
   team = [
-    { id: nextId++, name: 'Anna', type: 'minijob', hours: 40, wage: 13.90,
+    { id: nextId++, name: 'Anna', type: 'minijob', hours: 40, wage: 13.90, _beispiel: true,
       avail: { mo:[], di:[15,16,17], mi:[], do:[15,16,17], fr:[], sa:[10,11,12,13], so:[] } },
-    { id: nextId++, name: 'Ben', type: 'minijob', hours: 40, wage: 13.90,
+    { id: nextId++, name: 'Ben', type: 'minijob', hours: 40, wage: 13.90, _beispiel: true,
       avail: { mo:[16,17,18], di:[], mi:[], do:[], fr:[16,17,18,19], sa:[], so:[] } },
-    { id: nextId++, name: 'Cara', type: 'minijob', hours: 40, wage: 13.90,
+    { id: nextId++, name: 'Cara', type: 'minijob', hours: 40, wage: 13.90, _beispiel: true,
       avail: { mo:[], di:[], mi:[14,15,16,17,18], do:[], fr:[], sa:[14,15,16,17,18], so:[] } },
-    { id: nextId++, name: 'Dan', type: 'minijob', hours: 40, wage: 13.90,
+    { id: nextId++, name: 'Dan', type: 'minijob', hours: 40, wage: 13.90, _beispiel: true,
       avail: { mo:[18,19,20], di:[18,19,20], mi:[], do:[], fr:[], sa:[], so:[12,13,14,15,16] } }
   ];
 }
@@ -1568,6 +1568,7 @@ function removeMember(id) {
 function updateMember(id, field, value) {
   const m = team.find(x => x.id === id);
   if (!m) return;
+  m._beispiel = false;
   if (field === 'hours' || field === 'wage') m[field] = parseFloat(value) || 0;
   else m[field] = value;
   if (field === 'type') updateMemberCard(m); else updateMemberStats(m);
@@ -1577,6 +1578,7 @@ function updateMember(id, field, value) {
 function toggleHour(id, tag, hour) {
   const m = team.find(x => x.id === id);
   if (!m) return;
+  m._beispiel = false;
   const idx = m.avail[tag].indexOf(hour);
   if (idx >= 0) m.avail[tag].splice(idx, 1);
   else m.avail[tag].push(hour);
@@ -1589,6 +1591,7 @@ function toggleHour(id, tag, hour) {
 function clearAvail(id) {
   const m = team.find(x => x.id === id);
   if (!m) return;
+  m._beispiel = false;
   TAGE.forEach(t => m.avail[t] = []);
   updateMemberCard(m);
   calc();
@@ -1597,6 +1600,7 @@ function clearAvail(id) {
 function fillTypicalAvail(id) {
   const m = team.find(x => x.id === id);
   if (!m) return;
+  m._beispiel = false;
   m.avail = { mo:[15,16,17,18], di:[15,16,17,18], mi:[15,16,17,18], do:[15,16,17,18], fr:[15,16,17,18], sa:[], so:[] };
   updateMemberCard(m);
   calc();
@@ -1605,6 +1609,7 @@ function fillTypicalAvail(id) {
 function fillWeekend(id) {
   const m = team.find(x => x.id === id);
   if (!m) return;
+  m._beispiel = false;
   m.avail = { mo:[], di:[], mi:[], do:[], fr:[], sa:[10,11,12,13,14,15], so:[10,11,12,13,14,15] };
   updateMemberCard(m);
   calc();
@@ -2470,6 +2475,8 @@ function importiereBewerber() {
   if (!data) { pruefeBewerbungsImport(); return; }
   const leerAvail = () => ({ mo: [], di: [], mi: [], do: [], fr: [], sa: [], so: [] });
   let n = 0;
+  // Unveraenderte Beispiel-Mitarbeiter werden durch die echten Bewerber ersetzt
+  team = team.filter(m => !m._beispiel);
   data.team.forEach(m => {
     const type = ['minijob', 'midijob', 'teilzeit', 'vollzeit'].includes(m.type) ? m.type : 'minijob';
     const av = m.avail && typeof m.avail === 'object' ? Object.assign(leerAvail(), m.avail) : leerAvail();

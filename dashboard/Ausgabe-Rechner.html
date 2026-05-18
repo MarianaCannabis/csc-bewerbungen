@@ -342,6 +342,44 @@
   .shift-total .stl-meta { display: flex; justify-content: space-between; color: var(--text-dim);
     font-variant-numeric: tabular-nums; font-size: 10px; margin-top: 4px; }
 
+  /* Schichtplan: editierbare Slots + Slot-Editor */
+  .sp-cell.editable { cursor: pointer; position: relative; }
+  .sp-cell.editable:hover { border-color: var(--green-soft); }
+  .sp-edit { position: absolute; top: 2px; right: 3px; font-size: 9px;
+    color: var(--text-mute); opacity: 0; transition: opacity 0.12s; }
+  .sp-cell.editable:hover .sp-edit { opacity: 0.75; }
+  .shift-manual-badge { font-size: 11px; color: var(--warn);
+    background: rgba(255,159,67,0.12); border: 1px solid var(--warn);
+    border-radius: 5px; padding: 2px 8px; margin-right: 8px; white-space: nowrap; }
+  .slot-editor-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+    display: flex; align-items: center; justify-content: center; z-index: 200; }
+  .slot-editor-box { background: var(--bg-2); border: 1px solid var(--line);
+    border-radius: 12px; padding: 18px 20px; width: 360px; max-width: 92vw;
+    max-height: 82vh; overflow: auto; box-shadow: 0 12px 40px rgba(0,0,0,0.5); }
+  .se-head { display: flex; justify-content: space-between; align-items: flex-start;
+    margin-bottom: 14px; }
+  .se-title { font-size: 15px; font-weight: 600; color: var(--text); }
+  .se-sub { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+  .se-x { background: none; border: none; color: var(--text-mute); font-size: 16px;
+    cursor: pointer; padding: 0 4px; line-height: 1; }
+  .se-x:hover { color: var(--text); }
+  .se-list { display: flex; flex-direction: column; gap: 2px; }
+  .se-row { display: flex; align-items: center; gap: 9px; padding: 8px;
+    border-radius: 6px; cursor: pointer; font-size: 13px; color: var(--text); }
+  .se-row:hover { background: var(--bg); }
+  .se-row input { width: 16px; height: 16px; accent-color: var(--green); cursor: pointer; }
+  .se-name { flex: 1; }
+  .se-mark { font-size: 10px; color: var(--warn); text-transform: uppercase;
+    letter-spacing: 0.04em; }
+  .se-empty { font-size: 12px; color: var(--text-dim); padding: 10px 4px; line-height: 1.5; }
+  .se-foot { display: flex; justify-content: space-between; gap: 10px; margin-top: 16px; }
+  .se-btn { padding: 8px 16px; border-radius: 7px; border: 1px solid var(--line);
+    background: var(--bg); color: var(--text-dim); font-size: 13px; cursor: pointer; }
+  .se-btn:hover { color: var(--text); border-color: var(--text-mute); }
+  .se-btn-primary { background: var(--green); border-color: var(--green);
+    color: var(--bg); font-weight: 600; }
+  .se-btn-primary:hover { color: var(--bg); }
+
   /* Anstellungs-Vergleich */
   .compare-table { width: 100%; border-collapse: collapse; font-size: 12px; }
   .compare-table th, .compare-table td { padding: 8px 10px; text-align: right; border-bottom: 1px solid var(--line); }
@@ -633,11 +671,12 @@
     <div class="card card-spacer">
       <h2>📋 Schritt 2b · Schichtplan-Vorschlag<span class="info-i" data-tip="Erstellt automatisch einen Dienstplan-Vorschlag, der die Verfügbarkeiten des Teams möglichst gut abdeckt.">i</span>
         <span class="h2-right">
+          <span id="shiftManualBadge" class="shift-manual-badge" style="display:none">✎ manuell angepasst</span>
           <button class="btn-ghost" onclick="regenerateShiftPlan()">↻ Neu berechnen</button>
         </span>
       </h2>
       <p style="color:var(--text-dim);font-size:13px;margin:-8px 0 14px;">
-        Greedy-Zuteilung: für jeden besetzbaren Slot werden die Mitarbeiter mit Verfügbarkeit + niedrigster bisheriger Auslastung gewählt. Soll-Stunden werden möglichst gleichmäßig verteilt.
+        Greedy-Zuteilung: für jeden besetzbaren Slot werden die Mitarbeiter mit Verfügbarkeit + niedrigster bisheriger Auslastung gewählt. Soll-Stunden werden möglichst gleichmäßig verteilt. <b>Klicke auf einen Slot, um die Einteilung selbst anzupassen.</b>
       </p>
       <div class="shift-plan-wrap">
         <div class="shift-plan" id="shiftPlan"></div>
@@ -651,6 +690,10 @@
         <span id="shiftNoteText">…</span>
       </div>
     </div>
+
+    <!-- Slot-Editor (Schichtplan manuell bearbeiten) -->
+    <div id="slotEditor" class="slot-editor-overlay" style="display:none"
+         onclick="if(event.target===this)closeSlotEditor()"></div>
 
     <!-- 3. BEDARFSPLANUNG -->
     <div class="grid-main card-spacer">
@@ -1251,6 +1294,8 @@ let scenarios = {};
 let currentScenarioName = '';
 let snapshot = null;
 let lastShiftPlan = null;
+let shiftPlanManual = false;   // true, sobald der Plan von Hand bearbeitet wurde
+let currentSlotEdit = null;    // {dIdx, h} des gerade bearbeiteten Slots
 
 function initTeam() {
   team = [
@@ -1846,6 +1891,8 @@ function generateShiftPlan(suggested, minPersonen) {
 
 function renderShiftPlan(shiftData) {
   const wrap = $('shiftPlan');
+  const _mb = $('shiftManualBadge');
+  if (_mb) _mb.style.display = shiftPlanManual ? '' : 'none';
   if (!shiftData || !shiftData.suggested || shiftData.suggested.length === 0) {
     wrap.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-mute);font-size:13px;">Keine besetzbaren Zeitblöcke vorhanden. Erst Team und Verfügbarkeiten eintragen.</div>';
     $('shiftTotals').innerHTML = '';
@@ -1879,15 +1926,19 @@ function renderShiftPlan(shiftData) {
 
       if (!isOpenSlot) {
         html += '<div class="sp-cell empty"></div>';
-      } else if (!memberIds || memberIds.length === 0) {
-        html += '<div class="sp-cell short"><span class="sp-name warn">— niemand —</span></div>';
       } else {
-        const names = memberIds.map(id => {
-          const m = team.find(x => x.id === id);
-          return m ? `<span class="sp-name">${m.name}</span>` : '';
-        }).join('');
-        const cls = memberIds.length < 2 ? 'sp-cell short' : 'sp-cell assigned';
-        html += `<div class="${cls}">${names}</div>`;
+        const ids = memberIds || [];
+        let inner;
+        if (ids.length === 0) {
+          inner = '<span class="sp-name warn">— niemand —</span>';
+        } else {
+          inner = ids.map(id => {
+            const m = team.find(x => x.id === id);
+            return m ? `<span class="sp-name">${m.name}</span>` : '';
+          }).join('');
+        }
+        const cls = ids.length >= 2 ? 'sp-cell assigned' : 'sp-cell short';
+        html += `<div class="${cls} editable" onclick="openSlotEditor(${dIdx},${h})" title="Klicken zum Bearbeiten">${inner}<span class="sp-edit">✎</span></div>`;
       }
     });
   });
@@ -1945,7 +1996,114 @@ function renderShiftPlan(shiftData) {
 }
 
 function regenerateShiftPlan() {
-  if (lastShiftPlan) renderShiftPlan(lastShiftPlan);
+  if (shiftPlanManual && !confirm('Der Schichtplan wurde manuell angepasst. Neu berechnen verwirft deine Änderungen — fortfahren?')) return;
+  shiftPlanManual = false;
+  calc();
+}
+
+// Auslastung (memberLoad) aus dem aktuellen Plan neu berechnen
+function recomputeShiftLoad(shiftData) {
+  const memberLoad = {};
+  team.forEach(m => { memberLoad[m.id] = { ziel: m.hours / 4.33, assigned: 0, slots: [], m: m }; });
+  Object.entries(shiftData.plan).forEach(([dIdx, hours]) => {
+    Object.entries(hours).forEach(([h, ids]) => {
+      (ids || []).forEach(id => {
+        if (memberLoad[id]) {
+          memberLoad[id].assigned++;
+          memberLoad[id].slots.push(`${TAGE_LABELS[dIdx]} ${h}:00`);
+        }
+      });
+    });
+  });
+  shiftData.memberLoad = memberLoad;
+  return shiftData;
+}
+
+// Manuell bearbeiteten Plan auf aktuelle Öffnungszeiten/Team anpassen,
+// ohne die Einteilung zu verwerfen
+function reconcileShiftPlan(old, suggested) {
+  const plan = {};
+  TAGE.forEach((_, i) => plan[i] = {});
+  suggested.forEach(day => {
+    for (let h = day.startHour; h < day.endHour; h++) {
+      const prev = (old.plan[day.tagIdx] && old.plan[day.tagIdx][h]) || [];
+      plan[day.tagIdx][h] = prev.filter(id => team.some(m => m.id === id));
+    }
+  });
+  const shiftData = { plan, memberLoad: {}, suggested };
+  return recomputeShiftLoad(shiftData);
+}
+
+// Slot-Editor öffnen
+function openSlotEditor(dIdx, h) {
+  if (!lastShiftPlan) return;
+  currentSlotEdit = { dIdx, h };
+  const tag = TAGE[dIdx];
+  const assigned = (lastShiftPlan.plan[dIdx] && lastShiftPlan.plan[dIdx][h]) || [];
+  const list = team.filter(m =>
+    (m.avail[tag] && m.avail[tag].includes(h)) || assigned.some(id => id === m.id)
+  );
+  let rows;
+  if (list.length === 0) {
+    rows = '<div class="se-empty">Für diese Schicht ist niemand verfügbar. Trage in Schritt 1 mehr Verfügbarkeiten ein.</div>';
+  } else {
+    rows = list.map(m => {
+      const checked = assigned.some(id => id === m.id) ? 'checked' : '';
+      const avail = m.avail[tag] && m.avail[tag].includes(h);
+      const mark = avail ? '' : '<span class="se-mark">nicht verfügbar</span>';
+      return `<label class="se-row"><input type="checkbox" ${checked} onchange="toggleSlotMember('${String(m.id).replace(/'/g, "\\'")}')"><span class="se-name">${m.name}</span>${mark}</label>`;
+    }).join('');
+  }
+  $('slotEditor').innerHTML = `
+    <div class="slot-editor-box">
+      <div class="se-head">
+        <div>
+          <div class="se-title">Schicht bearbeiten</div>
+          <div class="se-sub">${TAGE_LABELS[dIdx]} · ${h}:00–${h + 1}:00 Uhr</div>
+        </div>
+        <button class="se-x" onclick="closeSlotEditor()" title="Schließen">✕</button>
+      </div>
+      <div class="se-list">${rows}</div>
+      <div class="se-foot">
+        <button class="se-btn" onclick="clearSlot()">Slot leeren</button>
+        <button class="se-btn se-btn-primary" onclick="closeSlotEditor()">Fertig</button>
+      </div>
+    </div>`;
+  $('slotEditor').style.display = 'flex';
+}
+
+function closeSlotEditor() {
+  $('slotEditor').style.display = 'none';
+  currentSlotEdit = null;
+}
+
+// Mitarbeiter im aktuellen Slot an-/abwählen
+function toggleSlotMember(idRaw) {
+  if (!currentSlotEdit || !lastShiftPlan) return;
+  const m = team.find(x => String(x.id) === String(idRaw));
+  if (!m) return;
+  const { dIdx, h } = currentSlotEdit;
+  if (!lastShiftPlan.plan[dIdx]) lastShiftPlan.plan[dIdx] = {};
+  const ids = (lastShiftPlan.plan[dIdx][h] || []).slice();
+  const pos = ids.findIndex(x => x === m.id);
+  if (pos >= 0) ids.splice(pos, 1);
+  else ids.push(m.id);
+  lastShiftPlan.plan[dIdx][h] = ids;
+  shiftPlanManual = true;
+  recomputeShiftLoad(lastShiftPlan);
+  renderShiftPlan(lastShiftPlan);
+}
+
+// Slot komplett leeren
+function clearSlot() {
+  if (!currentSlotEdit || !lastShiftPlan) return;
+  const { dIdx, h } = currentSlotEdit;
+  if (!lastShiftPlan.plan[dIdx]) lastShiftPlan.plan[dIdx] = {};
+  lastShiftPlan.plan[dIdx][h] = [];
+  shiftPlanManual = true;
+  recomputeShiftLoad(lastShiftPlan);
+  renderShiftPlan(lastShiftPlan);
+  openSlotEditor(dIdx, h);
 }
 
 // ============ KERN-BERECHNUNG ============
@@ -2192,8 +2350,12 @@ function calc() {
     $('rOpenMatchSub').textContent = `${fmtInt(moeglichStdMonat)} h möglich · ${fmtInt(persStdTotal)} h nötig`;
   }
 
-  // Schichtplan
-  lastShiftPlan = generateShiftPlan(suggested, minPersonen);
+  // Schichtplan — manuelle Bearbeitung hat Vorrang vor Neu-Generierung
+  if (shiftPlanManual && lastShiftPlan) {
+    lastShiftPlan = reconcileShiftPlan(lastShiftPlan, suggested);
+  } else {
+    lastShiftPlan = generateShiftPlan(suggested, minPersonen);
+  }
   renderShiftPlan(lastShiftPlan);
 
   // Spitzentag

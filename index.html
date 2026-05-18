@@ -2461,11 +2461,6 @@ const state = {
     adresse_lon: null,
     telefon: '',
     email: '',
-    steuer_id: '',
-    sv_nummer: '',
-    iban: '',
-    kk_name: '',
-    kk_mitgl: '',
     // Online-Profile (freiwillig) — neu in v2
     profil_linkedin: '',
     profil_xing: '',
@@ -3098,36 +3093,6 @@ function renderSection2() {
         <label class="form-label">${s.email}<span class="required">*</span></label>
         <input type="email" class="form-input" id="i-email" autocomplete="email">
         <div class="error-message">${t('validation.email_invalid')}</div>
-      </div>
-    </div>
-
-    <h3 class="section-subtitle">${s.optional_heading}</h3>
-    <p class="form-hint" style="margin-bottom: 1.25rem;">${s.optional_hint}</p>
-
-    <div class="field-grid cols-2">
-      <div class="form-group">
-        <label class="form-label">${s.steuer_id}</label>
-        <input type="text" class="form-input" id="i-steuer-id" inputmode="numeric" autocomplete="off" maxlength="11" placeholder="11-stellig">
-      </div>
-      <div class="form-group">
-        <label class="form-label">${s.sv_nummer}</label>
-        <input type="text" class="form-input" id="i-sv-nummer" autocapitalize="characters" autocomplete="off" maxlength="12" placeholder="12-stellig (z.B. 12345678D901)">
-      </div>
-    </div>
-
-    <div class="form-group">
-      <label class="form-label">${s.iban}</label>
-      <input type="text" class="form-input" id="i-iban" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="DE…">
-    </div>
-
-    <div class="field-grid cols-2">
-      <div class="form-group">
-        <label class="form-label">${s.kk_name}</label>
-        <input type="text" class="form-input" id="i-kk-name">
-      </div>
-      <div class="form-group">
-        <label class="form-label">${s.kk_mitgl}</label>
-        <input type="text" class="form-input" id="i-kk-mitgl" autocomplete="off" autocapitalize="characters" spellcheck="false">
       </div>
     </div>
 
@@ -4139,11 +4104,6 @@ function attachSection2() {
     ['i-ort', 'adresse_ort'],
     ['i-telefon', 'telefon'],
     ['i-email', 'email'],
-    ['i-steuer-id', 'steuer_id'],
-    ['i-sv-nummer', 'sv_nummer'],
-    ['i-iban', 'iban'],
-    ['i-kk-name', 'kk_name'],
-    ['i-kk-mitgl', 'kk_mitgl'],
     ['i-profil-linkedin', 'profil_linkedin'],
     ['i-profil-xing', 'profil_xing'],
     ['i-profil-weitere', 'profil_weitere']
@@ -4203,38 +4163,6 @@ function attachSection2() {
         if (em) em.textContent = t('validation.age_over_100');
       } else {
         if (fg) fg.classList.remove('has-error');
-      }
-    });
-  }
-  
-  // Live-Validierung IBAN (onBlur, nur wenn was eingetippt wurde)
-  const ibanEl = document.getElementById('i-iban');
-  if (ibanEl) {
-    ibanEl.addEventListener('blur', () => {
-      const v = ibanEl.value.trim();
-      // Status-Element direkt unter dem Feld einfügen falls nicht vorhanden
-      let statusEl = document.getElementById('iban-status');
-      if (!statusEl) {
-        statusEl = document.createElement('div');
-        statusEl.id = 'iban-status';
-        statusEl.style.cssText = 'margin-top: 0.4rem; font-size: 0.825rem; padding: 0.4rem 0.7rem; border-radius: var(--radius-md);';
-        ibanEl.parentNode.insertBefore(statusEl, ibanEl.nextSibling);
-      }
-      statusEl.style.display = 'none';
-      
-      if (!v) {
-        return;  // freiwillig, leer ist OK
-      }
-      if (!isValidIBANFormat(v)) {
-        statusEl.style.display = 'block';
-        statusEl.style.background = 'var(--error-bg)';
-        statusEl.style.color = 'var(--error)';
-        statusEl.textContent = '✗ ' + t('validation.iban_invalid');
-      } else {
-        statusEl.style.display = 'block';
-        statusEl.style.background = 'var(--success-bg)';
-        statusEl.style.color = 'var(--success)';
-        statusEl.textContent = '✓ Format OK';
       }
     });
   }
@@ -5280,11 +5208,6 @@ function fillFormFromState() {
   setVal('i-ort', d.adresse_ort);
   setVal('i-telefon', d.telefon);
   setVal('i-email', d.email);
-  setVal('i-steuer-id', d.steuer_id);
-  setVal('i-sv-nummer', d.sv_nummer);
-  setVal('i-iban', d.iban);
-  setVal('i-kk-name', d.kk_name);
-  setVal('i-kk-mitgl', d.kk_mitgl);
   setVal('i-profil-linkedin', d.profil_linkedin);
   setVal('i-profil-xing', d.profil_xing);
   setVal('i-profil-weitere', d.profil_weitere);
@@ -5533,11 +5456,6 @@ function validateSection(n) {
     if (!d.adresse_ort?.trim()) state.errors.ort = true;
     if (!d.telefon || d.telefon.replace(/\D/g, '').length < 6) state.errors.telefon = true;
     if (!d.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.email)) state.errors.email = true;
-    
-    // IBAN-Format-Check (nur wenn ausgefüllt, da freiwillig)
-    if (d.iban && d.iban.trim()) {
-      if (!isValidIBANFormat(d.iban)) state.errors.iban = true;
-    }
   }
 
   if (n === 3) {
@@ -6010,13 +5928,6 @@ function printBewerbung() {
       ] : [])
     ])}
     
-    ${block('Personalien für Anstellung', [
-      ['Steuer-ID', val(d.steuer_id)],
-      ['Sozialvers.-Nr.', val(d.sv_nummer)],
-      ['Krankenkasse', val(d.krankenkasse?.name)],
-      ['IBAN', val(d.iban)]
-    ])}
-    
     ${block('Compliance', [
       ['DSGVO-Einwilligung', valBool(d.dsgvo_einwilligung)],
       ['Wahrheits-Erklärung', valBool(d.wahrheit_einwilligung)]
@@ -6195,12 +6106,6 @@ function buildReviewHTML() {
         <span class="review-label">Einschränkungen</span>${val(d.schwerbehinderung_einschr)}
         <span class="review-label">Anpassungen gewünscht</span>${val(d.schwerbehinderung_anpassungen)}` : ''}
     `),
-    section(8, 'Personalien für Anstellung', `
-      <span class="review-label">Steuer-ID</span>${val(d.steuer_id)}
-      <span class="review-label">Sozialvers.-Nr.</span>${val(d.sv_nummer)}
-      <span class="review-label">Krankenkasse</span>${val(d.krankenkasse?.name)}
-      <span class="review-label">IBAN</span>${val(d.iban)}
-    `),
     section(9, 'Datenschutz', `
       <span class="review-label">DSGVO-Einwilligung</span>${valBool(d.dsgvo_einwilligung)}
       <span class="review-label">Wahrheits-Erklärung</span>${valBool(d.wahrheit_einwilligung)}
@@ -6247,10 +6152,6 @@ async function submitForm() {
     telefon: d.telefon.trim(),
     email: d.email.trim().toLowerCase(),
     geburtsort: d.geburtsort?.trim() || null,
-    steuer_id: d.steuer_id?.trim() || null,
-    sv_nummer: d.sv_nummer?.trim() || null,
-    iban: d.iban?.trim() || null,
-    krankenkasse: (d.kk_name || d.kk_mitgl) ? { name: d.kk_name, mitgliedsnummer: d.kk_mitgl } : null,
     ist_volljaehrig: d.ist_volljaehrig,
     wohnsitz_d_6_monate: d.wohnsitz_d_6_monate,
     ist_mitglied: d.ist_mitglied,

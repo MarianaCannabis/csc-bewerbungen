@@ -342,6 +342,70 @@
   .shift-total .stl-meta { display: flex; justify-content: space-between; color: var(--text-dim);
     font-variant-numeric: tabular-nums; font-size: 10px; margin-top: 4px; }
 
+  /* Schichtplan: editierbare Slots + Slot-Editor */
+  .sp-cell.editable { cursor: pointer; position: relative; }
+  .sp-cell.editable:hover { border-color: var(--green-soft); }
+  .sp-edit { position: absolute; top: 2px; right: 3px; font-size: 9px;
+    color: var(--text-mute); opacity: 0; transition: opacity 0.12s; }
+  .sp-cell.editable:hover .sp-edit { opacity: 0.75; }
+  .shift-manual-badge { font-size: 11px; color: var(--warn);
+    background: rgba(255,159,67,0.12); border: 1px solid var(--warn);
+    border-radius: 5px; padding: 2px 8px; margin-right: 8px; white-space: nowrap; }
+  .slot-editor-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+    display: flex; align-items: center; justify-content: center; z-index: 200; }
+  .slot-editor-box { background: var(--bg-2); border: 1px solid var(--line);
+    border-radius: 12px; padding: 18px 20px; width: 360px; max-width: 92vw;
+    max-height: 82vh; overflow: auto; box-shadow: 0 12px 40px rgba(0,0,0,0.5); }
+  .se-head { display: flex; justify-content: space-between; align-items: flex-start;
+    margin-bottom: 14px; }
+  .se-title { font-size: 15px; font-weight: 600; color: var(--text); }
+  .se-sub { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+  .se-x { background: none; border: none; color: var(--text-mute); font-size: 16px;
+    cursor: pointer; padding: 0 4px; line-height: 1; }
+  .se-x:hover { color: var(--text); }
+  .se-list { display: flex; flex-direction: column; gap: 2px; }
+  .se-row { display: flex; align-items: center; gap: 9px; padding: 8px;
+    border-radius: 6px; cursor: pointer; font-size: 13px; color: var(--text); }
+  .se-row:hover { background: var(--bg); }
+  .se-row input { width: 16px; height: 16px; accent-color: var(--green); cursor: pointer; }
+  .se-name { flex: 1; }
+  .se-mark { font-size: 10px; color: var(--warn); text-transform: uppercase;
+    letter-spacing: 0.04em; }
+  .se-empty { font-size: 12px; color: var(--text-dim); padding: 10px 4px; line-height: 1.5; }
+  .se-foot { display: flex; justify-content: space-between; gap: 10px; margin-top: 16px; }
+  .se-btn { padding: 8px 16px; border-radius: 7px; border: 1px solid var(--line);
+    background: var(--bg); color: var(--text-dim); font-size: 13px; cursor: pointer; }
+  .se-btn:hover { color: var(--text); border-color: var(--text-mute); }
+  .se-btn-primary { background: var(--green); border-color: var(--green);
+    color: var(--bg); font-weight: 600; }
+  .se-btn-primary:hover { color: var(--bg); }
+
+  /* Mitarbeiter-Editor (Stunden + Verfügbarkeit) */
+  .shift-total.editable { cursor: pointer; }
+  .shift-total.editable:hover { border-color: var(--green-soft); }
+  .member-editor-box { width: 470px; }
+  .member-editor-box .h-cell { height: 20px; }
+  .me-field { margin-bottom: 14px; }
+  .me-field label { display: block; font-size: 12px; color: var(--text-dim); margin-bottom: 5px; }
+  .me-field input { width: 100%; padding: 8px 10px; background: var(--bg); border: 1px solid var(--line);
+    border-radius: 7px; color: var(--text); font-size: 14px; box-sizing: border-box; }
+  .me-availlabel { font-size: 12px; color: var(--text-dim); margin-bottom: 8px; }
+  .me-availsum { font-size: 12px; color: var(--text-dim); margin-top: 10px; }
+  .cr-name-link { cursor: pointer; text-decoration: underline; text-decoration-style: dotted;
+    text-underline-offset: 3px; }
+  .cr-name-link:hover { color: var(--green-soft); }
+
+  /* Pflege-Dienstplan: editierbare Tageszeilen */
+  .cr-row { display: flex; gap: 10px; align-items: center; font-size: 13px;
+    padding: 6px 8px; border-radius: 6px; cursor: pointer; position: relative; }
+  .cr-row:hover { background: var(--bg); }
+  .cr-edit { position: absolute; right: 8px; font-size: 10px; color: var(--text-mute);
+    opacity: 0; transition: opacity 0.12s; }
+  .cr-row:hover .cr-edit { opacity: 0.75; }
+  .cr-tag { font-size: 10px; color: var(--warn); text-transform: uppercase; letter-spacing: 0.04em; }
+  .cr-radio { color: var(--green-soft); font-size: 12px; width: 14px; display: inline-block; }
+  .se-row.cr-sel { background: rgba(76,175,106,0.12); }
+
   /* Anstellungs-Vergleich */
   .compare-table { width: 100%; border-collapse: collapse; font-size: 12px; }
   .compare-table th, .compare-table td { padding: 8px 10px; text-align: right; border-bottom: 1px solid var(--line); }
@@ -872,7 +936,12 @@
 
     <!-- EINSATZPLAN -->
     <div class="card card-spacer">
-      <h2>🗓 Einsatzplan<span class="info-i" data-tip="Verfügbarkeits-Heatmap, Tages-Abdeckung und ein Vorschlag, wer an welchem Tag den Pflege-Dienst übernimmt.">i</span></h2>
+      <h2>🗓 Einsatzplan<span class="info-i" data-tip="Verfügbarkeits-Heatmap, Tages-Abdeckung und ein Vorschlag, wer an welchem Tag den Pflege-Dienst übernimmt.">i</span>
+        <span class="h2-right">
+          <span id="careManualBadge" class="shift-manual-badge" style="display:none">✎ manuell angepasst</span>
+          <button class="btn-ghost" onclick="resetCareRoster()">↻ Dienstplan zurücksetzen</button>
+        </span>
+      </h2>
       <p style="color:var(--text-dim);font-size:13px;margin:-8px 0 14px;">
         Stunde für Stunde: wie viele Grower sind verfügbar? Daraus leiten sich die Tages-Abdeckung und ein Pflege-Dienstplan ab.
       </p>
@@ -914,6 +983,11 @@
         </table>
       </div>
     </div>
+
+    <div id="memberEditor" class="slot-editor-overlay" style="display:none"
+         onclick="if(event.target===this)closeMemberEditor()"></div>
+    <div id="careEditor" class="slot-editor-overlay" style="display:none"
+         onclick="if(event.target===this)closeCareEditor()"></div>
 
     <div class="footer-note">
       Grow-Rechner v1 · Mariana Cannabis · Planungstool — alle Werte sind Schätzungen, keine Rechtsberatung.
@@ -1323,6 +1397,14 @@ function buildCareRoster(activeDays) {
   const roster = [];
   TAGE.forEach((t, i) => {
     if (!activeDays.includes(i)) return;
+    // Manuelle Vorgabe hat Vorrang
+    if (Object.prototype.hasOwnProperty.call(careRosterOverride, i)) {
+      const ovId = careRosterOverride[i];
+      if (ovId === null) { roster.push({ tag: i, member: null, manual: true }); return; }
+      const ov = team.find(m => m.id === ovId);
+      if (ov) { load[ov.id]++; roster.push({ tag: i, member: ov, manual: true }); return; }
+      // Vorgabe-Grower existiert nicht mehr -> Auto-Vorschlag
+    }
     const verfuegbar = team.filter(m => m.avail[t].length > 0);
     if (verfuegbar.length === 0) {
       roster.push({ tag: i, member: null });
@@ -1334,6 +1416,152 @@ function buildCareRoster(activeDays) {
     roster.push({ tag: i, member: pick });
   });
   return roster;
+}
+
+// ============ PFLEGE-DIENSTPLAN: manuell bearbeiten ============
+let careRosterOverride = {};   // dayIdx -> memberId | null
+let currentCareDay = null;
+let lastCareRoster = [];
+
+function openCareEditor(dayIdx) {
+  currentCareDay = dayIdx;
+  const tag = TAGE[dayIdx];
+  const r = lastCareRoster.find(x => x.tag === dayIdx);
+  const currentId = r && r.member ? r.member.id : null;
+  const list = team.filter(m => m.avail[tag].length > 0 || (currentId !== null && m.id === currentId));
+  let rows;
+  if (list.length === 0) {
+    rows = '<div class="se-empty">Für diesen Tag ist kein Grower verfügbar. Trage in Schritt 1 mehr Verfügbarkeiten ein.</div>';
+  } else {
+    rows = list.map(m => {
+      const isCur = m.id === currentId;
+      const avail = m.avail[tag].length > 0;
+      return `<div class="se-row${isCur ? ' cr-sel' : ''}" onclick="pickCareMember(${m.id})"><span class="cr-radio">${isCur ? '●' : '○'}</span><span class="se-name">${(m.name || '').replace(/</g, '&lt;')}</span>${avail ? '' : '<span class="se-mark">nicht verfügbar</span>'}</div>`;
+    }).join('');
+  }
+  rows += `<div class="se-row${currentId === null ? ' cr-sel' : ''}" onclick="pickCareMember(null)"><span class="cr-radio">${currentId === null ? '●' : '○'}</span><span class="se-name" style="color:var(--text-dim)">— niemand —</span></div>`;
+  $('careEditor').innerHTML = `
+    <div class="slot-editor-box">
+      <div class="se-head">
+        <div>
+          <div class="se-title">Tagesdienst ändern</div>
+          <div class="se-sub">${TAGE_LANG[dayIdx]}</div>
+        </div>
+        <button class="se-x" onclick="closeCareEditor()" title="Schließen">✕</button>
+      </div>
+      <div class="se-list">${rows}</div>
+    </div>`;
+  $('careEditor').style.display = 'flex';
+}
+
+function closeCareEditor() {
+  $('careEditor').style.display = 'none';
+  currentCareDay = null;
+}
+
+function pickCareMember(id) {
+  if (currentCareDay === null) return;
+  careRosterOverride[currentCareDay] = id;   // memberId oder null
+  closeCareEditor();
+  calc();
+}
+
+function resetCareRoster() {
+  if (Object.keys(careRosterOverride).length > 0 &&
+      !confirm('Der Pflege-Dienstplan wurde manuell angepasst. Zurücksetzen verwirft deine Änderungen — fortfahren?')) return;
+  careRosterOverride = {};
+  calc();
+}
+
+// ============ MITARBEITER-EDITOR (Stunden + Verfügbarkeit) ============
+let currentMemberEdit = null;
+
+function memberEditAvailGrid(m) {
+  const headerCells = HOURS.map(h => `<div class="h-lbl">${h}</div>`).join('');
+  const rows = TAGE.map((t, i) => {
+    const cells = HOURS.map(h =>
+      `<div class="h-cell ${m.avail[t].includes(h) ? 'active' : ''}" onclick="memberEditToggle(${m.id},'${t}',${h})" title="${TAGE_LABELS[i]} ${h}:00"></div>`
+    ).join('');
+    return `<div class="h-row"><div class="h-day">${TAGE_LABELS[i]}</div><div class="h-cells">${cells}</div></div>`;
+  }).join('');
+  return `<div class="avail-hours"><div class="h-header">${headerCells}</div>${rows}</div>`;
+}
+
+function updateMemberEditSum(m) {
+  const el = $('memberEditSum');
+  if (el) el.innerHTML = `<strong>${memberAvailHoursWeek(m)} h/Woche</strong> verfügbar · Soll ${m.hours} h/Monat`;
+}
+
+function openMemberEditor(id) {
+  const m = team.find(x => x.id === id);
+  if (!m) return;
+  currentMemberEdit = id;
+  $('memberEditor').innerHTML = `
+    <div class="slot-editor-box member-editor-box">
+      <div class="se-head">
+        <div>
+          <div class="se-title">Mitarbeiter bearbeiten</div>
+          <div class="se-sub">${(m.name || '').replace(/</g, '&lt;')}</div>
+        </div>
+        <button class="se-x" onclick="closeMemberEditor()" title="Schließen">✕</button>
+      </div>
+      <div class="me-field">
+        <label for="memberEditHoursInput">Soll-Stunden pro Monat</label>
+        <input type="number" id="memberEditHoursInput" min="1" max="200" step="1" value="${m.hours}"
+               onchange="memberEditHours(${m.id}, this.value)">
+      </div>
+      <div class="me-availlabel">Verfügbarkeit (${HOUR_START}–${HOUR_END + 1} Uhr) — klicken zum Umschalten</div>
+      <div id="memberEditGrid">${memberEditAvailGrid(m)}</div>
+      <div class="me-availsum" id="memberEditSum"></div>
+      <div class="se-foot">
+        <button class="se-btn" onclick="memberEditClear()">Verfügbarkeit leeren</button>
+        <button class="se-btn se-btn-primary" onclick="closeMemberEditor()">Fertig</button>
+      </div>
+    </div>`;
+  updateMemberEditSum(m);
+  $('memberEditor').style.display = 'flex';
+}
+
+function closeMemberEditor() {
+  $('memberEditor').style.display = 'none';
+  currentMemberEdit = null;
+}
+
+function memberEditHours(id, val) {
+  const m = team.find(x => x.id === id);
+  if (!m) return;
+  m._beispiel = false;
+  m.hours = parseFloat(val) || 0;
+  renderTeam();
+  calc();
+  updateMemberEditSum(m);
+}
+
+function memberEditToggle(id, tag, hour) {
+  const m = team.find(x => x.id === id);
+  if (!m) return;
+  m._beispiel = false;
+  const idx = m.avail[tag].indexOf(hour);
+  if (idx >= 0) m.avail[tag].splice(idx, 1);
+  else m.avail[tag].push(hour);
+  renderTeam();
+  calc();
+  const g = $('memberEditGrid');
+  if (g) g.innerHTML = memberEditAvailGrid(m);
+  updateMemberEditSum(m);
+}
+
+function memberEditClear() {
+  if (currentMemberEdit === null) return;
+  const m = team.find(x => x.id === currentMemberEdit);
+  if (!m) return;
+  m._beispiel = false;
+  TAGE.forEach(t => m.avail[t] = []);
+  renderTeam();
+  calc();
+  const g = $('memberEditGrid');
+  if (g) g.innerHTML = memberEditAvailGrid(m);
+  updateMemberEditSum(m);
 }
 
 // ============================================================================
@@ -1553,11 +1781,15 @@ function calc() {
   covDaysStat.className = 'stat ' + (kritisch.length === 0 ? 'highlight' : (abgedeckt >= activeDays.length - 1 ? 'warn' : 'danger'));
 
   const rosterEl = $('careRoster');
+  lastCareRoster = roster;
   rosterEl.innerHTML = roster.map(r => {
+    const mark = r.manual ? ' <span class="cr-tag">manuell</span>' : '';
     if (r.member)
-      return `<div style="display:flex;gap:10px;font-size:13px;"><span class="ohs-day" style="width:90px;">${TAGE_LANG[r.tag]}</span><span class="ohs-h">${r.member.name}</span></div>`;
-    return `<div style="display:flex;gap:10px;font-size:13px;"><span style="width:90px;color:var(--danger);font-weight:600;">${TAGE_LANG[r.tag]}</span><span style="color:var(--danger);">niemand verfügbar — Pflege nicht abgedeckt</span></div>`;
+      return `<div class="cr-row" onclick="openCareEditor(${r.tag})" title="Tag anklicken: Dienst ändern"><span class="ohs-day" style="width:90px;">${TAGE_LANG[r.tag]}</span><span class="ohs-h cr-name-link" onclick="event.stopPropagation();openMemberEditor(${r.member.id})" title="Stunden und Verfügbarkeit bearbeiten">${r.member.name}</span>${mark}<span class="cr-edit">✎</span></div>`;
+    return `<div class="cr-row" onclick="openCareEditor(${r.tag})" title="Tag anklicken: Dienst ändern"><span class="ohs-day" style="width:90px;color:var(--danger);font-weight:600;">${TAGE_LANG[r.tag]}</span><span style="color:var(--danger);">niemand — Pflege nicht abgedeckt</span>${mark}<span class="cr-edit">✎</span></div>`;
   }).join('');
+  const _cmb = $('careManualBadge');
+  if (_cmb) _cmb.style.display = Object.keys(careRosterOverride).length > 0 ? '' : 'none';
 
   const einsatzNote = $('einsatzNote');
   if (kritisch.length === 0) {

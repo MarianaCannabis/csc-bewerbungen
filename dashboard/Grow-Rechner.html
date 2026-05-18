@@ -1053,13 +1053,13 @@ let growImportData = null;
 // ── Team-Startdaten ─────────────────────────────────────────────────────────
 function initTeam() {
   team = [
-    { id: nextId++, name: 'Grower 1', type: 'minijob', hours: 40, wage: 13.90,
+    { id: nextId++, name: 'Grower 1', type: 'minijob', hours: 40, wage: 13.90, _beispiel: true,
       avail: { mo:[8,9,10,11], di:[], mi:[8,9,10,11], do:[], fr:[8,9,10,11], sa:[9,10], so:[] } },
-    { id: nextId++, name: 'Grower 2', type: 'minijob', hours: 40, wage: 13.90,
+    { id: nextId++, name: 'Grower 2', type: 'minijob', hours: 40, wage: 13.90, _beispiel: true,
       avail: { mo:[], di:[14,15,16,17], mi:[], do:[14,15,16,17], fr:[], sa:[], so:[10,11,12] } },
-    { id: nextId++, name: 'Grower 3', type: 'ehrenamt', hours: 24, wage: 0,
+    { id: nextId++, name: 'Grower 3', type: 'ehrenamt', hours: 24, wage: 0, _beispiel: true,
       avail: { mo:[], di:[9,10,11], mi:[], do:[9,10,11], fr:[], sa:[], so:[] } },
-    { id: nextId++, name: 'Grower 4', type: 'minijob', hours: 40, wage: 13.90,
+    { id: nextId++, name: 'Grower 4', type: 'minijob', hours: 40, wage: 13.90, _beispiel: true,
       avail: { mo:[16,17,18], di:[], mi:[16,17,18], do:[], fr:[15,16,17,18], sa:[], so:[14,15,16] } }
   ];
 }
@@ -1147,6 +1147,7 @@ function removeMember(id) {
 function updateMember(id, field, value) {
   const m = team.find(x => x.id === id);
   if (!m) return;
+  m._beispiel = false;
   if (field === 'hours' || field === 'wage') m[field] = parseFloat(value) || 0;
   else m[field] = value;
   if (field === 'type') {
@@ -1161,6 +1162,7 @@ function updateMember(id, field, value) {
 function toggleHour(id, tag, hour) {
   const m = team.find(x => x.id === id);
   if (!m) return;
+  m._beispiel = false;
   const idx = m.avail[tag].indexOf(hour);
   if (idx >= 0) m.avail[tag].splice(idx, 1);
   else m.avail[tag].push(hour);
@@ -1172,18 +1174,21 @@ function toggleHour(id, tag, hour) {
 function clearAvail(id) {
   const m = team.find(x => x.id === id);
   if (!m) return;
+  m._beispiel = false;
   TAGE.forEach(t => m.avail[t] = []);
   renderTeam(); calc();
 }
 function fillVormittag(id) {
   const m = team.find(x => x.id === id);
   if (!m) return;
+  m._beispiel = false;
   m.avail = { mo:[8,9,10,11], di:[8,9,10,11], mi:[8,9,10,11], do:[8,9,10,11], fr:[8,9,10,11], sa:[], so:[] };
   renderTeam(); calc();
 }
 function fillTaeglich(id) {
   const m = team.find(x => x.id === id);
   if (!m) return;
+  m._beispiel = false;
   m.avail = { mo:[9,10,11], di:[9,10,11], mi:[9,10,11], do:[9,10,11], fr:[9,10,11], sa:[9,10,11], so:[9,10,11] };
   renderTeam(); calc();
 }
@@ -1808,6 +1813,8 @@ function pruefeGrowImport() {
 }
 function importiereGrowBewerber() {
   if (!growImportData) return;
+  // Unveraenderte Beispiel-Mitarbeiter werden durch die echten Bewerber ersetzt
+  team = team.filter(m => !m._beispiel);
   growImportData.team.forEach(m => {
     const type = (m.type === 'ehrenamt') ? 'ehrenamt' : 'minijob';
     team.push({

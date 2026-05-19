@@ -5732,9 +5732,13 @@ function applyMailPlaceholders(text, b, v) {
 }
 
 function plainToHtml(text, b, v) {
-  // wandelt Plain-Text in branded HTML mit Mariana-Look
-  const escaped = String(text).replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
-  const paragraphs = escaped.split(/\n\n+/).map(p => `<p style="margin:0 0 14px 0;line-height:1.65;color:#1a1a1a">${p.replace(/\n/g, '<br>').replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" style="color:#2d7a4a;font-weight:600">$1</a>')}</p>`).join('');
+  // wandelt Plain-Text in branded HTML mit Mariana-Look.
+  // REIHENFOLGE-PFLICHT: escapeHtml MUSS vor dem Linkify-Schritt laufen.
+  // Wuerde escapeHtml danach laufen, wuerden die gerade gebauten <a href=...>-
+  // Tags selbst escaped und der Link erschiene als sichtbarer Text statt als
+  // klickbares Element (Sicherheits-Review Befund M3).
+  const escaped = escapeHtml(String(text));
+  const paragraphs = escaped.split(/\n\n+/).map(p => `<p style="margin:0 0 14px 0;line-height:1.65;color:#1a1a1a">${p.replace(/\n/g, '<br>').replace(/(https?:\/\/[^\s<"]+)/g, '<a href="$1" style="color:#2d7a4a;font-weight:600">$1</a>')}</p>`).join('');
   const vereinName = v?.name || 'Mariana Cannabis';
   const vereinEmail = v?.email || 'communityrecruiting@mariana-cannabis.de';
   return `<!DOCTYPE html>
@@ -5884,7 +5888,7 @@ function renderMailPreview() {
   const preview = document.getElementById('mail-preview');
   const subjectHtml = `<div style="font-weight:600;border-bottom:1px solid var(--border);padding-bottom:8px;margin-bottom:10px">📧 ${escapeHtml(subject || '(kein Betreff)')}</div>`;
   if (format === 'html') {
-    preview.innerHTML = subjectHtml + `<iframe style="width:100%;border:none;min-height:280px;background:#fff" srcdoc='${plainToHtml(bodyText, b, v).replace(/'/g, "&apos;")}'></iframe>`;
+    preview.innerHTML = subjectHtml + `<iframe sandbox="" style="width:100%;border:none;min-height:280px;background:#fff" srcdoc='${plainToHtml(bodyText, b, v).replace(/'/g, "&apos;")}'></iframe>`;
   } else {
     preview.innerHTML = subjectHtml + `<pre style="white-space:pre-wrap;font-family:inherit;margin:0;color:var(--tx)">${escapeHtml(bodyText)}</pre>`;
   }

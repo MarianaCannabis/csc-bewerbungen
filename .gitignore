@@ -2,3 +2,8 @@
 # Bleiben auf der Festplatte als Rollback-Sicherung, gehoeren aber nicht ins
 # Repo (GitHub Pages serviert das Repo oeffentlich).
 *.backup-vor-*
+
+# Supabase-CLI-Cache (entsteht beim `supabase functions download/deploy`,
+# wenn der Befehl im Repo-Root statt in einem Temp-Ordner laeuft).
+# Enthaelt .temp/cli-latest und .temp/linked-project.json.
+supabase/

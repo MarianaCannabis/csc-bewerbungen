@@ -5417,7 +5417,7 @@ const MAIL_TEMPLATES = [
     id: 'frei',
     label: '✍️ Freie Mitteilung (leeres Template)',
     auto: false,
-    subject: '',
+    subject: 'Persönliche Nachricht von {verein_name}',
     plain: `Hallo {vorname},
 
 [Hier deine Nachricht schreiben]
@@ -5485,6 +5485,28 @@ Bis bald!
 
 Grüne Grüße
 {verein_name}`,
+  },
+  {
+    id: 'gespraech_telefon',
+    label: '📞 Telefonisches Vorstellungsgespräch',
+    auto: false,
+    subject: 'Dein Vorstellungsgespräch bei {verein_name}, {vorname}',
+    plain: `Hallo {vorname},
+
+vielen Dank für deine Bewerbung bei {verein_name}. Wir würden dich gern in einem kurzen Telefongespräch persönlich kennenlernen.
+
+Das Ganze ist bewusst unkompliziert gehalten, du musst keinen festen Termin vereinbaren. Ruf uns einfach an, wenn es dir gut passt:
+
+Telefonnummer: 0176 47576774
+
+Falls niemand abnimmt, sind wir gerade kurz beschäftigt, probier es dann einfach etwas später noch einmal. Das ist völlig normal und kein schlechtes Zeichen.
+
+Plane für das Gespräch ungefähr 15 bis 20 Minuten ein. Es geht vor allem darum, dich kennenzulernen, offene Fragen zu klären und gemeinsam zu schauen, ob es für beide Seiten passt.
+
+Wir freuen uns auf deinen Anruf.
+
+Herzliche Grüße
+[Dein Name / Verein]`,
   },
   {
     id: 'rueckfrage',

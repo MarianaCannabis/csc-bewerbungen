@@ -2756,13 +2756,13 @@ async function selectBewerbung(id) {
     ? `<div class="verfuegbar-gesamt"><span class="vg-icon">⏱</span> Gesamt-Verfügbarkeit: <strong>${gesamtStunden}h/Woche</strong> in ${gesamtSlots} Slot${gesamtSlots !== 1 ? 's' : ''}</div>` 
     : '';
   
-  const sprachenList = b.sprachen ? Object.entries(b.sprachen).filter(([k, v]) => v && v !== '').map(([k, v]) => `<span class="tag">${SPRACHEN_LABELS[k] || k}: ${SPRACH_LEVEL[v] || v}</span>`).join('') : '';
+  const sprachenList = b.sprachen ? Object.entries(b.sprachen).filter(([k, v]) => v && v !== '').map(([k, v]) => `<span class="tag">${escapeHtml(SPRACHEN_LABELS[k] || k)}: ${escapeHtml(SPRACH_LEVEL[v] || v)}</span>`).join('') : '';
   
   let softSkillsHtml = '';
   if (b.soft_skills && typeof b.soft_skills === 'object') {
     const skills = Object.entries(b.soft_skills).filter(([k,v]) => v > 0);
     if (skills.length > 0) {
-      softSkillsHtml = skills.map(([k, v]) => `<div class="skill-bar"><div class="skill-bar-label">${SOFT_SKILL_LABELS[k] || k}</div><div class="skill-bar-track"><div class="skill-bar-fill" style="width:${Math.min(100, v*20)}%"></div></div><div class="skill-bar-val">${v}/5</div></div>`).join('');
+      softSkillsHtml = skills.map(([k, v]) => `<div class="skill-bar"><div class="skill-bar-label">${escapeHtml(SOFT_SKILL_LABELS[k] || k)}</div><div class="skill-bar-track"><div class="skill-bar-fill" style="width:${Math.min(100, v*20)}%"></div></div><div class="skill-bar-val">${Number(v)||0}/5</div></div>`).join('');
     }
   }
   
@@ -3112,7 +3112,7 @@ async function selectBewerbung(id) {
           
           return `
           <div class="anhang-item" id="anhang-row-${escapeHtml(String(anhangId))}">
-            ${previewable ? `<div class="anhang-thumb-wrap" id="${previewId}" data-storage="${escapeHtml(storagePath)}" data-type="${isPdf ? 'pdf' : 'image'}" data-filename="${escapeHtml(filename)}" onclick="previewAnhang('${escapeHtml(storagePath)}', '${escapeHtml(filename)}', '${isPdf ? 'pdf' : 'image'}')">
+            ${previewable ? `<div class="anhang-thumb-wrap" id="${previewId}" data-storage="${escapeHtml(storagePath)}" data-type="${isPdf ? 'pdf' : 'image'}" data-filename="${escapeHtml(filename)}" data-action="preview">
               <div class="anhang-thumb-loading">⏳</div>
             </div>` : `<div class="anhang-thumb-wrap no-preview"><span>${icon}</span></div>`}
             <div class="anhang-info">
@@ -3120,9 +3120,9 @@ async function selectBewerbung(id) {
               <div class="meta">${escapeHtml(typ)}${sizeKb ? ' · ' + sizeKb : ''}${previewable ? ' · klickbar' : ''}</div>
             </div>
             <div class="anhang-actions">
-              ${previewable ? `<button class="anhang-link" onclick="previewAnhang('${escapeHtml(storagePath)}', '${escapeHtml(filename)}', '${isPdf ? 'pdf' : 'image'}')">👁 Groß</button>` : ''}
-              <button class="anhang-link" onclick="downloadAnhang('${escapeHtml(storagePath)}', '${escapeHtml(filename)}')">⬇ Download</button>
-              <button class="anhang-link anhang-del" onclick="deleteAnhang('${escapeHtml(String(anhangId))}', '${escapeHtml(storagePath)}', '${escapeHtml(filename)}', '${id}')" title="Anhang dauerhaft löschen">🗑 Löschen</button>
+              ${previewable ? `<button class="anhang-link" data-action="preview" data-storage="${escapeHtml(storagePath)}" data-filename="${escapeHtml(filename)}" data-type="${isPdf ? 'pdf' : 'image'}">👁 Groß</button>` : ''}
+              <button class="anhang-link" data-action="download" data-storage="${escapeHtml(storagePath)}" data-filename="${escapeHtml(filename)}">⬇ Download</button>
+              <button class="anhang-link anhang-del" data-action="delete" data-anhang-id="${escapeHtml(String(anhangId))}" data-storage="${escapeHtml(storagePath)}" data-filename="${escapeHtml(filename)}" data-bewerbung-id="${escapeHtml(String(id))}" title="Anhang dauerhaft löschen">🗑 Löschen</button>
             </div>
           </div>
         `;}).join('')}
@@ -3136,6 +3136,9 @@ async function selectBewerbung(id) {
   loadNotizVerlauf(id);
   // Anhang-Thumbnails async laden
   loadAnhangThumbnails();
+  // Anhang-Aktionen via Event-Delegation binden (statt inline onclick — verhindert
+  // XSS über manipulierte Dateinamen, siehe Sicherheits-Review Befund K1)
+  attachAnhangActions(document.getElementById('detail-panel'));
   // Vertragsdaten (nur fuer Admins)
   loadVertragsdatenPanel(id);
 }
@@ -3237,6 +3240,44 @@ async function loadAnhangThumbnails() {
       w.innerHTML = '<div class="anhang-thumb-err">❌</div>';
     }
   }
+}
+
+// ============================================================================
+// ANHANG-AKTIONEN — Event-Delegation für Preview / Download / Delete
+// ============================================================================
+// Statt inline onclick="previewAnhang('${filename}', …)" routet ein einziger
+// Listener am .anhang-list-Container per data-action. Vorteil: die Werte
+// (Dateiname, Storage-Pfad, IDs) fliessen als data-Attribute, nicht als JS-
+// Stringliteral innerhalb eines HTML-Attributs. Damit entfaellt der frueher
+// existierende XSS-Vektor, bei dem ein `'` im Dateinamen die JS-Klammer
+// schliessen konnte (Sicherheits-Review Befund K1).
+function attachAnhangActions(root) {
+  const list = root && root.querySelector ? root.querySelector('.anhang-list') : null;
+  if (!list) return;
+  list.addEventListener('click', (e) => {
+    const trigger = e.target.closest('[data-action]');
+    if (!trigger || !list.contains(trigger)) return;
+    const action  = trigger.dataset.action;
+    const storage = trigger.dataset.storage  || '';
+    const file    = trigger.dataset.filename || '';
+    const type    = trigger.dataset.type     || '';
+    switch (action) {
+      case 'preview':
+        previewAnhang(storage, file, type);
+        break;
+      case 'download':
+        downloadAnhang(storage, file);
+        break;
+      case 'delete':
+        deleteAnhang(
+          trigger.dataset.anhangId    || '',
+          storage,
+          file,
+          trigger.dataset.bewerbungId || ''
+        );
+        break;
+    }
+  });
 }
 
 // ============================================================================

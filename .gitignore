@@ -1,0 +1,4 @@
+# Lokale Sicherungs-Kopien vor Sicherheitsreview-Schritten (K1/K2/M3 etc.).
+# Bleiben auf der Festplatte als Rollback-Sicherung, gehoeren aber nicht ins
+# Repo (GitHub Pages serviert das Repo oeffentlich).
+*.backup-vor-*

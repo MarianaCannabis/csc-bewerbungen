@@ -2219,6 +2219,10 @@ button:focus-visible, a:focus-visible {
     <p style="font-size:0.82rem;color:var(--ink-mute);margin-top:-0.6rem"><strong>Hinweis:</strong> Hochgeladene Dateien werden nicht übertragen — du müsstest sie nach dem Wiederkommen neu hochladen.</p>
     <label for="resume-email" style="display:block;margin-top:0.8rem;margin-bottom:0.3rem;font-size:0.9rem;font-weight:500">Deine E-Mail-Adresse</label>
     <input type="email" id="resume-email" class="form-input" placeholder="name@beispiel.de" autocomplete="email" required>
+    <div id="hcaptcha-container-resume" style="margin-top:1rem"></div>
+    <p style="font-size:0.875rem;color:#666;margin-top:0.5rem">
+      Bitte bestaetige, dass du kein Bot bist.
+    </p>
     <div class="btn-row">
       <button type="button" class="btn btn-secondary" onclick="closeResumeModal()">Abbrechen</button>
       <button type="button" class="btn btn-primary" id="btn-resume-send" onclick="sendResumeLink()">Link senden</button>
@@ -5069,11 +5073,14 @@ function attachSection9() {
 // Zustand: ist die hCaptcha-API geladen?
 window._hCaptchaApiLoaded = false;
 window._hCaptchaWidgetId = null;
+window._hCaptchaResumeWidgetId = null;
+window._hCaptchaResumeToken = '';
 
 window.onHCaptchaApiLoad = function() {
   window._hCaptchaApiLoaded = true;
   console.log('hCaptcha API geladen');
   renderHCaptcha();
+  renderResumeHCaptcha();  // defensiv falls Modal bereits offen
 };
 
 function renderHCaptcha() {
@@ -5110,6 +5117,38 @@ function renderHCaptcha() {
   }
 }
 
+// Paralleles Widget fuer das Resume-Modal — eigene State-Variable und
+// eigene Callbacks, damit der Sektion-9-Submit-Token nicht ueberschrieben
+// wird (K6-Phase-4, ab 20.05.2026).
+function renderResumeHCaptcha() {
+  const container = document.getElementById('hcaptcha-container-resume');
+  if (!container) {
+    return;
+  }
+  if (!window._hCaptchaApiLoaded || typeof hcaptcha === 'undefined') {
+    return;
+  }
+  if (window._hCaptchaResumeWidgetId !== null) {
+    try {
+      hcaptcha.reset(window._hCaptchaResumeWidgetId);
+    } catch (e) {
+      window._hCaptchaResumeWidgetId = null;
+    }
+  }
+  if (window._hCaptchaResumeWidgetId === null && container.childElementCount === 0) {
+    try {
+      window._hCaptchaResumeWidgetId = hcaptcha.render('hcaptcha-container-resume', {
+        sitekey: 'a4ba7a40-e684-4308-90be-5a6815f87508',
+        callback: 'onResumeCaptchaSuccess',
+        'expired-callback': 'onResumeCaptchaExpired',
+        'error-callback': 'onResumeCaptchaError'
+      });
+    } catch (e) {
+      console.error('Resume-hCaptcha render Fehler:', e);
+    }
+  }
+}
+
 // hCaptcha-Callbacks — global, weil hCaptcha sie über window aufruft
 window.onHCaptchaSuccess = function(token) {
   state.formData.captcha = true;
@@ -5130,6 +5169,19 @@ window.onHCaptchaError = function(err) {
   console.error('hCaptcha-Fehler:', err);
   state.formData.captcha = false;
   state.formData.captcha_token = '';
+};
+
+// Resume-Modal-Captcha-Callbacks — schreiben in den modal-lokalen
+// Token-Storage (nicht in state.formData), damit der Sektion-9-Submit-
+// Token unangetastet bleibt.
+window.onResumeCaptchaSuccess = function(token) {
+  window._hCaptchaResumeToken = token;
+};
+window.onResumeCaptchaExpired = function() {
+  window._hCaptchaResumeToken = '';
+};
+window.onResumeCaptchaError = function() {
+  window._hCaptchaResumeToken = '';
 };
 
 // ============================================================================
@@ -6407,10 +6459,17 @@ function openResumeModal() {
   if (!modal) return;
   modal.classList.add('show');
   setTimeout(() => document.getElementById('resume-email')?.focus(), 50);
+  renderResumeHCaptcha();
 }
 
 function closeResumeModal() {
   document.getElementById('resume-modal')?.classList.remove('show');
+  try {
+    if (window.hcaptcha && window._hCaptchaResumeWidgetId !== null) {
+      hcaptcha.reset(window._hCaptchaResumeWidgetId);
+    }
+  } catch (_e) { /* ignore */ }
+  window._hCaptchaResumeToken = '';
 }
 
 // FAQ-Modal
@@ -6425,7 +6484,10 @@ function closeFaqModal() {
   document.getElementById('faq-modal')?.classList.remove('show');
 }
 
-function buildResumeUrl() {
+// Liefert nur den URL-safe-base64-Blob des Form-State (ohne URL-Prefix).
+// Wird vom send-resume-link-Edge-Function-Payload genutzt; buildResumeUrl
+// wrappt diesen Blob in eine vollstaendige URL.
+function buildResumeStateBlob() {
   // State serialisieren OHNE File-Objekte (die kann man nicht in URLs packen)
   const slim = {
     lang: state.lang,
@@ -6439,100 +6501,90 @@ function buildResumeUrl() {
     // UTF-8 -> Base64
     const b64 = btoa(unescape(encodeURIComponent(json)));
     // URL-safe Base64 (für saubere Mail-Links)
-    const safe = b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-    const baseUrl = window.location.origin + window.location.pathname;
-    return `${baseUrl}?resume=${safe}`;
+    return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   } catch (e) {
-    console.error('Resume-URL bauen fehlgeschlagen:', e);
+    console.error('Resume-State-Blob bauen fehlgeschlagen:', e);
     return null;
   }
+}
+
+function buildResumeUrl() {
+  const safe = buildResumeStateBlob();
+  if (safe === null) return null;
+  const baseUrl = window.location.origin + window.location.pathname;
+  return `${baseUrl}?resume=${safe}`;
 }
 
 async function sendResumeLink() {
   const emailInput = document.getElementById('resume-email');
   const email = (emailInput?.value || '').trim();
-  const btn = document.getElementById('btn-resume-send');
-  
   if (!email || !email.includes('@')) {
-    emailInput?.focus();
-    emailInput?.classList.add('is-invalid');
-    setTimeout(() => emailInput?.classList.remove('is-invalid'), 1500);
+    alert(t('resumeModal.invalidEmail') || 'Bitte gib eine gueltige E-Mail-Adresse ein.');
     return;
   }
-  
-  const url = buildResumeUrl();
-  if (!url) {
-    alert('Konnte den Link nicht erstellen. Versuch es bitte später nochmal.');
+
+  const captchaToken = window._hCaptchaResumeToken || '';
+  if (!captchaToken) {
+    alert('Bitte loese zuerst das Captcha.');
     return;
   }
-  
-  btn.disabled = true;
-  btn.classList.add('is-loading');
-  
+
+  const sendBtn = document.getElementById('btn-resume-send');
+  const originalLabel = sendBtn?.textContent;
+  if (sendBtn) {
+    sendBtn.disabled = true;
+    sendBtn.textContent = t('resumeModal.sending') || 'Wird gesendet...';
+  }
+
   try {
-    // Pragmatisch: bestehende send-manual-mail Function nutzen
-    // (existiert schon und ist robust mit nodemailer)
-    const subject = 'Mach hier weiter mit deiner Bewerbung – Mariana Cannabis';
-    const bodyText = `Hi,
-
-du hast deine Bewerbung pausiert — hier ist der Link, mit dem du da weitermachst, wo du aufgehört hast:
-
-${url}
-
-Klick einfach drauf — auch von einem anderen Gerät — und du landest wieder im richtigen Abschnitt.
-
-Falls du Dateien hochgeladen hattest, müsstest du die nach dem Wiederkommen neu hochladen — alles andere ist gespeichert.
-
-Bei Fragen einfach auf diese Mail antworten.
-
-Grüne Grüße
-Dein Mariana-Cannabis-Team`;
-
-    const bodyHtml = `<!DOCTYPE html>
-<html><body style="font-family:-apple-system,sans-serif;max-width:600px;margin:0 auto;padding:24px;color:#222;background:#fafafa">
-<div style="background:white;padding:32px;border-radius:12px;border:1px solid #e0e0e0">
-<h2 style="color:#4a5a32;margin:0 0 16px 0">Mach hier weiter</h2>
-<p>Hi,</p>
-<p>du hast deine Bewerbung pausiert &mdash; hier ist der Link, mit dem du da weitermachst, wo du aufgeh&ouml;rt hast:</p>
-<p style="margin:24px 0"><a href="${url}" style="background:#4caf6a;color:white;padding:12px 24px;border-radius:6px;text-decoration:none;display:inline-block;font-weight:600">Bewerbung fortsetzen</a></p>
-<p style="font-size:13px;color:#666;word-break:break-all">Falls der Button nicht funktioniert: <br>${url}</p>
-<p style="background:#fff4e0;padding:12px;border-radius:6px;border-left:3px solid #ffb74d;font-size:13px;color:#7a5a1a">
-<strong>Hinweis:</strong> Falls du Dateien hochgeladen hattest, m&uuml;sstest du die nach dem Wiederkommen neu hochladen &mdash; alles andere ist gespeichert.
-</p>
-<p style="margin-top:24px">Bei Fragen einfach auf diese Mail antworten.</p>
-<p style="font-size:13px;color:#888">Gr&uuml;ne Gr&uuml;&szlig;e<br>Dein Mariana-Cannabis-Team</p>
-</div></body></html>`;
-
-    const { data, error } = await sb.functions.invoke('send-manual-mail', {
-      body: {
-        to: email,
-        subject,
-        body_text: bodyText,
-        body_html: bodyHtml,
-        format: 'html',
-        vorlage: 'resume-link',
-        sender_name: 'Bewerbungsbogen (anonym)',
+    const resume_state = buildResumeStateBlob();
+    const fnUrl = `${SUPABASE_URL}/functions/v1/send-resume-link`;
+    const resp = await fetch(fnUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
       },
+      body: JSON.stringify({ resume_state, email, captcha_token: captchaToken }),
     });
-    
-    if (error || data?.error) {
-      throw new Error(error?.message || data?.error || 'Versand fehlgeschlagen');
+    const respData = await resp.json().catch(() => ({}));
+
+    if (!resp.ok) {
+      const code = respData?.error || `http_${resp.status}`;
+      if (code === 'rate_limited') {
+        const sec = Number(respData.retry_after_seconds) || 0;
+        const wait = sec >= 60
+          ? `${Math.ceil(sec / 60)} Minute(n)`
+          : `${sec} Sekunde(n)`;
+        alert(`Zu viele Anfragen. Bitte versuche es in ${wait} erneut.`);
+      } else if (code === 'captcha_failed') {
+        try {
+          if (window.hcaptcha && window._hCaptchaResumeWidgetId !== null) {
+            hcaptcha.reset(window._hCaptchaResumeWidgetId);
+          }
+        } catch (_e) { /* ignore */ }
+        window._hCaptchaResumeToken = '';
+        alert('Captcha abgelaufen oder ungueltig. Bitte erneut loesen.');
+      } else if (code === 'invalid_input') {
+        alert('Eingabe ungueltig. Bitte E-Mail-Adresse pruefen.');
+      } else if (code === 'smtp_failed' || code === 'smtp_misconfig') {
+        alert('Versand fehlgeschlagen. Bitte spaeter erneut versuchen.');
+      } else {
+        alert(`Mail konnte nicht gesendet werden: ${code}`);
+      }
+      return;
     }
-    
-    // Erfolg
-    btn.classList.remove('is-loading');
-    btn.innerHTML = '✓ Gesendet';
-    setTimeout(() => {
-      closeResumeModal();
-      btn.disabled = false;
-      btn.innerHTML = 'Link senden';
-    }, 1500);
+
+    alert(t('resumeModal.success') || 'Link wurde gesendet. Schau in dein Postfach.');
+    closeResumeModal();
   } catch (e) {
-    console.error('Resume-Mail Fehler:', e);
-    btn.disabled = false;
-    btn.classList.remove('is-loading');
-    btn.innerHTML = 'Link senden';
-    alert('Mail konnte nicht gesendet werden:\n\n' + (e.message || e));
+    alert(`Mail konnte nicht gesendet werden:\n\n${(e && e.message) || e}`);
+  } finally {
+    if (sendBtn) {
+      sendBtn.disabled = false;
+      if (originalLabel) sendBtn.textContent = originalLabel;
+    }
   }
 }
 

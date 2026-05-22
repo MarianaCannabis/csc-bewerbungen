@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="description" content="Dashboard-Zugang pausiert — Mariana Cannabis Bewerbungs-Dashboard.">
+  <title>Dashboard pausiert — Mariana Cannabis</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0a120d;
+      --bg-card: #131e17;
+      --bg-elev: #1a2920;
+      --bg-elev2: #213227;
+      --border: #2a3d31;
+      --border-strong: #3d5644;
+      --tx: #e8f0e9;
+      --tx-dim: #9eb3a4;
+      --tx-mute: #6a8170;
+      --green: #4caf6a;
+      --green-dim: #3a8a52;
+      --green-glow: rgba(76, 175, 106, 0.18);
+      --gold: #f9c74f;
+      --gold-bg: rgba(249, 199, 79, 0.15);
+      --blue: #64b5f6;
+      --blue-bg: rgba(100, 181, 246, 0.12);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      font-family: 'DM Sans', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--tx);
+      font-size: 15px;
+      line-height: 1.55;
+      min-height: 100vh;
+    }
+
+    header {
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .logo-text {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+
+    .logo-text .accent { color: var(--green); }
+
+    .role-pill {
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-weight: 600;
+      background: var(--gold-bg);
+      color: var(--gold);
+      border: 1px solid var(--gold);
+    }
+
+    main {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 64px 24px 80px;
+    }
+
+    .notice-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 40px 36px;
+    }
+
+    .notice-card h1 {
+      font-size: 1.7rem;
+      font-weight: 700;
+      color: var(--tx);
+      margin-bottom: 20px;
+      line-height: 1.2;
+      letter-spacing: -0.015em;
+    }
+
+    .notice-card p {
+      color: var(--tx-dim);
+      margin-bottom: 16px;
+      font-size: 1rem;
+    }
+
+    .notice-card p.lead {
+      color: var(--tx);
+      font-size: 1.05rem;
+      margin-bottom: 20px;
+    }
+
+    .contact-block {
+      background: var(--bg-elev);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px 22px;
+      margin: 28px 0;
+    }
+
+    .contact-block .label {
+      font-size: 0.8rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--tx-mute);
+      margin-bottom: 6px;
+    }
+
+    .contact-block a {
+      color: var(--green);
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 1.05rem;
+      border-bottom: 1px solid var(--green-dim);
+      padding-bottom: 1px;
+      transition: color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .contact-block a:hover {
+      color: var(--tx);
+      border-color: var(--tx);
+    }
+
+    .action-row {
+      margin-top: 32px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .btn-logout {
+      background: var(--bg-elev2);
+      color: var(--tx);
+      border: 1px solid var(--border-strong);
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+
+    .btn-logout:hover {
+      background: var(--border);
+      border-color: var(--green-dim);
+    }
+
+    .logout-status {
+      font-size: 0.85rem;
+      color: var(--tx-mute);
+    }
+
+    .logout-status.done {
+      color: var(--green);
+    }
+
+    @media (max-width: 540px) {
+      main { padding: 32px 16px 60px; }
+      .notice-card { padding: 28px 22px; }
+      .notice-card h1 { font-size: 1.4rem; }
+      header { padding: 12px 16px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-left">
+      <div class="logo-text">Mariana <span class="accent">·</span> Bewerbungen</div>
+      <span class="role-pill">Pausiert</span>
+    </div>
+  </header>
+
+  <main>
+    <section class="notice-card">
+      <h1>Dashboard-Zugang pausiert</h1>
+
+      <p class="lead">
+        Der Vorstands-Zugang zum Bewerbungs-Dashboard ist zurzeit deaktiviert.
+      </p>
+
+      <p>
+        Bei Fragen oder Anliegen zu offenen Bewerbungen melde dich gerne direkt beim Community-Recruiting-Team.
+      </p>
+
+      <div class="contact-block">
+        <div class="label">Kontakt</div>
+        <a href="mailto:communityrecruiting@mariana-cannabis.de">communityrecruiting@mariana-cannabis.de</a>
+      </div>
+
+      <div class="action-row">
+        <button type="button" class="btn-logout" id="btn-logout">Manuell abmelden</button>
+        <span class="logout-status" id="logout-status">Abmeldung läuft…</span>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    // Supabase-Client analog Dashboard
+    const SUPABASE_URL = 'https://gvzayggvtlychyjbnsgv.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd2emF5Z2d2dGx5Y2h5amJuc2d2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3ODEzMTIsImV4cCI6MjA4OTM1NzMxMn0.1L2e98IjFjF8z_-t0Fpm20wwVyrtWfkMdjGG79fJwMg';
+    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const statusEl = document.getElementById('logout-status');
+    const btnLogout = document.getElementById('btn-logout');
+
+    // Automatischer Logout direkt beim Seitenaufruf
+    async function autoLogout() {
+      try {
+        const { data: { session } } = await sb.auth.getSession();
+        if (!session) {
+          statusEl.textContent = 'Bereits abgemeldet.';
+          statusEl.classList.add('done');
+          return;
+        }
+        await sb.auth.signOut();
+        statusEl.textContent = 'Erfolgreich abgemeldet.';
+        statusEl.classList.add('done');
+      } catch (e) {
+        console.warn('Auto-Logout fehlgeschlagen:', e);
+        statusEl.textContent = 'Abmeldung fehlgeschlagen. Bitte manuell abmelden.';
+      }
+    }
+
+    // Manueller Logout-Button als Fallback
+    btnLogout.addEventListener('click', async () => {
+      btnLogout.disabled = true;
+      statusEl.textContent = 'Abmeldung läuft…';
+      statusEl.classList.remove('done');
+      try {
+        await sb.auth.signOut();
+        statusEl.textContent = 'Erfolgreich abgemeldet.';
+        statusEl.classList.add('done');
+      } catch (e) {
+        statusEl.textContent = 'Abmeldung fehlgeschlagen: ' + (e.message || e);
+        btnLogout.disabled = false;
+      }
+    });
+
+    // Start
+    autoLogout();
+  </script>
+</body>
+</html>

@@ -2066,9 +2066,15 @@ async function loadDashboard() {
     console.error('[loadDashboard]', e);
     toast('Fehler beim Laden des User-Kontexts: ' + e.message, true); 
     loadDashboardInProgress = false;
-    return; 
+    return;
   }
-  
+
+  // Phase-B-Sperre: nur Hauptverein-Admins haben weiter Dashboard-Zugriff (22.05.2026)
+  if (getUserRolle() !== 'admin') {
+    window.location.replace('vorstand-pause.html');
+    return;
+  }
+
   document.getElementById('user-email').textContent = userContext.email;
   const pill = document.getElementById('role-pill');
   if (userContext.ist_admin) {

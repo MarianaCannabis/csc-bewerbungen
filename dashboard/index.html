@@ -391,77 +391,12 @@
     /* Termin-Indikator in Liste */
     .li-termin { display: inline-flex; align-items: center; gap: 2px; padding: 1px 6px; border-radius: 8px; font-size: 11px; font-weight: 600; background: rgba(249,199,79,0.18); color: var(--yellow); border: 1px solid rgba(249,199,79,0.4); margin: 0 2px; cursor: help; }
     .li-termin.overdue { background: rgba(236,100,100,0.18); color: var(--red); border-color: rgba(236,100,100,0.4); }
-    .score-section { padding: 12px 14px !important; }
-    
-    /* Kompakte Top-Anzeige */
-    .score-compact { display: flex; align-items: center; gap: 14px; }
-    .score-gauge-mini { width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 3px solid; }
-    .score-gauge-mini.gauge-gruen { background: rgba(76,175,106,0.15); border-color: #4caf6a; color: #6ed080; }
-    .score-gauge-mini.gauge-gelb  { background: rgba(249,199,79,0.15); border-color: #f9c74f; color: #f9c74f; }
-    .score-gauge-mini.gauge-rot   { background: rgba(236,100,100,0.15); border-color: #ec6464; color: #ec6464; }
-    .gauge-mini-value { font-size: 19px; font-weight: 800; line-height: 1; }
-    .score-compact-info { flex: 1; min-width: 0; }
-    .score-compact-label { font-size: 13px; font-weight: 600; color: var(--tx); margin-bottom: 6px; }
-    .score-compact-pills { display: flex; flex-wrap: wrap; gap: 4px; }
-    .mini-pill { display: inline-flex; align-items: center; gap: 3px; padding: 2px 7px; border-radius: 10px; font-size: 11px; font-weight: 600; border: 1px solid; font-variant-numeric: tabular-nums; cursor: help; }
-    .mini-pill.gruen { background: rgba(76,175,106,0.12); color: #6ed080; border-color: rgba(76,175,106,0.4); }
-    .mini-pill.gelb  { background: rgba(249,199,79,0.12); color: #f9c74f; border-color: rgba(249,199,79,0.4); }
-    .mini-pill.rot   { background: rgba(236,100,100,0.12); color: #ec6464; border-color: rgba(236,100,100,0.4); }
-    
-    /* Akkordeons */
-    .score-details { margin-top: 10px; }
-    .score-details > summary { 
-      cursor: pointer; padding: 6px 10px; background: var(--bg-elev); border: 1px solid var(--border); 
-      border-radius: 6px; font-size: 12px; color: var(--tx-mute); list-style: none;
-      font-weight: 500; user-select: none; transition: background 0.1s;
-    }
-    .score-details > summary:hover { background: var(--bg-card); color: var(--tx); }
-    .score-details > summary::-webkit-details-marker { display: none; }
-    .score-details > summary::before { content: '▸ '; display: inline-block; transition: transform 0.15s; color: var(--green); margin-right: 2px; }
-    .score-details[open] > summary::before { transform: rotate(90deg); }
-    .score-details[open] > summary { background: var(--bg-card); color: var(--tx); border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
-    .score-details > .score-rollen,
-    .score-details > .score-faktoren,
-    .score-details > .verfueg-heatmap { 
-      border-top: none !important; 
-      border-top-left-radius: 0 !important; 
-      border-top-right-radius: 0 !important;
-      margin-bottom: 0 !important;
-    }
-    
-    /* Legacy: Bestehende score-rollen / score-faktoren / verfueg-heatmap-Styles bleiben */
-    .score-rollen { background: var(--bg-elev); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; }
-    .score-rollen-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--tx-mute); margin-bottom: 8px; font-weight: 600; }
-    .score-rolle-row { display: grid; grid-template-columns: 130px 1fr 40px; gap: 8px; align-items: center; margin-bottom: 5px; font-size: 13px; }
-    .score-rolle-row:last-child { margin-bottom: 0; }
-    .score-rolle-name { color: var(--tx); }
-    .score-rolle-bar { height: 8px; background: rgba(255,255,255,0.05); border-radius: 4px; overflow: hidden; }
-    .score-rolle-fill { height: 100%; transition: width 0.4s ease; border-radius: 4px; }
-    .score-rolle-fill.gruen { background: linear-gradient(90deg, #4caf6a, #6ed080); }
-    .score-rolle-fill.gelb  { background: linear-gradient(90deg, #f9c74f, #fde68a); }
-    .score-rolle-fill.rot   { background: linear-gradient(90deg, #ec6464, #f59999); }
-    .score-rolle-num { text-align: right; font-weight: 700; color: var(--tx); font-variant-numeric: tabular-nums; }
-    
-    .score-hardfilter { background: rgba(236,100,100,0.1); border: 1px solid rgba(236,100,100,0.3); border-radius: 6px; padding: 10px 12px; color: var(--tx); font-size: 13px; margin-bottom: 12px; margin-top: 8px; }
-    
-    /* Faktor-Aufschlüsselung */
-    .score-faktoren { background: var(--bg-elev); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; margin-bottom: 12px; }
-    .faktor-row { margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px dashed var(--border); }
-    .faktor-row:last-of-type { border-bottom: none; padding-bottom: 0; margin-bottom: 6px; }
-    .faktor-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
-    .faktor-name { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--tx); font-weight: 500; }
-    .faktor-icon { font-size: 14px; }
-    .faktor-gewicht { font-size: 10px; color: var(--tx-mute); background: rgba(255,255,255,0.05); padding: 1px 6px; border-radius: 8px; font-weight: 600; }
-    .faktor-num { font-size: 13px; font-weight: 700; color: var(--tx); font-variant-numeric: tabular-nums; display: flex; align-items: center; gap: 6px; }
-    .faktor-beitrag { font-size: 11px; color: var(--green); font-weight: 500; }
-    .faktor-bar { height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden; margin-bottom: 4px; }
-    .faktor-fill { height: 100%; transition: width 0.4s ease; border-radius: 3px; }
-    .faktor-fill.gruen { background: linear-gradient(90deg, #4caf6a, #6ed080); }
-    .faktor-fill.gelb  { background: linear-gradient(90deg, #f9c74f, #fde68a); }
-    .faktor-fill.rot   { background: linear-gradient(90deg, #ec6464, #f59999); }
-    .faktor-erklaerung { font-size: 11px; color: var(--tx-mute); padding-left: 22px; }
-    .faktor-summary { font-size: 11px; color: var(--tx-mute); text-align: center; padding-top: 8px; border-top: 1px solid var(--border); margin-top: 8px; font-style: italic; }
-    
+
+    /* Score-CSS entfaellt (Score-Removal 2026-05-28, DSGVO Art. 22).
+       Alte Klassen: .score-section, .score-compact*, .score-gauge-mini*,
+       .gauge-mini-value, .mini-pill*, .score-details, .score-rollen*,
+       .score-rolle-*, .score-hardfilter, .score-faktoren, .faktor-* */
+
     .verfueg-heatmap { background: var(--bg-elev); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
     
     /* === Verfügbarkeits-Heatmap V2 (aufgewertet) === */
@@ -762,17 +697,7 @@
     
     /* Listen-Indikatoren (Notiz, Anhänge, etc.) */
     .li-indicator { display: inline-block; font-size: 12px; opacity: 0.8; margin: 0 1px; cursor: help; }
-    .li-score { 
-      display: inline-flex; align-items: center; justify-content: center;
-      min-width: 26px; height: 18px; padding: 0 4px;
-      border-radius: 9px; font-size: 11px; font-weight: 700;
-      vertical-align: middle; margin: 0 2px;
-      font-variant-numeric: tabular-nums; cursor: help;
-      border: 1px solid;
-    }
-    .li-score.sg-gruen { background: rgba(76,175,106,0.18); color: #6ed080; border-color: rgba(76,175,106,0.5); }
-    .li-score.sg-gelb  { background: rgba(249,199,79,0.18); color: #f9c74f; border-color: rgba(249,199,79,0.5); }
-    .li-score.sg-rot   { background: rgba(236,100,100,0.18); color: #ec6464; border-color: rgba(236,100,100,0.5); }
+    /* .li-score + .sg-gruen/gelb/rot entfallen (Score-Removal 2026-05-28) */
     
     /* Loading & Toast */
     .loading { display: flex; align-items: center; gap: 8px; color: var(--tx-mute); font-size: 13px; padding: 24px; }
@@ -1746,10 +1671,6 @@
               <option value="date_asc">⏱ Älteste zuerst</option>
               <option value="wartet_lange">⏰ Wartet am längsten</option>
             </optgroup>
-            <optgroup label="Score">
-              <option value="score_desc">⭐ Score: hoch → niedrig</option>
-              <option value="score_asc">⭐ Score: niedrig → hoch</option>
-            </optgroup>
             <optgroup label="Status &amp; Stunden">
               <option value="status">📋 Nach Status</option>
               <option value="stunden_desc">⏰ Stunden: hoch → niedrig</option>
@@ -2531,16 +2452,6 @@ function renderList() {
         if (aActive !== bActive) return aActive ? -1 : 1;
         return wartetTage(b) - wartetTage(a);
       }
-      case 'score_desc': {
-        const aS = a.score_gesamt ?? -1, bS = b.score_gesamt ?? -1;
-        if (aS !== bS) return bS - aS;
-        return new Date(b.eingegangen_am || 0) - new Date(a.eingegangen_am || 0);
-      }
-      case 'score_asc': {
-        const aS = a.score_gesamt ?? 101, bS = b.score_gesamt ?? 101;
-        if (aS !== bS) return aS - bS;
-        return new Date(b.eingegangen_am || 0) - new Date(a.eingegangen_am || 0);
-      }
       case 'stunden_desc': {
         const aS = a.wunsch_stunden_max ?? a.wunsch_stunden_min ?? -1;
         const bS = b.wunsch_stunden_max ?? b.wunsch_stunden_min ?? -1;
@@ -2600,14 +2511,8 @@ function renderList() {
     const stdHtml = stdLabel ? `<span class="list-item-std">${stdLabel}</span>` : '';
     const isSelected = selectedIds.has(b.id);
     
-    // Mini-Indikatoren neben dem Namen: Notiz, Anhänge, Score, etc.
+    // Mini-Indikatoren neben dem Namen: Notiz, Anhänge, etc.
     let indicators = '';
-    // Score-Pille (Ampel-Farbe)
-    if (b.score_gesamt !== null && b.score_gesamt !== undefined) {
-      const sCls = b.score_gesamt >= 75 ? 'sg-gruen' : b.score_gesamt >= 50 ? 'sg-gelb' : 'sg-rot';
-      const sTitle = b.score_gesamt >= 75 ? 'Starker Kandidat' : b.score_gesamt >= 50 ? 'Mittlerer Kandidat' : 'Schwacher Kandidat';
-      indicators += `<span class="li-score ${sCls}" title="Score: ${b.score_gesamt}/100 — ${sTitle}" aria-label="Score ${b.score_gesamt}">${b.score_gesamt}</span>`;
-    }
     if (b.vorstand_notiz && b.vorstand_notiz.trim()) {
       indicators += `<span class="li-indicator" title="Schnell-Notiz vorhanden" aria-label="Notiz vorhanden">💬</span>`;
     }
@@ -3022,80 +2927,21 @@ async function selectBewerbung(id) {
       </div>
     </div>
     
-    ${(b.score_gesamt !== null && b.score_gesamt !== undefined) ? `
-    <div class="section score-section">
-      <!-- Kompakte Top-Zeile: Gauge + Label + Mini-Faktoren-Pillen -->
-      <div class="score-compact">
-        <div class="score-gauge-mini ${b.score_gesamt >= 75 ? 'gauge-gruen' : b.score_gesamt >= 50 ? 'gauge-gelb' : 'gauge-rot'}">
-          <div class="gauge-mini-value">${b.score_gesamt}</div>
+    ${b.verfuegbarkeit && typeof b.verfuegbarkeit === 'object' ? `
+    <div class="section" style="padding:0;">
+      <details class="verfueg-heatmap-wrap" style="padding:0; margin-top:0;">
+        <summary style="cursor:pointer; padding:14px 16px; list-style:none; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+          <span class="verfueg-heatmap-headline">📅 Wann ist der Bewerber verfügbar?</span>
+          <span class="verfueg-heatmap-legend">
+            <span class="vlg-cell vlg-on"></span> verfügbar
+            <span class="vlg-cell vlg-off"></span> nicht
+            <span style="margin-left:8px; font-size:11px; color:var(--tx-mute);">▾ Details</span>
+          </span>
+        </summary>
+        <div style="padding: 0 16px 14px 16px;">
+          ${renderVerfuegbarkeitHeatmap(b.verfuegbarkeit)}
         </div>
-        <div class="score-compact-info">
-          <div class="score-compact-label">
-            ${b.score_gesamt >= 75 ? '🟢 Starker Kandidat' : b.score_gesamt >= 50 ? '🟡 Mittlerer Kandidat' : '🔴 Schwacher Kandidat'}
-          </div>
-          ${b.score_pro_rolle && b.score_pro_rolle._faktoren ? `
-            <div class="score-compact-pills">
-              ${['verfuegbarkeit','erfahrung','mobilitaet','softskills','bereitschaft','sachkunde'].map(k => {
-                const v = b.score_pro_rolle._faktoren[k]; if (v === undefined) return '';
-                const cls = v >= 75 ? 'gruen' : v >= 50 ? 'gelb' : 'rot';
-                const ic = {verfuegbarkeit:'📅',erfahrung:'🎓',mobilitaet:'🚗',softskills:'🤝',bereitschaft:'🌙',sachkunde:'📜'}[k];
-                const tt = {verfuegbarkeit:'Verfügbarkeit',erfahrung:'Erfahrung',mobilitaet:'Mobilität',softskills:'Soft-Skills',bereitschaft:'Bereitschaft',sachkunde:'Sachkunde'}[k];
-                return `<span class="mini-pill ${cls}" title="${tt}: ${v}/100">${ic} ${v}</span>`;
-              }).join('')}
-            </div>
-          ` : ''}
-        </div>
-      </div>
-      
-      ${b.score_pro_rolle && b.score_pro_rolle._hardfilter ? `
-        <div class="score-hardfilter">
-          ⚠️ Hard-Filter nicht erfüllt: <strong>${escapeHtml(b.score_pro_rolle._hardfilter)}</strong>
-        </div>
-      ` : ''}
-      
-      <!-- Details als klappbare Akkordeons -->
-      <details class="score-details">
-        <summary>📊 Score pro Rolle + Gewichtungen</summary>
-        ${b.score_pro_rolle && typeof b.score_pro_rolle === 'object' && Object.keys(b.score_pro_rolle).filter(k => !k.startsWith('_')).length > 0 ? `
-          <div class="score-rollen">
-            ${Object.entries(b.score_pro_rolle).filter(([k]) => !k.startsWith('_')).map(([role, score]) => {
-              const cls = score >= 75 ? 'gruen' : score >= 50 ? 'gelb' : 'rot';
-              return `
-                <div class="score-rolle-row">
-                  <div class="score-rolle-name">${ROLE_LABELS[role] || role}</div>
-                  <div class="score-rolle-bar"><div class="score-rolle-fill ${cls}" style="width:${score}%"></div></div>
-                  <div class="score-rolle-num">${score}</div>
-                </div>
-              `;
-            }).join('')}
-          </div>
-        ` : '<div style="color:var(--tx-mute);font-size:12px">Keine Rollen-Daten.</div>'}
       </details>
-      
-      ${b.score_pro_rolle && b.score_pro_rolle._faktoren ? `
-        <details class="score-details">
-          <summary>🔍 Faktor-Aufschlüsselung (Details + Erklärung)</summary>
-          <div class="score-faktoren">
-            ${renderFaktoren(b.score_pro_rolle._faktoren, b)}
-          </div>
-        </details>
-      ` : ''}
-      
-      ${b.verfuegbarkeit && typeof b.verfuegbarkeit === 'object' ? `
-        <details class="verfueg-heatmap-wrap" style="padding:0;">
-          <summary style="cursor:pointer; padding:14px 16px; list-style:none; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-            <span class="verfueg-heatmap-headline">📅 Wann ist der Bewerber verfügbar?</span>
-            <span class="verfueg-heatmap-legend">
-              <span class="vlg-cell vlg-on"></span> verfügbar
-              <span class="vlg-cell vlg-off"></span> nicht
-              <span style="margin-left:8px; font-size:11px; color:var(--tx-mute);">▾ Details</span>
-            </span>
-          </summary>
-          <div style="padding: 0 16px 14px 16px;">
-            ${renderVerfuegbarkeitHeatmap(b.verfuegbarkeit)}
-          </div>
-        </details>
-      ` : ''}
     </div>
     ` : ''}
     
@@ -3646,16 +3492,7 @@ function einstellungVollstaendig(einst) {
   return true;
 }
 
-// Score-basierter Vorschlag: beste Rolle (Vertrag kommt aus der Verfügbarkeit)
-function getScoreVorschlag(b) {
-  if (!b.score_pro_rolle || typeof b.score_pro_rolle !== 'object') return null;
-  const rollenScores = Object.entries(b.score_pro_rolle)
-    .filter(([k, v]) => !k.startsWith('_') && typeof v === 'number');
-  if (rollenScores.length === 0) return null;
-  rollenScores.sort((a, b) => b[1] - a[1]);
-  const [besteRolle, score] = rollenScores[0];
-  return { rolle: besteRolle, score };
-}
+// (getScoreVorschlag entfaellt — Score-Removal 2026-05-28)
 
 function renderEinstellungBlock(b) {
   const einst = getEinstellung(b);
@@ -3679,9 +3516,6 @@ function renderEinstellungBlock(b) {
     ...beworbeneRollen.filter(r => alleRollen.includes(r)),
     ...alleRollen.filter(r => !beworbeneRollen.includes(r))
   ];
-
-  const scoreVorschlag = getScoreVorschlag(b);
-  const scoreSchonGesetzt = scoreVorschlag && gewaehlteRollen.includes(scoreVorschlag.rolle);
 
   // Verfügbarkeits-basierter Vertragsvorschlag
   const vV = getVertragsVorschlag(b, gewaehlteRollen.length ? gewaehlteRollen : beworbeneRollen);
@@ -3778,15 +3612,6 @@ function renderEinstellungBlock(b) {
         ${fehltPflicht ? `
           <div class="eb-warn">⚠️ Status ist „${STATUS_LABELS[status]}" — bitte mindestens eine Rolle UND (für Nicht-Grow-Rollen) die Vertragsart festlegen.</div>
         ` : ''}
-        ${scoreVorschlag && !scoreSchonGesetzt ? `
-          <div class="eb-vorschlag">
-            <span class="eb-vorschlag-text">
-              💡 <strong>Score-Empfehlung:</strong> ${escapeHtml(ROLE_LABELS[scoreVorschlag.rolle] || scoreVorschlag.rolle)} 
-              (Score ${scoreVorschlag.score} — höchster Wert)
-            </span>
-            <button class="eb-vorschlag-btn" onclick="applyScoreVorschlag('${b.id}')">Rolle übernehmen</button>
-          </div>
-        ` : ''}
         <div class="eb-rollen-list-label">Rolle(n) auswählen — mehrere möglich:</div>
         <div class="eb-rollen-list">
           ${rollenHtml}
@@ -3832,22 +3657,7 @@ async function applyVertragsVorschlag(bewerbungId) {
   toast(`Vertrag übernommen: ${VERTRAG_LABELS[vV.restVertrag]} (aus Verfügbarkeit)`);
 }
 
-async function applyScoreVorschlag(bewerbungId) {
-  const b = bewerbungen.find(x => x.id === bewerbungId);
-  if (!b) return;
-  const vorschlag = getScoreVorschlag(b);
-  if (!vorschlag) { toast('Kein Score-Vorschlag verfügbar', true); return; }
-  const einst = getEinstellung(b);
-  if (!einst.rollen.includes(vorschlag.rolle)) einst.rollen.push(vorschlag.rolle);
-  // Vertrag für Nicht-Grow-Rollen aus Verfügbarkeit vorbelegen (falls noch leer)
-  const hatNichtGrow = einst.rollen.some(r => !GROWER_ROLLEN.includes(r));
-  if (hatNichtGrow && !einst.vertrag) {
-    const vV = getVertragsVorschlag(b, einst.rollen);
-    if (vV && vV.restVertrag) einst.vertrag = vV.restVertrag;
-  }
-  await saveEinstellung(bewerbungId, einst);
-  toast(`Empfehlung übernommen: ${ROLE_LABELS[vorschlag.rolle] || vorschlag.rolle}`);
-}
+// (applyScoreVorschlag entfaellt — Score-Removal 2026-05-28)
 
 async function saveEinstellung(bewerbungId, einst) {
   // Immer im neuen Objekt-Format speichern
@@ -5227,91 +5037,9 @@ function insertNotizTemplate(key) {
   if (sel) sel.value = '';
 }
 
-// ============================================================================
-// FAKTOR-AUFSCHLÜSSELUNG (für Score-Section)
-// ============================================================================
-const FAKTOR_LABELS = {
-  verfuegbarkeit: { label: 'Verfügbarkeit', icon: '📅', erklaerung: 'Anteil deiner belegten Verfügbarkeits-Slots' },
-  erfahrung:      { label: 'Erfahrung & Qualifikation', icon: '🎓', erklaerung: 'Vorerfahrung, Bildungsabschluss, Sprachen' },
-  mobilitaet:     { label: 'Mobilität', icon: '🚗', erklaerung: 'Max. Anfahrtszeit + eigenes Fahrzeug' },
-  softskills:     { label: 'Soft Skills', icon: '🤝', erklaerung: 'Mittelwert der Selbsteinschätzung' },
-  bereitschaft:   { label: 'Bereitschaft', icon: '🌙', erklaerung: 'Wochenende / Feiertag / Nacht' },
-  sachkunde:      { label: 'Sachkunde', icon: '📜', erklaerung: 'Präventions-Sachkundenachweis' }
-};
-
-function renderFaktoren(faktoren, b) {
-  if (!faktoren || typeof faktoren !== 'object') return '';
-  
-  // Wenn nur eine Rolle: zeige Gewichtung dazu
-  const rollenScores = b.score_pro_rolle 
-    ? Object.entries(b.score_pro_rolle).filter(([k]) => !k.startsWith('_'))
-    : [];
-  let gewichtungInfo = '';
-  if (rollenScores.length === 1) {
-    const [rolle] = rollenScores[0];
-    const gewichtungen = {
-      'ausgabe':                  { v:30, e:20, m:15, s:20, b:10, k:5 },
-      'grower':                   { v:25, e:35, m:10, s:10, b:15, k:5 },
-      'head_grower':              { v:25, e:40, m:10, s:10, b:10, k:5 },
-      'vorstand':                 { v:15, e:40, m:10, s:25, b:5, k:5 },
-      'stellv_vorstand':          { v:15, e:40, m:10, s:25, b:5, k:5 },
-      'praevention':              { v:15, e:25, m:10, s:15, b:5, k:30 },
-      'praeventionsbeauftragter': { v:15, e:25, m:10, s:15, b:5, k:30 },
-      'sicherheit':               { v:30, e:25, m:15, s:10, b:15, k:5 },
-      'reinigung':                { v:40, e:15, m:20, s:10, b:10, k:5 },
-      'springer':                 { v:45, e:15, m:15, s:10, b:10, k:5 }
-    };
-    const g = gewichtungen[rolle.toLowerCase()] || { v:25, e:25, m:15, s:15, b:10, k:10 };
-    gewichtungInfo = g;
-  }
-  
-  const order = ['verfuegbarkeit', 'erfahrung', 'mobilitaet', 'softskills', 'bereitschaft', 'sachkunde'];
-  const gewichtKey = { verfuegbarkeit: 'v', erfahrung: 'e', mobilitaet: 'm', softskills: 's', bereitschaft: 'b', sachkunde: 'k' };
-  
-  let html = '';
-  order.forEach(key => {
-    const val = faktoren[key];
-    if (val === undefined || val === null) return;
-    const info = FAKTOR_LABELS[key];
-    const cls = val >= 75 ? 'gruen' : val >= 50 ? 'gelb' : 'rot';
-    const gewicht = gewichtungInfo ? gewichtungInfo[gewichtKey[key]] : null;
-    const beitrag = gewicht !== null ? Math.round(val * gewicht / 100) : null;
-    
-    html += `
-      <div class="faktor-row">
-        <div class="faktor-head">
-          <div class="faktor-name">
-            <span class="faktor-icon">${info.icon}</span>
-            <span>${info.label}</span>
-            ${gewicht !== null ? `<span class="faktor-gewicht" title="Gewichtung für diese Rolle">${gewicht}%</span>` : ''}
-          </div>
-          <div class="faktor-num">
-            ${val}
-            ${beitrag !== null ? `<span class="faktor-beitrag" title="Beitrag zum Gesamt-Score">→ ${beitrag}</span>` : ''}
-          </div>
-        </div>
-        <div class="faktor-bar"><div class="faktor-fill ${cls}" style="width:${val}%"></div></div>
-        <div class="faktor-erklaerung">${info.erklaerung}</div>
-      </div>
-    `;
-  });
-  
-  if (gewichtungInfo) {
-    html += `
-      <div class="faktor-summary">
-        <span>Summe der gewichteten Beiträge ergibt den Rollen-Score (${rollenScores[0][1]} / 100).</span>
-      </div>
-    `;
-  } else if (rollenScores.length > 1) {
-    html += `
-      <div class="faktor-summary">
-        <span>Bei mehreren Rollen wird pro Rolle unterschiedlich gewichtet. Zahlen oben zeigen die Roh-Faktoren.</span>
-      </div>
-    `;
-  }
-  
-  return html;
-}
+// FAKTOR-AUFSCHLÜSSELUNG entfaellt — Score-Removal 2026-05-28 (DSGVO Art. 22).
+// FAKTOR_LABELS + renderFaktoren wurden komplett entfernt. Wiederherstellbar via
+// git: vor dem Score-Removal-Commit liegt der Original-Block in der Historie.
 
 // ============================================================================
 // VERFÜGBARKEITS-HEATMAP (aufgewertete Version mit Per-Tag-Summary)
